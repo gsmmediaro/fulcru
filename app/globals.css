@@ -1,0 +1,514 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────
+   Design tokens — AlignUI-style @theme, tuned to IPRoyal
+   ────────────────────────────────────────────────────────── */
+@theme {
+  /* Typography */
+  --font-sans: var(--font-be-vietnam-pro), ui-sans-serif, system-ui, sans-serif;
+  --font-display:
+    var(--font-be-vietnam-pro), ui-sans-serif, system-ui, sans-serif;
+
+  /* Type scale (AlignUI Title / Paragraph / Label / Subheading) */
+  --text-title-h1: 56px;
+  --text-title-h1--line-height: 64px;
+  --text-title-h1--letter-spacing: -0.01em;
+  --text-title-h2: 48px;
+  --text-title-h2--line-height: 56px;
+  --text-title-h3: 40px;
+  --text-title-h3--line-height: 48px;
+  --text-title-h4: 32px;
+  --text-title-h4--line-height: 42px;
+  --text-title-h5: 24px;
+  --text-title-h5--line-height: 32px;
+  --text-title-h6: 20px;
+  --text-title-h6--line-height: 26px;
+
+  --text-headline-m: 32px;
+  --text-headline-m--line-height: 42px;
+  --text-headline-s: 20px;
+  --text-headline-s--line-height: 26px;
+  --text-headline-xs: 18px;
+  --text-headline-xs--line-height: 24px;
+
+  --text-body-m: 16px;
+  --text-body-m--line-height: 24px;
+  --text-body-s: 14px;
+  --text-body-s--line-height: 20px;
+  --text-body-xs: 12px;
+  --text-body-xs--line-height: 16px;
+
+  --text-label-m: 14px;
+  --text-label-m--line-height: 20px;
+  --text-label-s: 12px;
+  --text-label-s--line-height: 16px;
+  --text-label-xs: 11px;
+  --text-label-xs--line-height: 14px;
+
+  /* Spacing primitives (used via rounded-*, p-*, gap-*, w-*) */
+  --spacing-1: 1px;
+  --spacing-2: 2px;
+  --spacing-4: 4px;
+  --spacing-6: 6px;
+  --spacing-8: 8px;
+  --spacing-10: 10px;
+  --spacing-12: 12px;
+  --spacing-14: 14px;
+  --spacing-16: 16px;
+  --spacing-20: 20px;
+  --spacing-24: 24px;
+  --spacing-28: 28px;
+  --spacing-32: 32px;
+  --spacing-36: 36px;
+  --spacing-40: 40px;
+  --spacing-48: 48px;
+  --spacing-56: 56px;
+  --spacing-64: 64px;
+  --spacing-72: 72px;
+  --spacing-80: 80px;
+  --spacing-96: 96px;
+  --spacing-112: 112px;
+  --spacing-128: 128px;
+  --spacing-144: 144px;
+  --spacing-160: 160px;
+  --spacing-192: 192px;
+  --spacing-216: 216px;
+  --spacing-240: 240px;
+  --spacing-248: 248px;
+  --spacing-288: 288px;
+  --spacing-320: 320px;
+  --spacing-344: 344px;
+  --spacing-400: 400px;
+  --spacing-456: 456px;
+  --spacing-512: 512px;
+  --spacing-1136: 1136px;
+
+  /* Radius */
+  --radius-4: 4px;
+  --radius-6: 6px;
+  --radius-8: 8px;
+  --radius-10: 10px;
+  --radius-12: 12px;
+  --radius-16: 16px;
+  --radius-20: 20px;
+
+  /* Brand teal (extracted from #19bdc8 family) */
+  --color-brand-50: oklch(97% 0.02 200);
+  --color-brand-100: oklch(32.5% 0.026 200); /* #222e30 card bg */
+  --color-brand-200: oklch(45% 0.05 200);
+  --color-brand-300: oklch(57% 0.082 200); /* #006f77 chart line */
+  --color-brand-400: oklch(72% 0.11 200); /* #19bdc8 icons/text */
+  --color-brand-500: oklch(78% 0.11 200); /* primary hover */
+  --color-brand-600: oklch(85% 0.1 200);
+  --color-brand-700: oklch(90% 0.08 200);
+
+  /* Neutrals — dark app palette */
+  --color-neutral-0: #232323; /* surface (sidebar/topbar/cards) */
+  --color-neutral-50: #2a2a2a;
+  --color-neutral-100: #2f2f2f; /* hairline ring */
+  --color-neutral-200: #3a3a3a;
+  --color-neutral-300: #575757;
+  --color-neutral-400: #8a8a8a; /* muted text */
+  --color-neutral-500: #a8a8a8;
+  --color-neutral-600: #c6c6c6;
+  --color-neutral-700: #d6d6d6;
+  --color-neutral-800: #e1e1e1; /* primary text */
+  --color-neutral-900: #f1f1f1;
+  --color-neutral-950: #ffffff;
+
+  --color-bg-app: #1c1c1c; /* main viewport bg */
+  --color-bg-surface: #232323;
+  --color-bg-surface-elevated: #2a2a2a;
+
+  /* Semantic */
+  --color-accent-orange: #d46804;
+  --color-accent-orange-hover: #e07416;
+  --color-accent-orange-ring: #b85703;
+  --color-accent-yellow: #eab308;
+  --color-accent-red: #f87171;
+  --color-accent-green: #22c55e;
+  --color-accent-purple: #a78bfa;
+
+  /* Text tokens */
+  --color-text-strong: #e1e1e1;
+  --color-text-sub: #c6c6c6;
+  --color-text-soft: #8a8a8a;
+  --color-text-disabled: #575757;
+
+  /* Stroke */
+  --color-stroke-soft: #2f2f2f;
+  --color-stroke-sub: #3a3a3a;
+  --color-stroke-strong: #575757;
+
+  /* Shadows */
+  --shadow-regular-xs: 0 1px 2px 0 rgb(0 0 0 / 0.24);
+  --shadow-regular-sm: 0 2px 4px 0 rgb(0 0 0 / 0.28);
+  --shadow-regular-md: 0 4px 8px 0 rgb(0 0 0 / 0.32);
+  --shadow-regular-lg: 0 10px 24px 0 rgb(0 0 0 / 0.4);
+  --shadow-button-orange-focus: 0 0 0 3px rgb(212 104 4 / 0.32);
+  --shadow-button-brand-focus: 0 0 0 3px rgb(25 189 200 / 0.28);
+}
+
+/* Tailwind dark-mode variant bound to the `dark` class */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ──────────────────────────────────────────────────────────
+   Base
+   ────────────────────────────────────────────────────────── */
+:root {
+  --app-header-height: 64px;
+  --sidebar-width: 248px;
+  --content-max-w: 1136px;
+}
+
+html,
+body {
+  background-color: var(--color-bg-app);
+  color: var(--color-text-strong);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-synthesis: none;
+  font-feature-settings: "cv11", "ss01";
+}
+
+/* Dynamic numbers shouldn't cause layout shift */
+.tabular,
+[data-numeric] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Heading wrapping — balance for short, pretty for longer */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Easings — refined curves (Emil-style)
+   ────────────────────────────────────────────────────────── */
+:root {
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft-spring: cubic-bezier(0.34, 1.26, 0.64, 1);
+}
+
+/* Keyframes: staggered enter */
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.enter-stagger > * {
+  animation: fade-rise 380ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+.enter-stagger > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.enter-stagger > *:nth-child(2) {
+  animation-delay: 60ms;
+}
+.enter-stagger > *:nth-child(3) {
+  animation-delay: 120ms;
+}
+.enter-stagger > *:nth-child(4) {
+  animation-delay: 180ms;
+}
+.enter-stagger > *:nth-child(5) {
+  animation-delay: 240ms;
+}
+.enter-stagger > *:nth-child(6) {
+  animation-delay: 300ms;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Delight primitives
+   ────────────────────────────────────────────────────────── */
+
+/* Breathing pulse — for status indicators (softer than ping) */
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.6);
+  }
+}
+.breathe-dot {
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+/* Single 360° rotation — for refresh confirmations */
+@keyframes spin-once {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin-once {
+  animation: spin-once 600ms var(--ease-out-expo);
+}
+
+/* Count-in for refreshed numbers (subtle) */
+@keyframes count-in {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+.count-in {
+  animation: count-in 420ms var(--ease-out-expo) both;
+}
+
+/* Icon wiggle — for card icon on parent hover */
+@keyframes icon-pop {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.08) rotate(-6deg);
+  }
+  100% {
+    transform: scale(1.04) rotate(0deg);
+  }
+}
+
+/* Bell ring — subtle attention tilt on hover */
+@keyframes bell-ring {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(-12deg);
+  }
+  40% {
+    transform: rotate(8deg);
+  }
+  60% {
+    transform: rotate(-5deg);
+  }
+  80% {
+    transform: rotate(3deg);
+  }
+}
+
+/* Cursor-follow radial glow on primary CTA.
+   Reads --mx / --my custom properties (set via React). */
+.glow-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.glow-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    140px circle at var(--mx, 50%) var(--my, 50%),
+    rgb(255 255 255 / 0.22),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 240ms var(--ease-out-quart);
+}
+.glow-cta:hover::before {
+  opacity: 1;
+}
+.glow-cta > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Chart area draw-in — SVG path reveal */
+@keyframes chart-draw {
+  from {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+.chart-draw {
+  animation: chart-draw 720ms var(--ease-out-expo) both;
+}
+
+/* Modal enter — soft rise + fade */
+@keyframes modal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.modal-rise {
+  animation: modal-rise 220ms var(--ease-out-expo) both;
+}
+
+/* Soft shimmer for loading / refresh states */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--color-brand-400) 18%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter-stagger > *,
+  .breathe-dot,
+  .spin-once,
+  .count-in,
+  .chart-draw,
+  .shimmer {
+    animation: none;
+  }
+  .glow-cta::before {
+    display: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+}
+
+/* Typography utility classes (AlignUI-ish aliases used across the app) */
+.tp-headline-m {
+  font-size: 32px;
+  line-height: 42px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.tp-headline-s {
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 500;
+}
+.tp-headline-xs {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+}
+.tp-body-m {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+.tp-body-s {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+.tp-body-xs {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+.tp-label-m {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.tp-label-s {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.tp-overline {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Focus ring helpers */
+.focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.focus-ring:focus-visible {
+  outline-color: var(--color-brand-400);
+}
+
+/* Scrollbar (thin + dark) */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-stroke-sub) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-stroke-sub);
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Recharts overrides (dark theme) */
+.recharts-cartesian-axis-tick-value {
+  fill: var(--color-text-soft) !important;
+  font-size: 11px;
+}
+.recharts-cartesian-grid line {
+  stroke: var(--color-stroke-soft) !important;
+}
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
