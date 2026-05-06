@@ -277,7 +277,7 @@ function TodayPill({ pulse }: { pulse: Pulse | null }) {
 function WorkspaceButton() {
   return (
     <a
-      href="/organizations"
+      href="/agency/clients"
       aria-label="Workspace"
       className={cn(
         "inline-flex h-[40px] items-center gap-[10px] rounded-[10px] sm:h-[44px]",

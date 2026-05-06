@@ -113,6 +113,7 @@ export default async function LeveragePage({
               href={`/agency/leverage?windowDays=${w.value}`}
               className={cn(
                 "rounded-[6px] px-[12px] py-[6px] text-[12px] font-semibold transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-400)]",
                 w.value === windowDays
                   ? "bg-[var(--color-brand-100)] text-[var(--color-brand-400)]"
                   : "text-[var(--color-text-soft)] hover:text-[var(--color-text-strong)]",
@@ -153,7 +154,7 @@ export default async function LeveragePage({
         <Card title="Effective vs Runtime" subtitle="hours per day, shipped runs">
           <div className="mb-[12px] flex items-center gap-[16px]">
             <Legend color="var(--color-brand-400)" label="Effective" />
-            <Legend color="#8B5CF6" label="Runtime" />
+            <Legend color="#38bdf8" label="Runtime" />
           </div>
           <LeverageAreaChart data={series} />
         </Card>
@@ -201,11 +202,14 @@ export default async function LeveragePage({
               ))}
               {topSkills.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={3}
-                    className="px-[12px] py-[24px] text-center text-[var(--color-text-soft)]"
-                  >
-                    No shipped runs in this window.
+                  <td colSpan={3} className="px-[12px] py-[32px] text-center">
+                    <div className="text-[13px] font-semibold text-[var(--color-text-strong)]">
+                      No shipped runs in this window
+                    </div>
+                    <div className="mt-[2px] text-[12px] text-[var(--color-text-soft)]">
+                      Widen the window to {windowDays === 7 ? "30d" : "90d"} or
+                      ship a run to see leverage build up.
+                    </div>
                   </td>
                 </tr>
               ) : null}

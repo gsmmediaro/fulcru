@@ -178,17 +178,36 @@ export default async function InvoiceDetailPage({
         <footer
           className={cn(
             "rounded-[12px] bg-[color-mix(in_oklab,var(--color-brand-400)_8%,var(--color-bg-surface))]",
-            "p-[16px] text-[13px] text-[var(--color-text-sub)] ring-1 ring-[color-mix(in_oklab,var(--color-brand-400)_22%,transparent)]",
+            "p-[20px] ring-1 ring-[color-mix(in_oklab,var(--color-brand-400)_22%,transparent)]",
           )}
         >
-          Effective hours total:{" "}
-          <span className="font-semibold tabular-nums text-[var(--color-text-strong)]">
-            {effectiveTotal.toFixed(1)}h
-          </span>{" "}
-          · Margin in this invoice:{" "}
-          <span className="font-semibold tabular-nums text-emerald-300">
-            {usd.format(margin)} ({marginPct.toFixed(1)}%)
-          </span>
+          <div className="tp-overline text-[var(--color-brand-400)]">Margin</div>
+          <div className="mt-[10px] grid grid-cols-1 gap-[16px] sm:grid-cols-3">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--color-text-soft)]">
+                Effective hours
+              </div>
+              <div className="mt-[2px] text-[20px] font-semibold tabular-nums text-[var(--color-text-strong)]">
+                {effectiveTotal.toFixed(1)}h
+              </div>
+            </div>
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--color-text-soft)]">
+                Net margin
+              </div>
+              <div className="mt-[2px] text-[20px] font-semibold tabular-nums text-emerald-300">
+                {usd.format(margin)}
+              </div>
+            </div>
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--color-text-soft)]">
+                Margin %
+              </div>
+              <div className="mt-[2px] text-[20px] font-semibold tabular-nums text-emerald-300">
+                {marginPct.toFixed(1)}%
+              </div>
+            </div>
+          </div>
         </footer>
       </div>
     </AppShell>

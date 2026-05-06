@@ -41,8 +41,8 @@ export function LeverageAreaChart({ data }: { data: LeverageDailyPoint[] }) {
               />
             </linearGradient>
             <linearGradient id="lev-rt" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.28} />
-              <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0} />
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.24} />
+              <stop offset="100%" stopColor="#38bdf8" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid
@@ -67,8 +67,8 @@ export function LeverageAreaChart({ data }: { data: LeverageDailyPoint[] }) {
           <Area
             type="monotone"
             dataKey="runtime"
-            stroke="#8B5CF6"
-            strokeWidth={2}
+            stroke="#38bdf8"
+            strokeWidth={1.75}
             fill="url(#lev-rt)"
             dot={false}
             name="Runtime"

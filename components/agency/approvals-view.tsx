@@ -80,10 +80,22 @@ function CardList({
 }) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-[12px] bg-[var(--color-bg-surface)] p-[32px] text-center text-[13px] text-[var(--color-text-soft)] ring-1 ring-[var(--color-stroke-soft)]">
-        {mode === "pending"
-          ? "No approvals waiting. Agents are unblocked."
-          : "No resolved approvals yet."}
+      <div
+        className={cn(
+          "rounded-[12px] p-[32px] text-center ring-1",
+          mode === "pending"
+            ? "bg-[color-mix(in_oklab,var(--color-brand-400)_5%,var(--color-bg-surface))] ring-[color-mix(in_oklab,var(--color-brand-400)_18%,transparent)]"
+            : "bg-[var(--color-bg-surface)] ring-[var(--color-stroke-soft)]",
+        )}
+      >
+        <div className="text-[14px] font-semibold text-[var(--color-text-strong)]">
+          {mode === "pending" ? "All clear" : "Nothing here yet"}
+        </div>
+        <div className="mt-[4px] text-[13px] text-[var(--color-text-soft)]">
+          {mode === "pending"
+            ? "No approvals waiting — every agent is unblocked."
+            : "Resolved approvals will land here once you act on the first one."}
+        </div>
       </div>
     );
   }
@@ -129,7 +141,8 @@ function ApprovalCard({
       className={cn(
         "rounded-[12px] bg-[var(--color-bg-surface)] p-[20px]",
         "ring-1 ring-[var(--color-stroke-soft)]",
-        "transition-colors duration-150 hover:ring-[var(--color-stroke-sub)]",
+        "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:ring-[var(--color-stroke-sub)]",
+        pending !== null && "opacity-60",
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-[16px]">
@@ -212,9 +225,10 @@ function ApprovalCard({
                 className={cn(
                   "inline-flex h-[36px] items-center gap-[6px] rounded-[8px] px-[12px]",
                   "text-[13px] font-semibold text-[var(--color-text-sub)]",
-                  "ring-1 ring-[var(--color-stroke-soft)]",
-                  "transition-colors duration-150",
-                  "hover:bg-[color-mix(in_oklab,#f43f5e_10%,transparent)] hover:text-rose-300 hover:ring-[color-mix(in_oklab,#f43f5e_30%,transparent)]",
+                  "bg-transparent ring-1 ring-[var(--color-stroke-sub)]",
+                  "transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  "hover:text-rose-300 hover:ring-[color-mix(in_oklab,#fb7185_60%,transparent)]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_oklab,#fb7185_70%,transparent)]",
                   "disabled:cursor-not-allowed disabled:opacity-50",
                 )}
               >
@@ -229,8 +243,9 @@ function ApprovalCard({
                   "inline-flex h-[36px] items-center gap-[6px] rounded-[8px] px-[14px]",
                   "text-[13px] font-semibold",
                   "bg-[var(--color-brand-400)] text-[#0b1f21]",
-                  "transition-colors duration-150 hover:bg-[var(--color-brand-500)]",
+                  "transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[var(--color-brand-500)]",
                   "active:scale-[0.98]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-400)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-surface)]",
                   "disabled:cursor-not-allowed disabled:opacity-50",
                 )}
               >
@@ -239,12 +254,12 @@ function ApprovalCard({
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-[6px] opacity-50">
-              <span className="inline-flex h-[36px] items-center gap-[6px] rounded-[8px] px-[12px] text-[13px] font-semibold text-[var(--color-text-soft)] ring-1 ring-[var(--color-stroke-soft)]">
+            <div className="flex items-center gap-[6px] opacity-40">
+              <span className="inline-flex h-[36px] items-center gap-[6px] rounded-[8px] bg-transparent px-[12px] text-[13px] font-semibold text-[var(--color-text-soft)] ring-1 ring-[var(--color-stroke-sub)]">
                 <RiCloseLine size={14} />
                 Reject
               </span>
-              <span className="inline-flex h-[36px] items-center gap-[6px] rounded-[8px] px-[14px] text-[13px] font-semibold text-[#0b1f21] bg-[var(--color-brand-400)]">
+              <span className="inline-flex h-[36px] items-center gap-[6px] rounded-[8px] bg-[var(--color-brand-400)] px-[14px] text-[13px] font-semibold text-[#0b1f21]">
                 <RiCheckLine size={14} />
                 Approve
               </span>

@@ -1,10 +1,5 @@
 import {
   RiHome5Line,
-  RiListCheck2,
-  RiToolsLine,
-  RiInformationLine,
-  RiLightbulbLine,
-  RiUserFollowLine,
   RiArrowRightUpLine,
   RiMailLine,
   RiPulseLine,
@@ -30,7 +25,7 @@ export type NavGroup = {
 };
 
 export const sidebarNav: NavGroup[] = [
-  { id: "home", label: "Home", icon: RiHome5Line, href: "/" },
+  { id: "home", label: "Home", icon: RiHome5Line, href: "/agency/runs" },
   { id: "runs", label: "Runs", icon: RiPulseLine, href: "/agency/runs" },
   {
     id: "leverage",
@@ -54,26 +49,11 @@ export const sidebarNav: NavGroup[] = [
       { label: "Projects", href: "/agency/projects" },
     ],
   },
-  { id: "invoices", label: "Invoices", icon: RiBillLine, href: "/agency/invoices" },
-  { id: "orders", label: "My Orders", icon: RiListCheck2, href: "/orders" },
-  { id: "tools", label: "Tools", icon: RiToolsLine, href: "/tools" },
   {
-    id: "help",
-    label: "Help Center",
-    icon: RiInformationLine,
-    href: "/help",
-  },
-  {
-    id: "suggestion",
-    label: "Got a Suggestion?",
-    icon: RiLightbulbLine,
-    href: "/feedback",
-  },
-  {
-    id: "referral",
-    label: "Referral program",
-    icon: RiUserFollowLine,
-    href: "/referral",
+    id: "invoices",
+    label: "Invoices",
+    icon: RiBillLine,
+    href: "/agency/invoices",
   },
 ];
 

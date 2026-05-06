@@ -267,11 +267,17 @@ export function RunsTable({ runs, clients, projects, skills }: Props) {
             })}
             {filtered.length === 0 ? (
               <tr>
-                <td
-                  colSpan={10}
-                  className="px-[16px] py-[40px] text-center text-[13px] text-[var(--color-text-soft)]"
-                >
-                  No runs match these filters.
+                <td colSpan={10} className="px-[16px] py-[40px] text-center">
+                  <div className="text-[14px] font-semibold text-[var(--color-text-strong)]">
+                    {runs.length === 0
+                      ? "No runs yet"
+                      : "Nothing matches those filters"}
+                  </div>
+                  <div className="mt-[4px] text-[13px] text-[var(--color-text-soft)]">
+                    {runs.length === 0
+                      ? "Start one from your Claude Code session — runs land here as they begin."
+                      : "Try clearing search or widening the status filter."}
+                  </div>
                 </td>
               </tr>
             ) : null}

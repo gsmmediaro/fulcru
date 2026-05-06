@@ -7,11 +7,11 @@ import {
   RiArrowDownSLine,
   RiArrowRightUpLine,
   RiPlugLine,
-  RiCheckLine,
   type RemixiconComponentType,
 } from "@remixicon/react";
 import { cn } from "@/lib/cn";
 import { Logo } from "@/components/brand/logo";
+import { Button } from "@/components/ui/button";
 import { sidebarNav, type NavGroup } from "./sidebar-nav-data";
 
 function isActive(pathname: string, href?: string) {
@@ -219,58 +219,66 @@ export function Sidebar() {
 }
 
 function McpStatusCard() {
+  const [connected, setConnected] = React.useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const res = await fetch("/api/mcp", { cache: "no-store" });
+        if (!cancelled) setConnected(res.ok);
+      } catch {
+        if (!cancelled) setConnected(false);
+      }
+    };
+    check();
+    const id = setInterval(check, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
   return (
     <div
       className={cn(
-        "mt-[12px] rounded-[12px] p-[14px]",
-        "bg-[color-mix(in_oklab,var(--color-bg-surface-elevated)_85%,transparent)]",
-        "ring-1 ring-[var(--color-stroke-soft)]",
-        "transition-[background,box-shadow] duration-200",
-        "hover:ring-[var(--color-stroke-strong)]",
+        "mt-[12px] rounded-[12px] p-[16px]",
+        "bg-[color-mix(in_oklab,var(--color-brand-100)_85%,transparent)]",
+        "ring-1 ring-[color-mix(in_oklab,var(--color-brand-400)_18%,transparent)]",
       )}
     >
       <div className="flex items-center gap-[10px]">
-        <span
+        <div
           className={cn(
-            "relative flex size-[28px] items-center justify-center rounded-[8px]",
-            "bg-[color-mix(in_oklab,var(--color-accent-green)_16%,transparent)]",
-            "text-[var(--color-accent-green)]",
+            "flex size-[28px] items-center justify-center rounded-full",
+            "bg-[color-mix(in_oklab,var(--color-brand-400)_18%,transparent)]",
+            "text-[var(--color-brand-400)]",
           )}
         >
           <RiPlugLine size={14} />
-          <span className="absolute -right-[1px] -top-[1px] flex size-[8px] items-center justify-center">
-            <span className="absolute inset-0 animate-ping rounded-full bg-[var(--color-accent-green)] opacity-60" />
-            <span className="relative size-[6px] rounded-full bg-[var(--color-accent-green)]" />
-          </span>
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[12px] font-semibold leading-[16px] text-[var(--color-text-strong)]">
-            MCP connected
-          </p>
-          <p className="truncate text-[11px] leading-[14px] text-[var(--color-text-soft)]">
-            agency-runs · 8 tools
-          </p>
         </div>
+        <p className="text-[13px] font-semibold leading-[18px]">
+          Connect Claude Code
+        </p>
       </div>
-      <p className="mt-[10px] text-[11px] leading-[16px] text-[var(--color-text-sub)]">
-        Every Claude Code session can call{" "}
-        <code className="rounded-[4px] bg-[color-mix(in_oklab,white_5%,transparent)] px-[4px] py-[1px] font-mono text-[10px] text-[var(--color-brand-400)]">
-          run_start
-        </code>{" "}
-        to bill its work here.
-      </p>
-      <a
-        href="/api/mcp"
-        target="_blank"
-        rel="noreferrer"
+      <Button
+        variant="outline"
+        size="sm"
         className={cn(
-          "mt-[10px] inline-flex items-center gap-[6px] text-[11px] font-semibold",
-          "text-[var(--color-brand-400)] transition-opacity hover:opacity-80",
+          "mt-[12px] w-full rounded-[8px]",
+          connected === true &&
+            "border-[var(--color-accent-green)]/30 text-[var(--color-accent-green)] hover:bg-[color-mix(in_oklab,var(--color-accent-green)_8%,transparent)]",
         )}
+        asChild
       >
-        <RiCheckLine size={12} />
-        View descriptor
-      </a>
+        <a href="/api/mcp" target="_blank" rel="noreferrer">
+          {connected === true
+            ? "Connected"
+            : connected === false
+              ? "Reconnect MCP"
+              : "Connect MCP"}
+        </a>
+      </Button>
     </div>
   );
 }

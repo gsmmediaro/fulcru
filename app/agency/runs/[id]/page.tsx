@@ -191,24 +191,21 @@ export default async function RunDetailPage({
           <div className="tp-overline text-[var(--color-brand-400)]">
             Effective hours
           </div>
-          <div className="mt-[10px] flex flex-wrap items-baseline gap-x-[10px] gap-y-[4px]">
-            <span className="text-[28px] font-semibold leading-[34px] tabular-nums text-[var(--color-text-strong)]">
-              {run.baselineHours}h
-            </span>
-            <span className="text-[20px] text-[var(--color-text-soft)]">×</span>
-            <span className="text-[20px] font-medium tabular-nums text-[var(--color-text-sub)]">
-              {formatCurrency(run.rateUsd, 0)}/h
-            </span>
-            <span className="text-[20px] text-[var(--color-text-soft)]">=</span>
-            <span className="text-[28px] font-semibold leading-[34px] tabular-nums text-[var(--color-brand-400)]">
+          <div className="mt-[12px] flex flex-wrap items-baseline gap-x-[12px] gap-y-[4px]">
+            <span className="text-[40px] font-bold leading-[44px] tracking-tight tabular-nums text-[var(--color-brand-400)] sm:text-[44px] sm:leading-[48px]">
               {formatCurrency(run.billableUsd, 2)}
+            </span>
+            <span className="text-[14px] tabular-nums text-[var(--color-text-soft)]">
+              {run.baselineHours}h
+              <span className="mx-[6px] text-[var(--color-text-soft)]">×</span>
+              {formatCurrency(run.rateUsd, 0)}/h
             </span>
           </div>
           <p className="mt-[8px] max-w-[560px] text-[13px] text-[var(--color-text-soft)]">
             Billed against the skill baseline, not runtime. The agent pays for
             itself many times over against the human-equivalent quote.
           </p>
-          <div className="mt-[14px] flex flex-wrap items-center gap-[8px] text-[12px]">
+          <div className="mt-[16px] flex flex-wrap items-center gap-[8px] text-[12px]">
             <Pill>{runtimeHours.toFixed(2)}h runtime</Pill>
             <span className="text-[var(--color-text-soft)]">·</span>
             <Pill>{run.baselineHours}h effective</Pill>
