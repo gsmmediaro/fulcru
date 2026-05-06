@@ -17,7 +17,9 @@ Call `list_skills`. Pick the skill whose `name` and `tags` best match the task (
 
 ## 3. Start the run
 
-Call `run_start` with `clientId`, `projectId`, `skillId`, and the user's original request as `prompt`. Remember the returned `run.id` — every subsequent call references it.
+Call `run_start` with `clientId`, `projectId`, `skillId`, the user's original request as `prompt`, and **always pass `cwd`** — your absolute working directory (it's in your system prompt). The server uses `cwd` at `run_end` to find your session JSONL and compute real token cost. Remember the returned `run.id` — every subsequent call references it.
+
+Default pricing is `time_plus_tokens` — billable = runtime_hours × rate + token_cost. Pass `pricingMode: "baseline"` only when the user explicitly wants flat-rate pricing.
 
 ## 4. Working
 
@@ -37,10 +39,10 @@ Before any destructive or production-impacting action — db migrations, prod de
 
 ## 6. Ending
 
-When the deliverable is shipped, call `run_end` with `status: "shipped"` and a `deliverableUrl` (PR link, staging URL, doc link). On unrecoverable failure use `failed`; if the user cancels, use `cancelled`. Never leave a run in `running` after a session ends.
+When the deliverable is shipped, call `run_end` with `status: "shipped"` and a `deliverableUrl` (PR link, staging URL, doc link). The server reads your session JSONL between `run_start` and now, sums tokens by model, and sets the run's COGS + billable. On unrecoverable failure use `failed`; if the user cancels, use `cancelled`. Never leave a run in `running` after a session ends.
 
 ## Example
 
 ```json
-{ "name": "run_start", "arguments": { "clientId": "cli_dictando", "projectId": "prj_dict_site", "skillId": "skl_landing_page", "prompt": "Refresh the hero section." } }
+{ "name": "run_start", "arguments": { "clientId": "cli_dictando", "projectId": "prj_dict_site", "skillId": "skl_landing_page", "prompt": "Refresh the hero section.", "cwd": "C:/Users/shado/Desktop/Altele/iproyal" } }
 ```

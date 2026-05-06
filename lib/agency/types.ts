@@ -61,6 +61,8 @@ export type Run = {
   billableUsd: number;
   deliverableUrl?: string;
   notes?: string;
+  cwd?: string;
+  pricingMode?: "baseline" | "time_plus_tokens";
 };
 
 export type RunEventKind =

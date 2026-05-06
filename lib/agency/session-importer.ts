@@ -5,6 +5,20 @@ import { tokenCostUsd } from "./pricing";
 import { api, getStore } from "./store";
 import type { Run, RunEvent } from "./types";
 
+export type EnrichmentResult = {
+  runId: string;
+  filePath?: string;
+  tokensIn: number;
+  tokensOut: number;
+  cacheWrite: number;
+  cacheRead: number;
+  tokenCostUsd: number;
+  modelTotals: Record<string, number>;
+  matchedEvents: number;
+  enriched: boolean;
+  reason?: string;
+};
+
 const ACTIVE_GAP_MS = 5 * 60 * 1000;
 
 export type SessionStats = {
@@ -199,6 +213,142 @@ export function parseSession(filePath: string): SessionStats {
     cacheWrite: totalCw,
     cacheRead: totalCr,
     tokenCostUsd: Number(totalCost.toFixed(4)),
+  };
+}
+
+export function enrichRunFromSession(input: {
+  runId: string;
+  cwd?: string;
+  sinceIso?: string;
+  untilIso?: string;
+  filePath?: string;
+}): EnrichmentResult {
+  const store = getStore();
+  const run = store.runs.find((r) => r.id === input.runId);
+  if (!run) {
+    return {
+      runId: input.runId,
+      tokensIn: 0,
+      tokensOut: 0,
+      cacheWrite: 0,
+      cacheRead: 0,
+      tokenCostUsd: 0,
+      modelTotals: {},
+      matchedEvents: 0,
+      enriched: false,
+      reason: "Run not found",
+    };
+  }
+
+  const cwd = input.cwd ?? run.cwd;
+  let filePath = input.filePath;
+  if (!filePath) {
+    if (!cwd) {
+      return {
+        runId: run.id,
+        tokensIn: 0,
+        tokensOut: 0,
+        cacheWrite: 0,
+        cacheRead: 0,
+        tokenCostUsd: 0,
+        modelTotals: {},
+        matchedEvents: 0,
+        enriched: false,
+        reason: "No cwd available — pass cwd to enrich token cost",
+      };
+    }
+    try {
+      filePath = findSessionJsonl({ cwd });
+    } catch (e) {
+      return {
+        runId: run.id,
+        tokensIn: 0,
+        tokensOut: 0,
+        cacheWrite: 0,
+        cacheRead: 0,
+        tokenCostUsd: 0,
+        modelTotals: {},
+        matchedEvents: 0,
+        enriched: false,
+        reason: e instanceof Error ? e.message : String(e),
+      };
+    }
+  }
+
+  const since = input.sinceIso ?? run.startedAt;
+  const until = input.untilIso ?? run.endedAt;
+  const raw = readFileSync(filePath, "utf-8");
+  const lines = raw.split(/\r?\n/).filter(Boolean);
+
+  let totalIn = 0,
+    totalOut = 0,
+    totalCw = 0,
+    totalCr = 0;
+  const modelMsgs: Record<string, number> = {};
+  let matched = 0;
+  let totalCost = 0;
+
+  for (const line of lines) {
+    let d: Line;
+    try {
+      d = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (d.type !== "assistant") continue;
+    const ts = d.timestamp;
+    if (!ts) continue;
+    if (since && ts < since) continue;
+    if (until && ts > until) continue;
+    matched++;
+    const msg = d.message ?? {};
+    const model = msg.model ?? "unknown";
+    const u = msg.usage ?? {};
+    const inT = Number(u.input_tokens ?? 0);
+    const outT = Number(u.output_tokens ?? 0);
+    const cwT = Number(u.cache_creation_input_tokens ?? 0);
+    const crT = Number(u.cache_read_input_tokens ?? 0);
+    totalIn += inT;
+    totalOut += outT;
+    totalCw += cwT;
+    totalCr += crT;
+    modelMsgs[model] = (modelMsgs[model] ?? 0) + 1;
+    totalCost += tokenCostUsd(model, {
+      input_tokens: inT,
+      output_tokens: outT,
+      cache_creation_input_tokens: cwT,
+      cache_read_input_tokens: crT,
+    });
+  }
+
+  run.tokensIn = totalIn + totalCw;
+  run.tokensOut = totalOut;
+  run.cacheHits = totalCr;
+  run.costUsd = Number(totalCost.toFixed(4));
+  if (run.cwd === undefined && cwd) run.cwd = cwd;
+
+  if (run.status === "shipped") {
+    const runtimeHours = run.runtimeSec / 3600;
+    if (run.pricingMode === "baseline") {
+      run.billableUsd = Number((run.baselineHours * run.rateUsd).toFixed(2));
+    } else {
+      run.billableUsd = Number(
+        (runtimeHours * run.rateUsd + run.costUsd).toFixed(2),
+      );
+    }
+  }
+
+  return {
+    runId: run.id,
+    filePath,
+    tokensIn: totalIn,
+    tokensOut: totalOut,
+    cacheWrite: totalCw,
+    cacheRead: totalCr,
+    tokenCostUsd: Number(totalCost.toFixed(4)),
+    modelTotals: modelMsgs,
+    matchedEvents: matched,
+    enriched: true,
   };
 }
 

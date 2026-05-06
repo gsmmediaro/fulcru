@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { api } from "@/lib/agency/store";
+import { enrichRunFromSession } from "@/lib/agency/session-importer";
 import type { RunEventKind } from "@/lib/agency/types";
 
 export const runtime = "nodejs";
@@ -81,6 +82,17 @@ const TOOLS = [
           type: "string",
           description: "The user's original request, for audit.",
         },
+        cwd: {
+          type: "string",
+          description:
+            "Absolute working directory of this Claude Code session — required to look up the JSONL for live token-cost enrichment at run_end.",
+        },
+        pricingMode: {
+          type: "string",
+          enum: ["baseline", "time_plus_tokens"],
+          description:
+            "time_plus_tokens (default): billable = runtime_hours × rate + token_cost. baseline: billable = skill.baseline_hours × rate.",
+        },
       },
       required: ["clientId", "projectId", "skillId"],
       additionalProperties: false,
@@ -127,7 +139,7 @@ const TOOLS = [
   {
     name: "run_end",
     description:
-      "End the run when work is complete. Use status=shipped on success (with deliverableUrl), failed on unrecoverable error, cancelled if the user aborted.",
+      "End the run when work is complete. The server reads your session JSONL from run_start to now, sums token usage, and computes billable = runtime_hours × rate + token_cost. Use status=shipped on success (with deliverableUrl), failed on unrecoverable error, cancelled if the user aborted.",
     inputSchema: {
       type: "object",
       properties: {
@@ -138,6 +150,11 @@ const TOOLS = [
         },
         deliverableUrl: { type: "string" },
         notes: { type: "string" },
+        cwd: {
+          type: "string",
+          description:
+            "Absolute cwd of this session, only required if not provided at run_start.",
+        },
       },
       required: ["runId", "status"],
       additionalProperties: false,
@@ -217,12 +234,18 @@ function callTool(
       if (!clientId || !projectId || !skillId) {
         throw new Error("clientId, projectId, skillId are required");
       }
+      const pricingMode = asString(args.pricingMode);
       return api.startRun({
         clientId,
         projectId,
         skillId,
         agentName: asString(args.agentName),
         prompt: asString(args.prompt),
+        cwd: asString(args.cwd),
+        pricingMode:
+          pricingMode === "baseline" || pricingMode === "time_plus_tokens"
+            ? pricingMode
+            : undefined,
       });
     }
 
@@ -268,12 +291,18 @@ function callTool(
       if (!["shipped", "failed", "cancelled"].includes(status)) {
         throw new Error("status must be shipped|failed|cancelled");
       }
-      return api.endRun({
+      const ended = api.endRun({
         runId,
         status: status as "shipped" | "failed" | "cancelled",
         deliverableUrl: asString(args.deliverableUrl),
         notes: asString(args.notes),
       });
+      const enrichment = enrichRunFromSession({
+        runId,
+        cwd: asString(args.cwd),
+      });
+      const finalRun = api.getRun(runId);
+      return { run: finalRun ?? ended, enrichment };
     }
 
     case "get_run": {

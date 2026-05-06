@@ -18,7 +18,7 @@ export async function POST(
   }
   try {
     const approval = api.resolveApproval({ approvalId: id, status });
-    return NextResponse.json({ approval });
+    return NextResponse.json(approval);
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Unknown error" },

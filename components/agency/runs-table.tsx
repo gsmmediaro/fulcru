@@ -253,7 +253,11 @@ export function RunsTable({ runs, clients, projects, skills }: Props) {
                   >
                     {r.billableUsd > 0 ? formatCurrency(r.billableUsd, 0) : "—"}
                   </Td>
-                  <Td align="right" className="text-[var(--color-text-soft)]">
+                  <Td
+                    align="right"
+                    className="text-[var(--color-text-soft)]"
+                    suppressHydrationWarning
+                  >
                     {formatDistanceToNowStrict(new Date(r.startedAt), {
                       addSuffix: true,
                     })}
@@ -301,10 +305,12 @@ function Td({
   children,
   className,
   align = "left",
+  suppressHydrationWarning,
 }: {
   children: React.ReactNode;
   className?: string;
   align?: "left" | "right";
+  suppressHydrationWarning?: boolean;
 }) {
   return (
     <td
@@ -313,6 +319,7 @@ function Td({
         align === "right" && "text-right",
         className,
       )}
+      suppressHydrationWarning={suppressHydrationWarning}
     >
       {children}
     </td>

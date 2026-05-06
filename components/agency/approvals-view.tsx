@@ -156,7 +156,7 @@ function ApprovalCard({
               </>
             ) : null}
             <span>·</span>
-            <span>
+            <span suppressHydrationWarning>
               opened{" "}
               {formatDistanceToNowStrict(new Date(approval.createdAt), {
                 addSuffix: true,
@@ -165,7 +165,7 @@ function ApprovalCard({
             {mode === "resolved" && approval.resolvedAt ? (
               <>
                 <span>·</span>
-                <span>
+                <span suppressHydrationWarning>
                   resolved{" "}
                   {formatDistanceToNowStrict(new Date(approval.resolvedAt), {
                     addSuffix: true,

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { api } from "@/lib/agency/store";
+import { enrichRunFromSession } from "@/lib/agency/session-importer";
 import type {
   ApprovalStatus,
   RunEventKind,
@@ -172,12 +173,16 @@ function route(
             return bad("clientId, projectId, skillId required");
           }
           try {
+            const pm = asString(body.pricingMode);
             const run = api.startRun({
               clientId,
               projectId,
               skillId,
               agentName: asString(body.agentName),
               prompt: asString(body.prompt),
+              cwd: asString(body.cwd),
+              pricingMode:
+                pm === "baseline" || pm === "time_plus_tokens" ? pm : undefined,
             });
             return json(run, { status: 201 });
           } catch (e) {
@@ -213,13 +218,18 @@ function route(
             return bad("status must be shipped|failed|cancelled");
           }
           try {
-            const run = api.endRun({
+            api.endRun({
               runId: id,
               status: status as "shipped" | "failed" | "cancelled",
               deliverableUrl: asString(body.deliverableUrl),
               notes: asString(body.notes),
             });
-            return json(run);
+            const enrichment = enrichRunFromSession({
+              runId: id,
+              cwd: asString(body.cwd),
+            });
+            const run = api.getRun(id);
+            return json({ run, enrichment });
           } catch (e) {
             return bad((e as Error).message, 404);
           }

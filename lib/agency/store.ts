@@ -514,6 +514,8 @@ export const api = {
     skillId: string;
     agentName?: string;
     prompt?: string;
+    cwd?: string;
+    pricingMode?: "baseline" | "time_plus_tokens";
   }) => {
     const s = getStore();
     const client = s.clients.find((c) => c.id === input.clientId);
@@ -540,6 +542,8 @@ export const api = {
       baselineHours: skill.baselineHours,
       rateUsd: client.hourlyRate * skill.rateModifier,
       billableUsd: 0,
+      cwd: input.cwd,
+      pricingMode: input.pricingMode ?? "time_plus_tokens",
     };
     s.runs.unshift(run);
     s.events.push({
@@ -659,9 +663,14 @@ export const api = {
       (new Date(run.endedAt).getTime() - new Date(run.startedAt).getTime()) / 1000,
     );
     if (input.status === "shipped") {
-      run.billableUsd = Number(
-        (run.baselineHours * run.rateUsd).toFixed(2),
-      );
+      const runtimeHours = run.runtimeSec / 3600;
+      if (run.pricingMode === "baseline") {
+        run.billableUsd = Number((run.baselineHours * run.rateUsd).toFixed(2));
+      } else {
+        run.billableUsd = Number(
+          (runtimeHours * run.rateUsd + run.costUsd).toFixed(2),
+        );
+      }
     }
     s.events.push({
       id: genId("evt"),
