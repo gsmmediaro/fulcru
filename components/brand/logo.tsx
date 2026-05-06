@@ -4,37 +4,57 @@ import { cn } from "@/lib/cn";
 export function Logo({
   className,
   wordmarkClassName,
+  showWordmark = true,
   ...props
-}: React.HTMLAttributes<HTMLDivElement> & { wordmarkClassName?: string }) {
+}: React.HTMLAttributes<HTMLDivElement> & {
+  wordmarkClassName?: string;
+  showWordmark?: boolean;
+}) {
   return (
     <div
-      className={cn("flex items-center gap-[8px]", className)}
-      aria-label="IPRoyal"
+      className={cn("flex items-center gap-[10px]", className)}
+      aria-label="Fulcra"
       {...props}
     >
-      <svg viewBox="0 0 32 32" className="size-[32px] shrink-0" aria-hidden>
-        <defs>
-          <linearGradient id="crown-g" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#6be3eb" />
-            <stop offset="100%" stopColor="#19bdc8" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M4 23 L9 9 L13 17 L16 6 L19 17 L23 9 L28 23 Z"
-          fill="url(#crown-g)"
-          stroke="#19bdc8"
-          strokeWidth="0.5"
-          strokeLinejoin="round"
-        />
-      </svg>
       <span
+        aria-hidden
         className={cn(
-          "text-[18px] font-bold tracking-tight text-[var(--color-brand-400)]",
-          wordmarkClassName,
+          "relative flex size-[32px] shrink-0 items-center justify-center rounded-[9px]",
+          "bg-[color-mix(in_oklab,var(--color-brand-400)_18%,transparent)]",
+          "ring-1 ring-[color-mix(in_oklab,var(--color-brand-400)_28%,transparent)]",
+          "transition-transform duration-[260ms] ease-[var(--ease-soft-spring,cubic-bezier(.22,1.2,.36,1))]",
+          "group-hover/logo:rotate-[-3deg] group-hover/logo:scale-[1.04]",
         )}
       >
-        IPRoyal
+        <svg
+          viewBox="0 0 32 32"
+          className="size-[20px] text-[var(--color-brand-400)]"
+          fill="none"
+        >
+          <path
+            d="M4 13.5 L28 9.5"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+          />
+          <path
+            d="M11 17.5 L21 17.5 L16 26 Z"
+            fill="currentColor"
+          />
+          <circle cx="16" cy="11.5" r="1.5" fill="currentColor" />
+        </svg>
       </span>
+      {showWordmark ? (
+        <span
+          className={cn(
+            "text-[18px] font-semibold tracking-[-0.01em] leading-none",
+            "text-[var(--color-text-strong)]",
+            wordmarkClassName,
+          )}
+        >
+          Fulcra
+        </span>
+      ) : null}
     </div>
   );
 }

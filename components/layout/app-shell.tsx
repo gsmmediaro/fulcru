@@ -34,7 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </main>
           <footer className="border-t border-[var(--color-stroke-soft)] px-[16px] py-[18px] sm:px-[24px] lg:px-[32px]">
             <div className="mx-auto flex w-full max-w-[1136px] flex-col gap-[12px] text-[12px] text-[var(--color-text-soft)] sm:flex-row sm:items-center sm:justify-between">
-              <span>IPRoyal © {new Date().getFullYear()}</span>
+              <span>Fulcra © {new Date().getFullYear()} · Bill the leverage.</span>
               <div className="flex flex-wrap items-center gap-x-[16px] gap-y-[6px] sm:gap-x-[20px]">
                 <a className="hover:text-[var(--color-text-strong)]" href="#">
                   Terms of Service

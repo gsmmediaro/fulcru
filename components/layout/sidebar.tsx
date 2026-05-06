@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 import {
   RiArrowDownSLine,
   RiArrowRightUpLine,
-  RiMailLine,
+  RiPlugLine,
+  RiCheckLine,
   type RemixiconComponentType,
 } from "@remixicon/react";
 import { cn } from "@/lib/cn";
 import { Logo } from "@/components/brand/logo";
-import { Button } from "@/components/ui/button";
 import { sidebarNav, type NavGroup } from "./sidebar-nav-data";
 
 function isActive(pathname: string, href?: string) {
@@ -115,9 +115,8 @@ function NavRow({
 export function Sidebar() {
   const pathname = usePathname();
 
-  // Auto-expand groups whose children include active page
   const initialExpanded = React.useMemo(() => {
-    const out: Record<string, boolean> = { proxies: true };
+    const out: Record<string, boolean> = { catalog: true };
     for (const g of sidebarNav) {
       if (g.children?.length && childrenActive(pathname, g)) out[g.id] = true;
     }
@@ -139,10 +138,12 @@ export function Sidebar() {
         "px-[10px] pb-[24px] pt-[16px]",
       )}
     >
-      {/* Logo */}
-      <div className="flex h-[48px] items-center px-[14px]">
+      <Link
+        href="/"
+        className="group/logo flex h-[48px] items-center rounded-[10px] px-[10px] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-400)]"
+      >
         <Logo />
-      </div>
+      </Link>
 
       {/* Nav */}
       <nav className="scrollbar-thin mt-[20px] flex-1 overflow-y-auto">
@@ -212,37 +213,64 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      {/* Bottom CTA — Have a large project */}
-      <div
-        className={cn(
-          "mt-[12px] rounded-[12px] p-[16px]",
-          "bg-[color-mix(in_oklab,var(--color-brand-100)_85%,transparent)]",
-          "ring-1 ring-[color-mix(in_oklab,var(--color-brand-400)_18%,transparent)]",
-        )}
-      >
-        <div className="flex items-center gap-[10px]">
-          <div
-            className={cn(
-              "flex size-[28px] items-center justify-center rounded-full",
-              "bg-[color-mix(in_oklab,var(--color-brand-400)_18%,transparent)]",
-              "text-[var(--color-brand-400)]",
-            )}
-          >
-            <RiMailLine size={14} />
-          </div>
-          <p className="text-[13px] font-semibold leading-[18px]">
-            Have a large project?
+      <McpStatusCard />
+    </aside>
+  );
+}
+
+function McpStatusCard() {
+  return (
+    <div
+      className={cn(
+        "mt-[12px] rounded-[12px] p-[14px]",
+        "bg-[color-mix(in_oklab,var(--color-bg-surface-elevated)_85%,transparent)]",
+        "ring-1 ring-[var(--color-stroke-soft)]",
+        "transition-[background,box-shadow] duration-200",
+        "hover:ring-[var(--color-stroke-strong)]",
+      )}
+    >
+      <div className="flex items-center gap-[10px]">
+        <span
+          className={cn(
+            "relative flex size-[28px] items-center justify-center rounded-[8px]",
+            "bg-[color-mix(in_oklab,var(--color-accent-green)_16%,transparent)]",
+            "text-[var(--color-accent-green)]",
+          )}
+        >
+          <RiPlugLine size={14} />
+          <span className="absolute -right-[1px] -top-[1px] flex size-[8px] items-center justify-center">
+            <span className="absolute inset-0 animate-ping rounded-full bg-[var(--color-accent-green)] opacity-60" />
+            <span className="relative size-[6px] rounded-full bg-[var(--color-accent-green)]" />
+          </span>
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[12px] font-semibold leading-[16px] text-[var(--color-text-strong)]">
+            MCP connected
+          </p>
+          <p className="truncate text-[11px] leading-[14px] text-[var(--color-text-soft)]">
+            agency-runs · 8 tools
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-[12px] w-full rounded-[8px]"
-          asChild
-        >
-          <a href="/contact">Contact sales</a>
-        </Button>
       </div>
-    </aside>
+      <p className="mt-[10px] text-[11px] leading-[16px] text-[var(--color-text-sub)]">
+        Every Claude Code session can call{" "}
+        <code className="rounded-[4px] bg-[color-mix(in_oklab,white_5%,transparent)] px-[4px] py-[1px] font-mono text-[10px] text-[var(--color-brand-400)]">
+          run_start
+        </code>{" "}
+        to bill its work here.
+      </p>
+      <a
+        href="/api/mcp"
+        target="_blank"
+        rel="noreferrer"
+        className={cn(
+          "mt-[10px] inline-flex items-center gap-[6px] text-[11px] font-semibold",
+          "text-[var(--color-brand-400)] transition-opacity hover:opacity-80",
+        )}
+      >
+        <RiCheckLine size={12} />
+        View descriptor
+      </a>
+    </div>
   );
 }

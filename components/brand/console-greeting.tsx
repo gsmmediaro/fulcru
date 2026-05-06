@@ -5,13 +5,11 @@ import * as React from "react";
 export function ConsoleGreeting() {
   React.useEffect(() => {
     if (typeof window === "undefined") return;
-    if ((window as unknown as { __ipr_greeted?: boolean }).__ipr_greeted) {
-      return;
-    }
-    (window as unknown as { __ipr_greeted?: boolean }).__ipr_greeted = true;
+    const w = window as unknown as { __fulcra_greeted?: boolean };
+    if (w.__fulcra_greeted) return;
+    w.__fulcra_greeted = true;
 
-    const title =
-      "%c  IPRoyal  %c  Reading the console already? We like that.  ";
+    const title = "%c  Fulcra  %c  Bill the leverage.  ";
     const titleStyle =
       "background:#19bdc8;color:#0b1f21;padding:4px 10px;border-radius:4px 0 0 4px;font-weight:700;letter-spacing:0.04em;";
     const messageStyle =
@@ -19,7 +17,7 @@ export function ConsoleGreeting() {
 
     console.log(title, titleStyle, messageStyle);
     console.log(
-      "%cBuilding with proxies? Our docs live at https://docs.iproyal.com",
+      "%cMCP descriptor live at /api/mcp · skill at skills/agency-runs/SKILL.md",
       "color:#8a8a8a;font-size:12px;",
     );
   }, []);

@@ -11,9 +11,12 @@ const beVietnamPro = Be_Vietnam_Pro({
 });
 
 export const metadata: Metadata = {
-  title: "Home · IPRoyal",
+  title: {
+    default: "Fulcra",
+    template: "%s · Fulcra",
+  },
   description:
-    "IPRoyal customer dashboard clone — built with AlignUI + Next.js.",
+    "Time-tracking, leverage measurement and billing for AI-coding agencies. Bill the leverage.",
 };
 
 export default function RootLayout({
@@ -27,7 +30,7 @@ export default function RootLayout({
       className={`dark ${beVietnamPro.variable}`}
       suppressHydrationWarning
     >
-      <body className="min-h-screen antialiased">
+      <body className="min-h-screen antialiased" suppressHydrationWarning>
         <ConsoleGreeting />
         {children}
       </body>
