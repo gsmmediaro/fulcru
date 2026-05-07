@@ -19,6 +19,7 @@ const en: Dict = {
   "nav.clients": "Clients",
   "nav.projects": "Projects",
   "nav.invoices": "Invoices",
+  "nav.settings": "Settings",
   "sidebar.connect": "Connect Claude Code",
   "sidebar.connectMcp": "Connect MCP",
   "sidebar.connected": "Connected",
@@ -526,6 +527,27 @@ const en: Dict = {
   "onb.attr.friend": "Friend / colleague",
   "onb.attr.claude_code": "Claude Code MCP listing",
   "onb.attr.other": "Other",
+
+  // Settings
+  "settings.title": "Settings",
+  "settings.subtitle":
+    "Workspace defaults: your business identity and the rate that pre-fills new clients.",
+  "settings.section.business": "Business",
+  "settings.section.billing": "Billing defaults",
+  "settings.field.businessName": "Business name",
+  "settings.field.businessNamePh": "Acme Studio S.R.L.",
+  "settings.field.businessEmail": "Email",
+  "settings.field.businessEmailPh": "billing@acme.com",
+  "settings.field.businessAddress": "Address",
+  "settings.field.businessAddressPh":
+    "Street, number, city, region, postal code, country",
+  "settings.field.defaultRate": "Default hourly rate",
+  "settings.field.defaultRateHint":
+    "Pre-fills the New client modal. Each client can still override it.",
+  "settings.save": "Save changes",
+  "settings.saving": "Saving…",
+  "settings.saved": "Saved",
+  "settings.errors.rate": "Hourly rate must be a positive number.",
 };
 
 const ro: Dict = {
@@ -539,6 +561,7 @@ const ro: Dict = {
   "nav.clients": "Clienți",
   "nav.projects": "Proiecte",
   "nav.invoices": "Facturi",
+  "nav.settings": "Setări",
   "sidebar.connect": "Conectează Claude Code",
   "sidebar.connectMcp": "Conectează MCP",
   "sidebar.connected": "Conectat",
@@ -1050,6 +1073,27 @@ const ro: Dict = {
   "onb.attr.friend": "De la un prieten / coleg",
   "onb.attr.claude_code": "Lista MCP din Claude Code",
   "onb.attr.other": "Altceva",
+
+  // Settings
+  "settings.title": "Setări",
+  "settings.subtitle":
+    "Setări implicite: datele firmei și tariful care se pre-completează la clienți noi.",
+  "settings.section.business": "Firmă",
+  "settings.section.billing": "Setări facturare",
+  "settings.field.businessName": "Nume firmă",
+  "settings.field.businessNamePh": "Acme Studio S.R.L.",
+  "settings.field.businessEmail": "Email",
+  "settings.field.businessEmailPh": "facturare@acme.com",
+  "settings.field.businessAddress": "Adresă",
+  "settings.field.businessAddressPh":
+    "Stradă, număr, oraș, județ, cod poștal, țară",
+  "settings.field.defaultRate": "Tarif orar implicit",
+  "settings.field.defaultRateHint":
+    "Se pre-completează la modalul Client nou. Fiecare client îl poate suprascrie.",
+  "settings.save": "Salvează",
+  "settings.saving": "Se salvează…",
+  "settings.saved": "Salvat",
+  "settings.errors.rate": "Tariful orar trebuie să fie un număr pozitiv.",
 };
 
 const dicts: Record<Locale, Dict> = { en, ro };

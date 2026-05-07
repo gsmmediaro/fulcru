@@ -1,6 +1,7 @@
 import { requireUserId } from "@/lib/auth-server";
 import { store } from "./store";
 import type {
+  AgencySettings,
   Approval,
   ApprovalStatus,
   Client,
@@ -78,6 +79,10 @@ export function bindApi(userId: string) {
 
     leverage: (windowDays?: number): Promise<LeverageSnapshot> =>
       store.leverage(userId, windowDays),
+
+    getSettings: (): Promise<AgencySettings> => store.getSettings(userId),
+    updateSettings: (patch: Parameters<typeof store.updateSettings>[1]) =>
+      store.updateSettings(userId, patch),
   };
 }
 

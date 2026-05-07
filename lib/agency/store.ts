@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db";
 import type {
+  AgencySettings,
   Approval,
   ApprovalStatus,
   Client,
@@ -321,6 +322,24 @@ async function ensureAppUser(userId: string) {
     INSERT INTO app_user (id) VALUES (${userId})
     ON CONFLICT (id) DO NOTHING
   `;
+}
+
+type AppUserRow = {
+  default_hourly_rate: string | number | null;
+  business_name: string | null;
+  business_address: string | null;
+  business_email: string | null;
+  business_currency: string;
+};
+function mapSettings(r: AppUserRow): AgencySettings {
+  return {
+    defaultHourlyRate:
+      r.default_hourly_rate == null ? undefined : num(r.default_hourly_rate),
+    businessName: r.business_name ?? undefined,
+    businessAddress: r.business_address ?? undefined,
+    businessEmail: r.business_email ?? undefined,
+    businessCurrency: r.business_currency,
+  };
 }
 
 export const store = {
@@ -1131,6 +1150,44 @@ export const store = {
     `) as InvoiceRow[];
     if (!rows[0]) throw new Error("Unknown invoice");
     return mapInvoice(rows[0]);
+  },
+
+  // ─── Agency settings ───────────────────────────────────────
+  async getSettings(userId: string): Promise<AgencySettings> {
+    await ensureAppUser(userId);
+    const rows = (await sql`
+      SELECT default_hourly_rate, business_name, business_address, business_email, business_currency
+      FROM app_user
+      WHERE id = ${userId}
+      LIMIT 1
+    `) as AppUserRow[];
+    return rows[0]
+      ? mapSettings(rows[0])
+      : { businessCurrency: "USD" };
+  },
+
+  async updateSettings(
+    userId: string,
+    patch: {
+      defaultHourlyRate?: number | null;
+      businessName?: string | null;
+      businessAddress?: string | null;
+      businessEmail?: string | null;
+      businessCurrency?: string;
+    },
+  ): Promise<AgencySettings> {
+    await ensureAppUser(userId);
+    const rows = (await sql`
+      UPDATE app_user SET
+        default_hourly_rate = CASE WHEN ${patch.defaultHourlyRate !== undefined} THEN ${patch.defaultHourlyRate ?? null}::numeric ELSE default_hourly_rate END,
+        business_name       = CASE WHEN ${patch.businessName !== undefined} THEN ${patch.businessName ?? null}::text ELSE business_name END,
+        business_address    = CASE WHEN ${patch.businessAddress !== undefined} THEN ${patch.businessAddress ?? null}::text ELSE business_address END,
+        business_email      = CASE WHEN ${patch.businessEmail !== undefined} THEN ${patch.businessEmail ?? null}::text ELSE business_email END,
+        business_currency   = COALESCE(${patch.businessCurrency ?? null}, business_currency)
+      WHERE id = ${userId}
+      RETURNING default_hourly_rate, business_name, business_address, business_email, business_currency
+    `) as AppUserRow[];
+    return mapSettings(rows[0]);
   },
 
   // ─── Leverage ──────────────────────────────────────────────

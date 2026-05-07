@@ -368,6 +368,27 @@ export function ClientModal(props: ClientModalProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.open]);
 
+  // In create mode, hydrate the default hourly rate from settings the first
+  // time the modal opens, so clients pre-fill with whatever the user set
+  // under /agency/settings.
+  React.useEffect(() => {
+    if (!props.open || isEdit) return;
+    let cancelled = false;
+    fetch("/api/agency/settings", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { defaultHourlyRate?: number } | null) => {
+        if (cancelled || !data?.defaultHourlyRate) return;
+        setState((prev) => ({
+          ...prev,
+          hourlyRate: String(data.defaultHourlyRate),
+        }));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [props.open, isEdit]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);

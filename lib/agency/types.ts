@@ -152,6 +152,14 @@ export type Invoice = {
   recurringNextIssue?: string;
 };
 
+export type AgencySettings = {
+  defaultHourlyRate?: number;
+  businessName?: string;
+  businessAddress?: string;
+  businessEmail?: string;
+  businessCurrency: string;
+};
+
 export type LeverageSnapshot = {
   windowDays: number;
   effectiveHours: number;

@@ -653,6 +653,51 @@ export function InvoiceEditor({
   const [billFromEmail, setBillFromEmail] = React.useState(
     initialInvoice.billFromEmail ?? "",
   );
+
+  // Hydrate Bill from defaults from /agency/settings on first mount, but only
+  // when the invoice doesn't already have its own values and the user hasn't
+  // typed anything yet. We don't auto-save these defaults — the user has to
+  // accept them by typing/blurring, otherwise the invoice stays as-is.
+  const billFromHydratedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (billFromHydratedRef.current) return;
+    if (
+      initialInvoice.billFromName ||
+      initialInvoice.billFromAddress ||
+      initialInvoice.billFromEmail
+    ) {
+      billFromHydratedRef.current = true;
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/agency/settings", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then(
+        (
+          data: {
+            businessName?: string | null;
+            businessAddress?: string | null;
+            businessEmail?: string | null;
+          } | null,
+        ) => {
+          if (cancelled || !data) return;
+          billFromHydratedRef.current = true;
+          if (data.businessName) setBillFromName((prev) => prev || data.businessName!);
+          if (data.businessAddress)
+            setBillFromAddress((prev) => prev || data.businessAddress!);
+          if (data.businessEmail)
+            setBillFromEmail((prev) => prev || data.businessEmail!);
+        },
+      )
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    initialInvoice.billFromName,
+    initialInvoice.billFromAddress,
+    initialInvoice.billFromEmail,
+  ]);
   const [billToAddress, setBillToAddress] = React.useState(
     initialInvoice.billToAddress ?? "",
   );

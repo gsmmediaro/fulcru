@@ -587,6 +587,40 @@ async function route(
         return json(await api.leverage(windowDays));
       }
 
+      case "settings": {
+        if (method === "GET") return json(await api.getSettings());
+        if (method === "PATCH") {
+          if (!body) return bad("Missing body");
+          try {
+            const updated = await api.updateSettings({
+              defaultHourlyRate:
+                body.defaultHourlyRate === null
+                  ? null
+                  : body.defaultHourlyRate === undefined
+                    ? undefined
+                    : Number(body.defaultHourlyRate),
+              businessName:
+                body.businessName === null
+                  ? null
+                  : asString(body.businessName),
+              businessAddress:
+                body.businessAddress === null
+                  ? null
+                  : asString(body.businessAddress),
+              businessEmail:
+                body.businessEmail === null
+                  ? null
+                  : asString(body.businessEmail),
+              businessCurrency: asString(body.businessCurrency),
+            });
+            return json(updated);
+          } catch (e) {
+            return bad((e as Error).message);
+          }
+        }
+        return bad("Method not allowed", 405);
+      }
+
       default:
         return notFound(`Unknown resource: ${resource ?? "(none)"}`);
     }

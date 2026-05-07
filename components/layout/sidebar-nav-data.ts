@@ -6,6 +6,7 @@ import {
   RiBarChartBoxLine,
   RiShieldCheckLine,
   RiBillLine,
+  RiSettings4Line,
   RiStackLine,
   type RemixiconComponentType,
 } from "@remixicon/react";
@@ -59,6 +60,12 @@ export const sidebarNav: NavGroup[] = [
     labelKey: "nav.invoices",
     icon: RiBillLine,
     href: "/agency/invoices",
+  },
+  {
+    id: "settings",
+    labelKey: "nav.settings",
+    icon: RiSettings4Line,
+    href: "/agency/settings",
   },
 ];
 
