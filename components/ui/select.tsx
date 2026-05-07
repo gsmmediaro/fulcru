@@ -19,8 +19,8 @@ export const SelectTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       "group inline-flex w-full items-center justify-between gap-[10px]",
-      "h-[44px] px-[16px] rounded-[8px]",
-      "bg-[var(--color-bg-surface)]",
+      "h-[40px] px-[12px] rounded-[6px]",
+      "bg-[color-mix(in_oklab,white_3%,transparent)]",
       "ring-1 ring-[var(--color-stroke-soft)]",
       "text-[14px] leading-[20px] text-[var(--color-text-strong)]",
       "transition-[box-shadow,background-color] duration-150",
@@ -62,8 +62,8 @@ export const SelectContent = React.forwardRef<
         position={position}
         sideOffset={sideOffset}
         className={cn(
-          "z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden",
-          "rounded-[10px] bg-[var(--color-bg-surface-elevated)] p-[6px]",
+          "z-[100] min-w-[var(--radix-select-trigger-width)] overflow-hidden",
+          "rounded-[8px] bg-[var(--color-bg-surface-elevated)] p-[6px]",
           "ring-1 ring-[var(--color-stroke-sub)]",
           "shadow-[var(--shadow-regular-lg)]",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",

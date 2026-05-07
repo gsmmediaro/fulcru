@@ -1,8 +1,9 @@
-import { test } from "node:test";
+import { test, before } from "node:test";
 import assert from "node:assert/strict";
 
 const BASE = process.env.AGENCY_BASE ?? "http://localhost:3000";
 const MCP = `${BASE}/api/mcp`;
+const CWD = "C:/Users/shado/Desktop/Altele/iproyal";
 
 const j = async (res) => {
   if (!res.ok && res.status !== 201) {
@@ -38,8 +39,60 @@ const callTool = async (name, args) => {
   return JSON.parse(r.content[0].text);
 };
 
+const ctx = {
+  client: null,
+  client2: null,
+  project: null,
+  project2: null,
+  skill: null,
+  skill2: null,
+};
+
+before(async () => {
+  ctx.client = await post(`${BASE}/api/agency/clients`, {
+    name: "E2E Client",
+    initials: "EC",
+    accentColor: "#3B82F6",
+    hourlyRate: 150,
+  });
+  ctx.client2 = await post(`${BASE}/api/agency/clients`, {
+    name: "E2E Client B",
+    initials: "EB",
+    accentColor: "#10B981",
+    hourlyRate: 180,
+  });
+  ctx.project = await post(`${BASE}/api/agency/projects`, {
+    clientId: ctx.client.id,
+    name: "E2E Project",
+    description: "test",
+    color: "#3B82F6",
+  });
+  ctx.project2 = await post(`${BASE}/api/agency/projects`, {
+    clientId: ctx.client2.id,
+    name: "E2E Project B",
+    color: "#10B981",
+  });
+  ctx.skill = await post(`${BASE}/api/agency/skills`, {
+    name: "E2E Skill",
+    description: "test",
+    category: "engineering",
+    baselineHours: 5,
+    rateModifier: 1,
+    tags: ["test"],
+  });
+  ctx.skill2 = await post(`${BASE}/api/agency/skills`, {
+    name: "E2E Skill B",
+    description: "test",
+    category: "engineering",
+    baselineHours: 6,
+    rateModifier: 1.1,
+    tags: ["test"],
+  });
+});
+
 test("agency pages render (200)", async () => {
   const paths = [
+    "/agency",
     "/agency/runs",
     "/agency/leverage",
     "/agency/skills",
@@ -54,13 +107,13 @@ test("agency pages render (200)", async () => {
   }
 });
 
-test("REST: clients/projects/skills seeded", async () => {
+test("REST: clients/projects/skills round-trip via POST", async () => {
   const clients = await get(`${BASE}/api/agency/clients`);
   const projects = await get(`${BASE}/api/agency/projects`);
   const skills = await get(`${BASE}/api/agency/skills`);
-  assert.ok(clients.length >= 4);
-  assert.ok(projects.length >= 8);
-  assert.ok(skills.length >= 10);
+  assert.ok(clients.find((c) => c.id === ctx.client.id));
+  assert.ok(projects.find((p) => p.id === ctx.project.id));
+  assert.ok(skills.find((s) => s.id === ctx.skill.id));
 });
 
 test("REST: leverage returns numeric snapshot", async () => {
@@ -79,16 +132,16 @@ test("MCP: tools/list exposes 8 tools with cwd on run_start", async () => {
 
 test("MCP: full lifecycle (start → event → end) records the run", async () => {
   const run = await callTool("run_start", {
-    clientId: "cli_dictando",
-    projectId: "prj_dict_site",
-    skillId: "skl_landing_page",
+    clientId: ctx.client.id,
+    projectId: ctx.project.id,
+    skillId: ctx.skill.id,
     agentName: "claude-opus-4-7",
     prompt: "test lifecycle",
-    cwd: "C:/Users/shado/Desktop/Altele/iproyal",
+    cwd: CWD,
   });
   assert.ok(run.id.startsWith("run_"));
   assert.equal(run.status, "running");
-  assert.equal(run.cwd, "C:/Users/shado/Desktop/Altele/iproyal");
+  assert.equal(run.cwd, CWD);
 
   await callTool("run_event", {
     runId: run.id,
@@ -111,10 +164,10 @@ test("MCP: full lifecycle (start → event → end) records the run", async () =
 
 test("MCP: time_plus_tokens billable = runtime_hours × rate + token_cost", async () => {
   const run = await callTool("run_start", {
-    clientId: "cli_dictando",
-    projectId: "prj_dict_site",
-    skillId: "skl_dashboard_screen",
-    cwd: "C:/Users/shado/Desktop/Altele/iproyal",
+    clientId: ctx.client.id,
+    projectId: ctx.project.id,
+    skillId: ctx.skill2.id,
+    cwd: CWD,
   });
   await new Promise((r) => setTimeout(r, 1100));
   const ended = await callTool("run_end", {
@@ -130,11 +183,11 @@ test("MCP: time_plus_tokens billable = runtime_hours × rate + token_cost", asyn
 
 test("MCP: baseline mode bills baseline_hours × rate", async () => {
   const run = await callTool("run_start", {
-    clientId: "cli_dictando",
-    projectId: "prj_dict_site",
-    skillId: "skl_landing_page",
+    clientId: ctx.client.id,
+    projectId: ctx.project.id,
+    skillId: ctx.skill.id,
     pricingMode: "baseline",
-    cwd: "C:/Users/shado/Desktop/Altele/iproyal",
+    cwd: CWD,
   });
   const ended = await callTool("run_end", {
     runId: run.id,
@@ -164,10 +217,10 @@ test("MCP: unknown method returns -32601", async () => {
 
 test("REST: approvals roundtrip — create → resolve", async () => {
   const run = await callTool("run_start", {
-    clientId: "cli_acme",
-    projectId: "prj_acme_dash",
-    skillId: "skl_bug_fix_be",
-    cwd: "C:/Users/shado/Desktop/Altele/iproyal",
+    clientId: ctx.client2.id,
+    projectId: ctx.project2.id,
+    skillId: ctx.skill2.id,
+    cwd: CWD,
   });
   const apr = await post(`${BASE}/api/agency/approvals`, {
     runId: run.id,
@@ -180,4 +233,35 @@ test("REST: approvals roundtrip — create → resolve", async () => {
     { status: "approved" },
   );
   assert.equal(resolved.status, "approved");
+});
+
+test("REST: invoice issue + pay actions", async () => {
+  // Create a shipped run for the invoice
+  const run = await callTool("run_start", {
+    clientId: ctx.client2.id,
+    projectId: ctx.project2.id,
+    skillId: ctx.skill.id,
+    pricingMode: "baseline",
+    cwd: CWD,
+  });
+  await callTool("run_end", { runId: run.id, status: "shipped" });
+
+  const draft = await post(`${BASE}/api/agency/invoices`, {
+    clientId: ctx.client2.id,
+    windowDays: 30,
+    taxPct: 5,
+  });
+  assert.equal(draft.status, "draft");
+  assert.ok(draft.lineItems.length >= 1);
+
+  const issued = await post(
+    `${BASE}/api/agency/invoices/${draft.id}/issue`,
+    {},
+  );
+  assert.equal(issued.status, "sent");
+  assert.ok(issued.issuedAt);
+
+  const paid = await post(`${BASE}/api/agency/invoices/${draft.id}/pay`, {});
+  assert.equal(paid.status, "paid");
+  assert.ok(paid.paidAt);
 });

@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { RiBriefcase4Line, RiAddLine, RiArrowRightLine } from "@remixicon/react";
+import { RiBriefcase4Line, RiArrowRightLine } from "@remixicon/react";
 import { AppShell } from "@/components/layout/app-shell";
-import { Button } from "@/components/ui/button";
 import { ClientAvatar } from "@/components/agency/client-avatar";
-import { api } from "@/lib/agency/store";
+import { NewClientButton } from "@/components/agency/new-client-modal";
+import { getApi } from "@/lib/agency/server-api";
+import { getT } from "@/lib/i18n/server";
 import { cn } from "@/lib/cn";
 
 const usd = new Intl.NumberFormat("en-US", {
@@ -14,9 +15,17 @@ const usd = new Intl.NumberFormat("en-US", {
 
 const DAY = 24 * 60 * 60 * 1000;
 
-export default function ClientsPage() {
-  const clients = api.listClients();
+export default async function ClientsPage() {
+  const { t } = await getT();
+  const api = await getApi();
+  const clients = await api.listClients();
   const cutoff = Date.now() - 30 * DAY;
+  const perClient = await Promise.all(
+    clients.map(async (c) => ({
+      runs: await api.listRuns({ clientId: c.id }),
+      projects: await api.listProjects(c.id),
+    })),
+  );
 
   return (
     <AppShell>
@@ -25,24 +34,21 @@ export default function ClientsPage() {
           <span className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-100)] text-[var(--color-brand-400)]">
             <RiBriefcase4Line size={20} />
           </span>
-          <div>
-            <h1 className="text-[26px] font-medium leading-[34px] tracking-tight sm:text-[28px] md:text-[32px] md:leading-[42px]">
-              Clients
+          <div className="flex flex-col">
+            <h1 className="text-[26px] font-semibold leading-[32px] tracking-tight sm:text-[28px] sm:leading-[34px]">
+              {t("clients.title")}
             </h1>
-            <p className="mt-[4px] text-[13px] text-[var(--color-text-soft)]">
-              The companies the agency ships work for.
+            <p className="mt-[2px] text-[13px] leading-[18px] text-[var(--color-text-soft)]">
+              {t("clients.subtitle")}
             </p>
           </div>
         </div>
-        <Button variant="outline" leadingIcon={<RiAddLine size={16} />}>
-          New client
-        </Button>
+        <NewClientButton />
       </div>
 
       <div className="enter-stagger mt-[24px] grid grid-cols-1 gap-[16px] sm:grid-cols-2 lg:grid-cols-3">
-        {clients.map((c) => {
-          const runs = api.listRuns({ clientId: c.id });
-          const projects = api.listProjects(c.id);
+        {clients.map((c, i) => {
+          const { runs, projects } = perClient[i];
           const activeRuns = runs.filter(
             (r) => r.status === "running" || r.status === "awaiting_approval",
           ).length;
@@ -60,7 +66,7 @@ export default function ClientsPage() {
             <article
               key={c.id}
               className={cn(
-                "flex flex-col gap-[16px] rounded-[12px] bg-[var(--color-bg-surface)] p-[20px]",
+                "flex flex-col gap-[16px] rounded-[8px] bg-[var(--color-bg-surface)] p-[20px]",
                 "ring-1 ring-[var(--color-stroke-soft)] transition-colors",
                 "hover:ring-[var(--color-stroke-sub)]",
               )}
@@ -79,20 +85,25 @@ export default function ClientsPage() {
                       {usd.format(c.hourlyRate)}/h
                     </span>
                     <span className="text-[11px] text-[var(--color-text-soft)]">
-                      {projects.length} project{projects.length === 1 ? "" : "s"}
+                      {t(
+                        projects.length === 1
+                          ? "clients.projectsCount"
+                          : "clients.projectsCountPl",
+                        { n: projects.length },
+                      )}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-[8px] rounded-[10px] bg-[color-mix(in_oklab,white_2%,transparent)] p-[12px] ring-1 ring-[var(--color-stroke-soft)]">
-                <Mini label="Active runs" value={`${activeRuns}`} />
+              <div className="grid grid-cols-3 gap-[8px] rounded-[6px] bg-[color-mix(in_oklab,white_2%,transparent)] p-[12px] ring-1 ring-[var(--color-stroke-soft)]">
+                <Mini label={t("clients.activeRuns")} value={`${activeRuns}`} />
                 <Mini
-                  label="Eff. hours · 30d"
+                  label={t("clients.eff30")}
                   value={`${effectiveHours.toFixed(0)}h`}
                 />
                 <Mini
-                  label="Billable · 30d"
+                  label={t("clients.bill30")}
                   value={usd.format(billable)}
                 />
               </div>
@@ -101,7 +112,7 @@ export default function ClientsPage() {
                 href={`/agency/runs?clientId=${c.id}`}
                 className="inline-flex items-center gap-[6px] self-start text-[13px] font-semibold text-[var(--color-brand-400)] hover:underline"
               >
-                View runs <RiArrowRightLine size={14} />
+                {t("clients.viewRuns")} <RiArrowRightLine size={14} />
               </Link>
             </article>
           );

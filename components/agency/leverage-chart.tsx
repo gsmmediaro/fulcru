@@ -100,7 +100,7 @@ function AreaTooltip({
   if (!active || !payload?.length) return null;
   return (
     <div
-      className="count-in rounded-[10px] bg-[var(--color-bg-surface-elevated)] px-[12px] py-[10px] ring-1 ring-[var(--color-stroke-sub)] shadow-[var(--shadow-regular-md)]"
+      className="count-in rounded-[6px] bg-[var(--color-bg-surface-elevated)] px-[12px] py-[10px] ring-1 ring-[var(--color-stroke-sub)] shadow-[var(--shadow-regular-md)]"
       style={{ pointerEvents: "none", animationDuration: "160ms" }}
     >
       <div className="text-[11px] text-[var(--color-text-soft)]">{label}</div>
@@ -180,7 +180,7 @@ function BarTooltip({
   if (!active || !payload?.length) return null;
   const p = payload[0];
   return (
-    <div className="rounded-[10px] bg-[var(--color-bg-surface-elevated)] px-[12px] py-[10px] ring-1 ring-[var(--color-stroke-sub)] shadow-[var(--shadow-regular-md)]">
+    <div className="rounded-[6px] bg-[var(--color-bg-surface-elevated)] px-[12px] py-[10px] ring-1 ring-[var(--color-stroke-sub)] shadow-[var(--shadow-regular-md)]">
       <div className="flex items-center gap-[8px]">
         <span
           className="size-[8px] rounded-full"

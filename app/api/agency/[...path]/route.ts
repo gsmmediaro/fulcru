@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { api } from "@/lib/agency/store";
+import { getSession } from "@/lib/auth-server";
+import { bindApi } from "@/lib/agency/server-api";
 import { enrichRunFromSession } from "@/lib/agency/session-importer";
 import type {
   ApprovalStatus,
@@ -61,6 +62,10 @@ function notFound(error = "Not found") {
   return json({ error }, { status: 404 });
 }
 
+function unauthorized() {
+  return json({ error: "unauthorized" }, { status: 401 });
+}
+
 async function readBody(req: NextRequest): Promise<Record<string, unknown>> {
   try {
     const text = await req.text();
@@ -86,12 +91,16 @@ function asNumber(v: unknown): number | undefined {
 type Ctx = { params: Promise<{ path: string[] }> };
 
 export async function GET(req: NextRequest, ctx: Ctx) {
+  const session = await getSession();
+  if (!session?.user?.id) return unauthorized();
   const { path } = await ctx.params;
   const url = new URL(req.url);
-  return route("GET", path ?? [], url, null);
+  return route("GET", path ?? [], url, null, session.user.id);
 }
 
 export async function POST(req: NextRequest, ctx: Ctx) {
+  const session = await getSession();
+  if (!session?.user?.id) return unauthorized();
   const { path } = await ctx.params;
   const url = new URL(req.url);
   let body: Record<string, unknown>;
@@ -100,42 +109,117 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   } catch (e) {
     return bad((e as Error).message);
   }
-  return route("POST", path ?? [], url, body);
+  return route("POST", path ?? [], url, body, session.user.id);
 }
 
-function route(
+async function route(
   method: "GET" | "POST",
   path: string[],
   url: URL,
   body: Record<string, unknown> | null,
-): Response {
+  userId: string,
+): Promise<Response> {
+  const api = bindApi(userId);
   try {
     const [resource, id, action] = path;
     const qp = url.searchParams;
 
     switch (resource) {
       case "clients": {
-        if (method !== "GET") return bad("Method not allowed", 405);
-        if (!id) return json(api.listClients());
-        const c = api.getClient(id);
-        return c ? json(c) : notFound("Client not found");
+        if (method === "GET") {
+          if (!id) return json(await api.listClients());
+          const c = await api.getClient(id);
+          return c ? json(c) : notFound("Client not found");
+        }
+        if (id) return bad("Method not allowed", 405);
+        if (!body) return bad("Missing body");
+        const name = asString(body.name);
+        const hourlyRate = asNumber(body.hourlyRate);
+        if (!name || hourlyRate === undefined) {
+          return bad("name and hourlyRate are required");
+        }
+        const created = await api.createClient({
+          name,
+          initials: asString(body.initials),
+          accentColor: asString(body.accentColor),
+          hourlyRate,
+        });
+        return json(created, { status: 201 });
       }
 
       case "projects": {
-        if (method !== "GET") return bad("Method not allowed", 405);
-        if (!id) {
-          const clientId = qp.get("clientId") ?? undefined;
-          return json(api.listProjects(clientId));
+        if (method === "GET") {
+          if (!id) {
+            const clientId = qp.get("clientId") ?? undefined;
+            return json(await api.listProjects(clientId));
+          }
+          const p = await api.getProject(id);
+          return p ? json(p) : notFound("Project not found");
         }
-        const p = api.getProject(id);
-        return p ? json(p) : notFound("Project not found");
+        if (id) return bad("Method not allowed", 405);
+        if (!body) return bad("Missing body");
+        const clientId = asString(body.clientId);
+        const name = asString(body.name);
+        if (!clientId || !name) {
+          return bad("clientId and name are required");
+        }
+        const created = await api.createProject({
+          clientId,
+          name,
+          description: asString(body.description),
+          color: asString(body.color),
+        });
+        return json(created, { status: 201 });
       }
 
       case "skills": {
-        if (method !== "GET") return bad("Method not allowed", 405);
-        if (!id) return json(api.listSkills());
-        const s = api.getSkill(id);
-        return s ? json(s) : notFound("Skill not found");
+        if (method === "GET") {
+          if (!id) return json(await api.listSkills());
+          const s = await api.getSkill(id);
+          return s ? json(s) : notFound("Skill not found");
+        }
+        if (id) return bad("Method not allowed", 405);
+        if (!body) return bad("Missing body");
+        const name = asString(body.name);
+        const category = asString(body.category) as
+          | "engineering"
+          | "design"
+          | "content"
+          | "ops"
+          | "research"
+          | undefined;
+        const baselineHours = asNumber(body.baselineHours);
+        const rateModifier = asNumber(body.rateModifier);
+        const allowedCategories = [
+          "engineering",
+          "design",
+          "content",
+          "ops",
+          "research",
+        ];
+        if (
+          !name ||
+          !category ||
+          !allowedCategories.includes(category) ||
+          baselineHours === undefined ||
+          rateModifier === undefined
+        ) {
+          return bad(
+            "name, category, baselineHours, rateModifier are required",
+          );
+        }
+        const tags = Array.isArray(body.tags)
+          ? (body.tags.filter((t) => typeof t === "string") as string[])
+          : [];
+        const created = await api.createSkill({
+          name,
+          description: asString(body.description) ?? "",
+          category,
+          baselineHours,
+          rateModifier,
+          tags,
+        });
+        return json(created, { status: 201 });
       }
 
       case "runs": {
@@ -151,7 +235,7 @@ function route(
               return bad("Invalid limit");
             }
             return json(
-              api.listRuns({
+              await api.listRuns({
                 clientId: qp.get("clientId") ?? undefined,
                 projectId: qp.get("projectId") ?? undefined,
                 status: status as RunStatus | undefined,
@@ -159,9 +243,9 @@ function route(
               }),
             );
           }
-          const run = api.getRun(id);
+          const run = await api.getRun(id);
           if (!run) return notFound("Run not found");
-          return json({ run, events: api.listRunEvents(id) });
+          return json({ run, events: await api.listRunEvents(id) });
         }
         // POST
         if (!body) return bad("Missing body");
@@ -174,7 +258,7 @@ function route(
           }
           try {
             const pm = asString(body.pricingMode);
-            const run = api.startRun({
+            const run = await api.startRun({
               clientId,
               projectId,
               skillId,
@@ -197,7 +281,7 @@ function route(
             return bad(`Invalid kind: ${kind}`);
           }
           try {
-            const evt = api.recordEvent({
+            const evt = await api.recordEvent({
               runId: id,
               kind: kind as RunEventKind,
               label,
@@ -218,17 +302,17 @@ function route(
             return bad("status must be shipped|failed|cancelled");
           }
           try {
-            api.endRun({
+            await api.endRun({
               runId: id,
               status: status as "shipped" | "failed" | "cancelled",
               deliverableUrl: asString(body.deliverableUrl),
               notes: asString(body.notes),
             });
-            const enrichment = enrichRunFromSession({
+            const enrichment = await enrichRunFromSession(userId, {
               runId: id,
               cwd: asString(body.cwd),
             });
-            const run = api.getRun(id);
+            const run = await api.getRun(id);
             return json({ run, enrichment });
           } catch (e) {
             return bad((e as Error).message, 404);
@@ -244,7 +328,9 @@ function route(
           if (status && !APPROVAL_STATUSES.includes(status as ApprovalStatus)) {
             return bad(`Invalid status: ${status}`);
           }
-          return json(api.listApprovals(status as ApprovalStatus | undefined));
+          return json(
+            await api.listApprovals(status as ApprovalStatus | undefined),
+          );
         }
         // POST
         if (!body) return bad("Missing body");
@@ -253,7 +339,7 @@ function route(
           const question = asString(body.question);
           if (!runId || !question) return bad("runId and question required");
           try {
-            const apr = api.requestApproval({
+            const apr = await api.requestApproval({
               runId,
               question,
               context: asString(body.context),
@@ -269,7 +355,7 @@ function route(
             return bad("status must be approved|rejected");
           }
           try {
-            const apr = api.resolveApproval({
+            const apr = await api.resolveApproval({
               approvalId: id,
               status: status as "approved" | "rejected",
               resolvedBy: asString(body.resolvedBy),
@@ -283,12 +369,45 @@ function route(
       }
 
       case "invoices": {
-        if (method !== "GET") return bad("Method not allowed", 405);
-        if (!id) {
-          return json(api.listInvoices(qp.get("clientId") ?? undefined));
+        if (method === "GET") {
+          if (!id) {
+            return json(
+              await api.listInvoices(qp.get("clientId") ?? undefined),
+            );
+          }
+          const inv = await api.getInvoice(id);
+          return inv ? json(inv) : notFound("Invoice not found");
         }
-        const inv = api.getInvoice(id);
-        return inv ? json(inv) : notFound("Invoice not found");
+        if (!id) {
+          if (!body) return bad("Missing body");
+          const clientId = asString(body.clientId);
+          if (!clientId) return bad("clientId is required");
+          try {
+            const created = await api.createInvoice({
+              clientId,
+              windowDays: asNumber(body.windowDays),
+              taxPct: asNumber(body.taxPct),
+            });
+            return json(created, { status: 201 });
+          } catch (e) {
+            return bad((e as Error).message);
+          }
+        }
+        if (action === "issue") {
+          try {
+            return json(await api.issueInvoice(id));
+          } catch (e) {
+            return bad((e as Error).message, 400);
+          }
+        }
+        if (action === "pay") {
+          try {
+            return json(await api.payInvoice(id));
+          } catch (e) {
+            return bad((e as Error).message, 400);
+          }
+        }
+        return notFound("Unknown invoice action");
       }
 
       case "leverage": {
@@ -298,7 +417,7 @@ function route(
         if (!Number.isFinite(windowDays) || windowDays <= 0) {
           return bad("Invalid windowDays");
         }
-        return json(api.leverage(windowDays));
+        return json(await api.leverage(windowDays));
       }
 
       default:

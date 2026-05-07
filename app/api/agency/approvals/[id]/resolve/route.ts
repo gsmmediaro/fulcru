@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { api } from "@/lib/agency/store";
+import { getSession } from "@/lib/auth-server";
+import { bindApi } from "@/lib/agency/server-api";
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await getSession();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
   const { id } = await params;
   const body = (await req.json().catch(() => ({}))) as {
     status?: "approved" | "rejected";
@@ -17,7 +22,8 @@ export async function POST(
     );
   }
   try {
-    const approval = api.resolveApproval({ approvalId: id, status });
+    const api = bindApi(session.user.id);
+    const approval = await api.resolveApproval({ approvalId: id, status });
     return NextResponse.json(approval);
   } catch (e) {
     return NextResponse.json(

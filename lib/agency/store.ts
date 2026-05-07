@@ -1,728 +1,867 @@
+import { sql } from "@/lib/db";
 import type {
   Approval,
+  ApprovalStatus,
   Client,
   Invoice,
+  InvoiceLineItem,
+  InvoiceStatus,
+  LeverageSnapshot,
   Project,
   Run,
   RunEvent,
   RunEventKind,
   RunStatus,
   Skill,
+  SkillCategory,
 } from "./types";
 
-type Store = {
-  clients: Client[];
-  projects: Project[];
-  skills: Skill[];
-  runs: Run[];
-  events: RunEvent[];
-  approvals: Approval[];
-  invoices: Invoice[];
+const DAY = 24 * 60 * 60 * 1000;
+
+function genId(prefix: string): string {
+  return `${prefix}_${Math.random().toString(36).slice(2, 8)}${Date.now()
+    .toString(36)
+    .slice(-4)}`;
+}
+
+function deriveInitials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "??";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
+function num(v: unknown): number {
+  if (typeof v === "number") return v;
+  if (v == null) return 0;
+  const n = parseFloat(String(v));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function iso(v: unknown): string {
+  if (v instanceof Date) return v.toISOString();
+  return String(v);
+}
+
+function isoOrUndef(v: unknown): string | undefined {
+  if (v == null) return undefined;
+  return iso(v);
+}
+
+type ClientRow = {
+  id: string;
+  name: string;
+  initials: string;
+  accent_color: string;
+  hourly_rate: string | number;
+  created_at: string;
 };
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __agencyStore: Store | undefined;
-}
-
-const NOW = new Date("2026-05-05T12:00:00Z").getTime();
-const HOUR = 3600_000;
-const DAY = 24 * HOUR;
-
-const ts = (offsetMs: number) => new Date(NOW + offsetMs).toISOString();
-
-const SEED_CLIENTS: Client[] = [
-  {
-    id: "cli_dictando",
-    name: "Dictando",
-    initials: "DC",
-    accentColor: "#FF7A1A",
-    hourlyRate: 140,
-    createdAt: ts(-90 * DAY),
-  },
-  {
-    id: "cli_acme",
-    name: "Acme Robotics",
-    initials: "AR",
-    accentColor: "#3B82F6",
-    hourlyRate: 165,
-    createdAt: ts(-180 * DAY),
-  },
-  {
-    id: "cli_northstar",
-    name: "NorthStar Health",
-    initials: "NS",
-    accentColor: "#10B981",
-    hourlyRate: 200,
-    createdAt: ts(-60 * DAY),
-  },
-  {
-    id: "cli_pixelforge",
-    name: "Pixel Forge",
-    initials: "PF",
-    accentColor: "#8B5CF6",
-    hourlyRate: 120,
-    createdAt: ts(-220 * DAY),
-  },
-];
-
-const SEED_PROJECTS: Project[] = [
-  {
-    id: "prj_dict_site",
-    clientId: "cli_dictando",
-    name: "Q2 site refresh",
-    description: "Marketing site rebuild on Next.js 15 + design tokens.",
-    color: "#FF7A1A",
-    createdAt: ts(-45 * DAY),
-  },
-  {
-    id: "prj_dict_blog",
-    clientId: "cli_dictando",
-    name: "Editorial pipeline",
-    description: "Long-form SEO articles, weekly cadence.",
-    color: "#F59E0B",
-    createdAt: ts(-30 * DAY),
-  },
-  {
-    id: "prj_acme_dash",
-    clientId: "cli_acme",
-    name: "Fleet dashboard v2",
-    description: "Internal robotics ops dashboard.",
-    color: "#3B82F6",
-    createdAt: ts(-120 * DAY),
-  },
-  {
-    id: "prj_acme_api",
-    clientId: "cli_acme",
-    name: "Telemetry API",
-    description: "gRPC ingestion + Postgres warehousing.",
-    color: "#06B6D4",
-    createdAt: ts(-90 * DAY),
-  },
-  {
-    id: "prj_ns_portal",
-    clientId: "cli_northstar",
-    name: "Patient portal",
-    description: "HIPAA-aware appointment + records portal.",
-    color: "#10B981",
-    createdAt: ts(-50 * DAY),
-  },
-  {
-    id: "prj_ns_intake",
-    clientId: "cli_northstar",
-    name: "Intake automation",
-    description: "Form-to-EHR pipeline with audit logging.",
-    color: "#22C55E",
-    createdAt: ts(-25 * DAY),
-  },
-  {
-    id: "prj_pf_site",
-    clientId: "cli_pixelforge",
-    name: "Studio website",
-    description: "Portfolio site + CMS.",
-    color: "#8B5CF6",
-    createdAt: ts(-150 * DAY),
-  },
-  {
-    id: "prj_pf_brand",
-    clientId: "cli_pixelforge",
-    name: "Brand kit refresh",
-    description: "Logo, type, color tokens, social templates.",
-    color: "#A855F7",
-    createdAt: ts(-40 * DAY),
-  },
-];
-
-const SEED_SKILLS: Skill[] = [
-  {
-    id: "skl_landing_page",
-    name: "Landing page redesign",
-    description: "Hero, sections, CTA, responsive, ships to staging.",
-    category: "engineering",
-    baselineHours: 6,
-    rateModifier: 1.0,
-    tags: ["frontend", "marketing"],
-  },
-  {
-    id: "skl_stripe_integration",
-    name: "Stripe integration",
-    description: "Checkout, webhooks, customer portal, idempotent.",
-    category: "engineering",
-    baselineHours: 12,
-    rateModifier: 1.2,
-    tags: ["payments", "backend"],
-  },
-  {
-    id: "skl_bug_fix_fe",
-    name: "Frontend bug fix",
-    description: "Reproduce, isolate, patch, regression test.",
-    category: "engineering",
-    baselineHours: 2,
-    rateModifier: 1.0,
-    tags: ["frontend", "maintenance"],
-  },
-  {
-    id: "skl_bug_fix_be",
-    name: "Backend bug fix",
-    description: "Trace, root-cause, patch, deploy with rollback plan.",
-    category: "engineering",
-    baselineHours: 3,
-    rateModifier: 1.0,
-    tags: ["backend", "maintenance"],
-  },
-  {
-    id: "skl_blog_post",
-    name: "Long-form blog post (1500w)",
-    description: "Research, outline, draft, edit, SEO meta.",
-    category: "content",
-    baselineHours: 4,
-    rateModifier: 0.85,
-    tags: ["seo", "writing"],
-  },
-  {
-    id: "skl_brand_guidelines",
-    name: "Brand guidelines",
-    description: "Logo lockups, type scale, color tokens, examples.",
-    category: "design",
-    baselineHours: 10,
-    rateModifier: 1.1,
-    tags: ["brand", "design"],
-  },
-  {
-    id: "skl_dashboard_screen",
-    name: "Dashboard screen",
-    description: "Layout, components, data wiring, loading states.",
-    category: "engineering",
-    baselineHours: 8,
-    rateModifier: 1.0,
-    tags: ["frontend", "internal-tool"],
-  },
-  {
-    id: "skl_api_endpoint",
-    name: "API endpoint",
-    description: "Schema, handler, auth, tests, docs.",
-    category: "engineering",
-    baselineHours: 4,
-    rateModifier: 1.0,
-    tags: ["backend"],
-  },
-  {
-    id: "skl_user_research",
-    name: "User research synthesis",
-    description: "Transcribe, cluster, themes, insight memo.",
-    category: "research",
-    baselineHours: 6,
-    rateModifier: 0.9,
-    tags: ["research"],
-  },
-  {
-    id: "skl_devops_pipeline",
-    name: "CI/CD pipeline",
-    description: "GitHub Actions, preview envs, secrets management.",
-    category: "ops",
-    baselineHours: 6,
-    rateModifier: 1.15,
-    tags: ["devops"],
-  },
-  {
-    id: "skl_seo_audit",
-    name: "SEO audit",
-    description: "Crawl, on-page, schema, fixes plan.",
-    category: "research",
-    baselineHours: 5,
-    rateModifier: 0.95,
-    tags: ["seo"],
-  },
-  {
-    id: "skl_email_template",
-    name: "Email template set",
-    description: "5 transactional templates, responsive, dark-mode safe.",
-    category: "design",
-    baselineHours: 3,
-    rateModifier: 1.0,
-    tags: ["email", "design"],
-  },
-];
-
-function seedRuns(): {
-  runs: Run[];
-  events: RunEvent[];
-  approvals: Approval[];
-} {
-  const runs: Run[] = [];
-  const events: RunEvent[] = [];
-  const approvals: Approval[] = [];
-
-  const mkRun = (
-    i: number,
-    clientId: string,
-    projectId: string,
-    skillId: string,
-    status: RunStatus,
-    startOffsetMs: number,
-    runtimeSec: number,
-    activeSec: number,
-    tokensIn: number,
-    tokensOut: number,
-  ): Run => {
-    const client = SEED_CLIENTS.find((c) => c.id === clientId)!;
-    const skill = SEED_SKILLS.find((s) => s.id === skillId)!;
-    const rate = client.hourlyRate * skill.rateModifier;
-    const billable =
-      status === "shipped" ? skill.baselineHours * rate : 0;
-    const cost = (tokensIn * 3 + tokensOut * 15) / 1_000_000;
-    return {
-      id: `run_${String(i).padStart(4, "0")}`,
-      clientId,
-      projectId,
-      skillId,
-      agentName: i % 3 === 0 ? "claude-opus-4-7" : "claude-sonnet-4-6",
-      status,
-      startedAt: ts(startOffsetMs),
-      endedAt:
-        status === "running" || status === "awaiting_approval"
-          ? undefined
-          : ts(startOffsetMs + runtimeSec * 1000),
-      runtimeSec,
-      activeSec,
-      tokensIn,
-      tokensOut,
-      cacheHits: Math.round(tokensIn * 0.4),
-      costUsd: Number(cost.toFixed(4)),
-      baselineHours: skill.baselineHours,
-      rateUsd: rate,
-      billableUsd: Number(billable.toFixed(2)),
-      prompt: undefined,
-      deliverableUrl:
-        status === "shipped" ? `https://github.com/agency/pr/${1000 + i}` : undefined,
-    };
-  };
-
-  const seeds: Array<
-    [
-      string,
-      string,
-      string,
-      RunStatus,
-      number,
-      number,
-      number,
-      number,
-      number,
-    ]
-  > = [
-    ["cli_dictando", "prj_dict_site", "skl_landing_page", "shipped", -7 * DAY, 980, 612, 184_000, 41_000],
-    ["cli_dictando", "prj_dict_site", "skl_dashboard_screen", "shipped", -5 * DAY, 1420, 880, 220_000, 58_000],
-    ["cli_dictando", "prj_dict_blog", "skl_blog_post", "shipped", -4 * DAY, 740, 410, 92_000, 28_000],
-    ["cli_dictando", "prj_dict_blog", "skl_seo_audit", "shipped", -3 * DAY, 1200, 720, 130_000, 31_000],
-    ["cli_acme", "prj_acme_dash", "skl_dashboard_screen", "shipped", -10 * DAY, 1690, 1010, 240_000, 62_000],
-    ["cli_acme", "prj_acme_dash", "skl_bug_fix_fe", "shipped", -2 * DAY, 380, 220, 38_000, 9_400],
-    ["cli_acme", "prj_acme_api", "skl_api_endpoint", "shipped", -8 * DAY, 920, 540, 110_000, 27_000],
-    ["cli_acme", "prj_acme_api", "skl_devops_pipeline", "shipped", -6 * DAY, 1880, 1120, 270_000, 71_000],
-    ["cli_northstar", "prj_ns_portal", "skl_landing_page", "shipped", -12 * DAY, 1050, 640, 175_000, 43_000],
-    ["cli_northstar", "prj_ns_portal", "skl_stripe_integration", "shipped", -9 * DAY, 2840, 1720, 410_000, 102_000],
-    ["cli_northstar", "prj_ns_intake", "skl_api_endpoint", "shipped", -1 * DAY, 870, 510, 99_000, 24_000],
-    ["cli_northstar", "prj_ns_intake", "skl_bug_fix_be", "shipped", -1 * DAY - 6 * HOUR, 540, 320, 54_000, 14_000],
-    ["cli_pixelforge", "prj_pf_site", "skl_landing_page", "shipped", -14 * DAY, 1100, 660, 195_000, 47_000],
-    ["cli_pixelforge", "prj_pf_site", "skl_email_template", "shipped", -11 * DAY, 720, 410, 78_000, 19_000],
-    ["cli_pixelforge", "prj_pf_brand", "skl_brand_guidelines", "shipped", -3 * DAY, 2210, 1330, 320_000, 84_000],
-    ["cli_pixelforge", "prj_pf_brand", "skl_user_research", "shipped", -2 * DAY - 4 * HOUR, 1480, 880, 165_000, 38_000],
-    ["cli_dictando", "prj_dict_site", "skl_bug_fix_fe", "failed", -2 * DAY - 2 * HOUR, 290, 170, 31_000, 7_400],
-    ["cli_acme", "prj_acme_dash", "skl_bug_fix_fe", "cancelled", -1 * DAY - 1 * HOUR, 60, 30, 4_200, 900],
-    ["cli_dictando", "prj_dict_site", "skl_landing_page", "awaiting_approval", -45 * 60 * 1000, 380, 240, 62_000, 16_000],
-    ["cli_northstar", "prj_ns_intake", "skl_api_endpoint", "awaiting_approval", -22 * 60 * 1000, 190, 120, 28_000, 7_200],
-    ["cli_acme", "prj_acme_api", "skl_devops_pipeline", "awaiting_approval", -15 * 60 * 1000, 220, 140, 41_000, 9_800],
-    ["cli_dictando", "prj_dict_blog", "skl_blog_post", "running", -8 * 60 * 1000, 480, 280, 71_000, 18_000],
-    ["cli_pixelforge", "prj_pf_brand", "skl_brand_guidelines", "running", -3 * 60 * 1000, 180, 110, 24_000, 6_100],
-    ["cli_acme", "prj_acme_dash", "skl_dashboard_screen", "running", -90_000, 90, 55, 12_000, 3_000],
-    ["cli_northstar", "prj_ns_portal", "skl_landing_page", "running", -30_000, 30, 20, 4_400, 1_100],
-  ];
-
-  seeds.forEach((s, i) => {
-    runs.push(mkRun(i + 1, ...s));
-  });
-
-  const eventTemplates: Array<
-    [RunEventKind, string, string?, number?]
-  > = [
-    ["tool_call", "Read package.json", "Inspecting dependencies", 120],
-    ["tool_call", "Glob '**/*.tsx'", "Map component layout", 240],
-    ["thought", "Plan: extract Hero into shared component", undefined, 0],
-    ["file_edit", "components/marketing/hero.tsx", "+148 / -22", 1100],
-    ["tool_call", "Bash 'pnpm build'", "Verify type-check passes", 18_400],
-    ["decision", "Use server component for above-the-fold", "Avoids hydration cost", 0],
-    ["file_edit", "app/(marketing)/page.tsx", "+62 / -41", 700],
-    ["tool_call", "Grep '@/components/ui/button'", undefined, 90],
-    ["milestone", "Deliverable pushed to staging", "https://staging.example.com", 0],
-  ];
-
-  runs.forEach((run, ri) => {
-    if (run.status === "running" || run.status === "shipped" || run.status === "awaiting_approval") {
-      const count = run.status === "shipped" ? 9 : run.status === "awaiting_approval" ? 6 : 4;
-      for (let i = 0; i < count; i++) {
-        const tpl = eventTemplates[i % eventTemplates.length];
-        events.push({
-          id: `evt_${run.id}_${i}`,
-          runId: run.id,
-          ts: ts(
-            new Date(run.startedAt).getTime() - NOW + i * 30_000 + ri * 100,
-          ),
-          kind: tpl[0],
-          label: tpl[1],
-          detail: tpl[2],
-          durationMs: tpl[3],
-        });
-      }
-    }
-  });
-
-  const approvalSeeds: Array<[string, string, string]> = [
-    ["run_0019", "Publish landing page redesign to production?", "Staging URL: https://staging.dictando.ro · Lighthouse 98/100/100/100"],
-    ["run_0020", "Drop and recreate intake_forms table for new schema?", "Migration is non-reversible. Backup snapshot id: snap_8f2a1c."],
-    ["run_0021", "Rotate production deploy key and update GitHub Actions secret?", "Old key still valid for 24h after rotation."],
-  ];
-
-  approvalSeeds.forEach(([runId, q, ctx], i) => {
-    approvals.push({
-      id: `apr_${String(i + 1).padStart(4, "0")}`,
-      runId,
-      question: q,
-      context: ctx,
-      status: "pending",
-      createdAt: ts(-(15 + i * 10) * 60 * 1000),
-    });
-    events.push({
-      id: `evt_${runId}_apr`,
-      runId,
-      ts: ts(-(15 + i * 10) * 60 * 1000),
-      kind: "approval_requested",
-      label: q,
-      detail: ctx,
-    });
-  });
-
-  return { runs, events, approvals };
-}
-
-function seedInvoices(runs: Run[]): Invoice[] {
-  const invoices: Invoice[] = [];
-  const periodStart = ts(-30 * DAY);
-  const periodEnd = ts(0);
-
-  SEED_CLIENTS.forEach((client, idx) => {
-    const clientRuns = runs.filter(
-      (r) => r.clientId === client.id && r.status === "shipped",
-    );
-    if (clientRuns.length === 0) return;
-    const lineItems = clientRuns.map((r) => {
-      const skill = SEED_SKILLS.find((s) => s.id === r.skillId)!;
-      return {
-        runId: r.id,
-        skillName: skill.name,
-        description: `${skill.name} — run ${r.id}`,
-        hours: r.baselineHours,
-        rateUsd: r.rateUsd,
-        amountUsd: r.billableUsd,
-      };
-    });
-    const subtotal = lineItems.reduce((s, li) => s + li.amountUsd, 0);
-    const tax = 0;
-    invoices.push({
-      id: `inv_${String(idx + 1).padStart(4, "0")}`,
-      number: `INV-2026-${String(100 + idx).padStart(4, "0")}`,
-      clientId: client.id,
-      status: idx === 0 ? "sent" : idx === 1 ? "paid" : idx === 2 ? "draft" : "overdue",
-      periodStart,
-      periodEnd,
-      issuedAt: idx === 2 ? undefined : ts(-2 * DAY),
-      dueAt: ts(12 * DAY),
-      paidAt: idx === 1 ? ts(-1 * DAY) : undefined,
-      lineItems,
-      subtotalUsd: Number(subtotal.toFixed(2)),
-      taxUsd: tax,
-      totalUsd: Number((subtotal + tax).toFixed(2)),
-    });
-  });
-
-  return invoices;
-}
-
-function bootstrap(): Store {
-  const { runs, events, approvals } = seedRuns();
+function mapClient(r: ClientRow): Client {
   return {
-    clients: SEED_CLIENTS,
-    projects: SEED_PROJECTS,
-    skills: SEED_SKILLS,
-    runs,
-    events,
-    approvals,
-    invoices: seedInvoices(runs),
+    id: r.id,
+    name: r.name,
+    initials: r.initials,
+    accentColor: r.accent_color,
+    hourlyRate: num(r.hourly_rate),
+    createdAt: iso(r.created_at),
   };
 }
 
-export function getStore(): Store {
-  if (!globalThis.__agencyStore) {
-    globalThis.__agencyStore = bootstrap();
-  }
-  return globalThis.__agencyStore;
+type ProjectRow = {
+  id: string;
+  client_id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+  created_at: string;
+};
+function mapProject(r: ProjectRow): Project {
+  return {
+    id: r.id,
+    clientId: r.client_id,
+    name: r.name,
+    description: r.description ?? undefined,
+    color: r.color ?? "#FF7A1A",
+    createdAt: iso(r.created_at),
+  };
 }
 
-function genId(prefix: string) {
-  return `${prefix}_${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36).slice(-4)}`;
+type SkillRow = {
+  id: string;
+  name: string;
+  description: string;
+  category: SkillCategory;
+  baseline_hours: string | number;
+  rate_modifier: string | number;
+  tags: string[];
+};
+function mapSkill(r: SkillRow): Skill {
+  return {
+    id: r.id,
+    name: r.name,
+    description: r.description,
+    category: r.category,
+    baselineHours: num(r.baseline_hours),
+    rateModifier: num(r.rate_modifier),
+    tags: r.tags ?? [],
+  };
 }
 
-export const api = {
-  listClients: () => getStore().clients.slice(),
-  getClient: (id: string) =>
-    getStore().clients.find((c) => c.id === id),
-  listProjects: (clientId?: string) => {
-    const s = getStore();
-    return clientId
-      ? s.projects.filter((p) => p.clientId === clientId)
-      : s.projects.slice();
-  },
-  getProject: (id: string) =>
-    getStore().projects.find((p) => p.id === id),
-  listSkills: () => getStore().skills.slice(),
-  getSkill: (id: string) =>
-    getStore().skills.find((s) => s.id === id),
+type RunRow = {
+  id: string;
+  client_id: string;
+  project_id: string;
+  skill_id: string;
+  agent_name: string;
+  status: RunStatus;
+  prompt: string | null;
+  cwd: string | null;
+  pricing_mode: "baseline" | "time_plus_tokens";
+  started_at: string;
+  ended_at: string | null;
+  runtime_sec: number;
+  active_sec: number;
+  tokens_in: number;
+  tokens_out: number;
+  cache_hits: number;
+  cost_usd: string | number;
+  baseline_hours: string | number;
+  rate_usd: string | number;
+  billable_usd: string | number;
+  deliverable_url: string | null;
+  notes: string | null;
+};
+function mapRun(r: RunRow): Run {
+  return {
+    id: r.id,
+    clientId: r.client_id,
+    projectId: r.project_id,
+    skillId: r.skill_id,
+    agentName: r.agent_name,
+    status: r.status,
+    prompt: r.prompt ?? undefined,
+    cwd: r.cwd ?? undefined,
+    pricingMode: r.pricing_mode,
+    startedAt: iso(r.started_at),
+    endedAt: isoOrUndef(r.ended_at),
+    runtimeSec: r.runtime_sec,
+    activeSec: r.active_sec,
+    tokensIn: r.tokens_in,
+    tokensOut: r.tokens_out,
+    cacheHits: r.cache_hits,
+    costUsd: num(r.cost_usd),
+    baselineHours: num(r.baseline_hours),
+    rateUsd: num(r.rate_usd),
+    billableUsd: num(r.billable_usd),
+    deliverableUrl: r.deliverable_url ?? undefined,
+    notes: r.notes ?? undefined,
+  };
+}
 
-  listRuns: (filter?: {
-    clientId?: string;
-    projectId?: string;
-    status?: RunStatus;
-    limit?: number;
-  }) => {
-    const s = getStore();
-    let rows = s.runs.slice();
-    if (filter?.clientId) rows = rows.filter((r) => r.clientId === filter.clientId);
-    if (filter?.projectId) rows = rows.filter((r) => r.projectId === filter.projectId);
-    if (filter?.status) rows = rows.filter((r) => r.status === filter.status);
-    rows.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-    if (filter?.limit) rows = rows.slice(0, filter.limit);
-    return rows;
-  },
-  getRun: (id: string) => getStore().runs.find((r) => r.id === id),
-  listRunEvents: (runId: string) =>
-    getStore()
-      .events.filter((e) => e.runId === runId)
-      .sort((a, b) => a.ts.localeCompare(b.ts)),
+type RunEventRow = {
+  id: string;
+  run_id: string;
+  ts: string;
+  kind: RunEventKind;
+  label: string;
+  detail: string | null;
+  duration_ms: number | null;
+};
+function mapRunEvent(r: RunEventRow): RunEvent {
+  return {
+    id: r.id,
+    runId: r.run_id,
+    ts: iso(r.ts),
+    kind: r.kind,
+    label: r.label,
+    detail: r.detail ?? undefined,
+    durationMs: r.duration_ms ?? undefined,
+  };
+}
 
-  startRun: (input: {
-    clientId: string;
-    projectId: string;
-    skillId: string;
-    agentName?: string;
-    prompt?: string;
-    cwd?: string;
-    pricingMode?: "baseline" | "time_plus_tokens";
-  }) => {
-    const s = getStore();
-    const client = s.clients.find((c) => c.id === input.clientId);
-    const project = s.projects.find((p) => p.id === input.projectId);
-    const skill = s.skills.find((sk) => sk.id === input.skillId);
+type ApprovalRow = {
+  id: string;
+  run_id: string;
+  question: string;
+  context: string | null;
+  status: ApprovalStatus;
+  created_at: string;
+  resolved_at: string | null;
+  resolved_by: string | null;
+};
+function mapApproval(r: ApprovalRow): Approval {
+  return {
+    id: r.id,
+    runId: r.run_id,
+    question: r.question,
+    context: r.context ?? undefined,
+    status: r.status,
+    createdAt: iso(r.created_at),
+    resolvedAt: isoOrUndef(r.resolved_at),
+    resolvedBy: r.resolved_by ?? undefined,
+  };
+}
+
+type InvoiceRow = {
+  id: string;
+  client_id: string;
+  number: string;
+  status: InvoiceStatus;
+  period_start: string;
+  period_end: string;
+  issued_at: string | null;
+  due_at: string | null;
+  paid_at: string | null;
+  line_items: InvoiceLineItem[];
+  subtotal_usd: string | number;
+  tax_usd: string | number;
+  total_usd: string | number;
+};
+function mapInvoice(r: InvoiceRow): Invoice {
+  return {
+    id: r.id,
+    clientId: r.client_id,
+    number: r.number,
+    status: r.status,
+    periodStart: iso(r.period_start),
+    periodEnd: iso(r.period_end),
+    issuedAt: isoOrUndef(r.issued_at),
+    dueAt: isoOrUndef(r.due_at),
+    paidAt: isoOrUndef(r.paid_at),
+    lineItems: Array.isArray(r.line_items) ? r.line_items : [],
+    subtotalUsd: num(r.subtotal_usd),
+    taxUsd: num(r.tax_usd),
+    totalUsd: num(r.total_usd),
+  };
+}
+
+async function ensureAppUser(userId: string) {
+  await sql`
+    INSERT INTO app_user (id) VALUES (${userId})
+    ON CONFLICT (id) DO NOTHING
+  `;
+}
+
+export const store = {
+  // ─── Clients ───────────────────────────────────────────────
+  async listClients(userId: string): Promise<Client[]> {
+    const rows = (await sql`
+      SELECT id, name, initials, accent_color, hourly_rate, created_at
+      FROM client
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+    `) as ClientRow[];
+    return rows.map(mapClient);
+  },
+
+  async getClient(userId: string, id: string): Promise<Client | undefined> {
+    const rows = (await sql`
+      SELECT id, name, initials, accent_color, hourly_rate, created_at
+      FROM client
+      WHERE user_id = ${userId} AND id = ${id}
+      LIMIT 1
+    `) as ClientRow[];
+    return rows[0] ? mapClient(rows[0]) : undefined;
+  },
+
+  async createClient(
+    userId: string,
+    input: {
+      name: string;
+      initials?: string;
+      accentColor?: string;
+      hourlyRate: number;
+    },
+  ): Promise<Client> {
+    const name = input.name.trim();
+    if (!name) throw new Error("Name is required");
+    if (!Number.isFinite(input.hourlyRate) || input.hourlyRate <= 0) {
+      throw new Error("hourlyRate must be a positive number");
+    }
+    await ensureAppUser(userId);
+    const id = genId("cli");
+    const initials = (input.initials?.trim() || deriveInitials(name))
+      .slice(0, 3)
+      .toUpperCase();
+    const accent = input.accentColor?.trim() || "#FF7A1A";
+    const rows = (await sql`
+      INSERT INTO client (id, user_id, name, initials, accent_color, hourly_rate)
+      VALUES (${id}, ${userId}, ${name}, ${initials}, ${accent}, ${input.hourlyRate})
+      RETURNING id, name, initials, accent_color, hourly_rate, created_at
+    `) as ClientRow[];
+    return mapClient(rows[0]);
+  },
+
+  // ─── Projects ──────────────────────────────────────────────
+  async listProjects(userId: string, clientId?: string): Promise<Project[]> {
+    const rows = (clientId
+      ? await sql`
+          SELECT id, client_id, name, description, color, created_at
+          FROM project
+          WHERE user_id = ${userId} AND client_id = ${clientId}
+          ORDER BY created_at DESC
+        `
+      : await sql`
+          SELECT id, client_id, name, description, color, created_at
+          FROM project
+          WHERE user_id = ${userId}
+          ORDER BY created_at DESC
+        `) as ProjectRow[];
+    return rows.map(mapProject);
+  },
+
+  async getProject(userId: string, id: string): Promise<Project | undefined> {
+    const rows = (await sql`
+      SELECT id, client_id, name, description, color, created_at
+      FROM project
+      WHERE user_id = ${userId} AND id = ${id}
+      LIMIT 1
+    `) as ProjectRow[];
+    return rows[0] ? mapProject(rows[0]) : undefined;
+  },
+
+  async createProject(
+    userId: string,
+    input: {
+      clientId: string;
+      name: string;
+      description?: string;
+      color?: string;
+    },
+  ): Promise<Project> {
+    const client = await store.getClient(userId, input.clientId);
+    if (!client) throw new Error("Unknown client");
+    const name = input.name.trim();
+    if (!name) throw new Error("Name is required");
+    const id = genId("prj");
+    const description = input.description?.trim() || null;
+    const color = input.color?.trim() || client.accentColor;
+    const rows = (await sql`
+      INSERT INTO project (id, user_id, client_id, name, description, color)
+      VALUES (${id}, ${userId}, ${input.clientId}, ${name}, ${description}, ${color})
+      RETURNING id, client_id, name, description, color, created_at
+    `) as ProjectRow[];
+    return mapProject(rows[0]);
+  },
+
+  // ─── Skills ────────────────────────────────────────────────
+  async listSkills(userId: string): Promise<Skill[]> {
+    const rows = (await sql`
+      SELECT id, name, description, category, baseline_hours, rate_modifier, tags
+      FROM skill
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+    `) as SkillRow[];
+    return rows.map(mapSkill);
+  },
+
+  async getSkill(userId: string, id: string): Promise<Skill | undefined> {
+    const rows = (await sql`
+      SELECT id, name, description, category, baseline_hours, rate_modifier, tags
+      FROM skill
+      WHERE user_id = ${userId} AND id = ${id}
+      LIMIT 1
+    `) as SkillRow[];
+    return rows[0] ? mapSkill(rows[0]) : undefined;
+  },
+
+  async createSkill(
+    userId: string,
+    input: {
+      name: string;
+      description?: string;
+      category: SkillCategory;
+      baselineHours: number;
+      rateModifier: number;
+      tags?: string[];
+    },
+  ): Promise<Skill> {
+    const name = input.name.trim();
+    if (!name) throw new Error("Name is required");
+    if (!Number.isFinite(input.baselineHours) || input.baselineHours <= 0) {
+      throw new Error("baselineHours must be positive");
+    }
+    if (!Number.isFinite(input.rateModifier) || input.rateModifier <= 0) {
+      throw new Error("rateModifier must be positive");
+    }
+    await ensureAppUser(userId);
+    const id = genId("skl");
+    const tags = (input.tags ?? [])
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .slice(0, 6);
+    const description = input.description?.trim() || "";
+    const rows = (await sql`
+      INSERT INTO skill (id, user_id, name, description, category, baseline_hours, rate_modifier, tags)
+      VALUES (${id}, ${userId}, ${name}, ${description}, ${input.category}, ${input.baselineHours}, ${input.rateModifier}, ${tags})
+      RETURNING id, name, description, category, baseline_hours, rate_modifier, tags
+    `) as SkillRow[];
+    return mapSkill(rows[0]);
+  },
+
+  // ─── Runs ──────────────────────────────────────────────────
+  async listRuns(
+    userId: string,
+    filter?: {
+      clientId?: string;
+      projectId?: string;
+      status?: RunStatus;
+      limit?: number;
+    },
+  ): Promise<Run[]> {
+    const limit = filter?.limit ?? 1000;
+    const rows = (await sql`
+      SELECT id, client_id, project_id, skill_id, agent_name, status, prompt, cwd,
+             pricing_mode, started_at, ended_at, runtime_sec, active_sec,
+             tokens_in, tokens_out, cache_hits, cost_usd,
+             baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+      FROM run
+      WHERE user_id = ${userId}
+        AND (${filter?.clientId ?? null}::text IS NULL OR client_id = ${filter?.clientId ?? null})
+        AND (${filter?.projectId ?? null}::text IS NULL OR project_id = ${filter?.projectId ?? null})
+        AND (${filter?.status ?? null}::text IS NULL OR status = ${filter?.status ?? null})
+      ORDER BY started_at DESC
+      LIMIT ${limit}
+    `) as RunRow[];
+    return rows.map(mapRun);
+  },
+
+  async getRun(userId: string, id: string): Promise<Run | undefined> {
+    const rows = (await sql`
+      SELECT id, client_id, project_id, skill_id, agent_name, status, prompt, cwd,
+             pricing_mode, started_at, ended_at, runtime_sec, active_sec,
+             tokens_in, tokens_out, cache_hits, cost_usd,
+             baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+      FROM run
+      WHERE user_id = ${userId} AND id = ${id}
+      LIMIT 1
+    `) as RunRow[];
+    return rows[0] ? mapRun(rows[0]) : undefined;
+  },
+
+  async listRunEvents(userId: string, runId: string): Promise<RunEvent[]> {
+    const rows = (await sql`
+      SELECT id, run_id, ts, kind, label, detail, duration_ms
+      FROM run_event
+      WHERE user_id = ${userId} AND run_id = ${runId}
+      ORDER BY ts ASC
+    `) as RunEventRow[];
+    return rows.map(mapRunEvent);
+  },
+
+  async startRun(
+    userId: string,
+    input: {
+      clientId: string;
+      projectId: string;
+      skillId: string;
+      agentName?: string;
+      prompt?: string;
+      cwd?: string;
+      pricingMode?: "baseline" | "time_plus_tokens";
+    },
+  ): Promise<Run> {
+    const [client, project, skill] = await Promise.all([
+      store.getClient(userId, input.clientId),
+      store.getProject(userId, input.projectId),
+      store.getSkill(userId, input.skillId),
+    ]);
     if (!client || !project || !skill) {
       throw new Error("Unknown client / project / skill");
     }
-    const run: Run = {
-      id: genId("run"),
-      clientId: client.id,
-      projectId: project.id,
-      skillId: skill.id,
-      agentName: input.agentName ?? "claude-opus-4-7",
-      status: "running",
-      prompt: input.prompt,
-      startedAt: new Date().toISOString(),
-      runtimeSec: 0,
-      activeSec: 0,
-      tokensIn: 0,
-      tokensOut: 0,
-      cacheHits: 0,
-      costUsd: 0,
-      baselineHours: skill.baselineHours,
-      rateUsd: client.hourlyRate * skill.rateModifier,
-      billableUsd: 0,
-      cwd: input.cwd,
-      pricingMode: input.pricingMode ?? "time_plus_tokens",
-    };
-    s.runs.unshift(run);
-    s.events.push({
-      id: genId("evt"),
-      runId: run.id,
-      ts: run.startedAt,
-      kind: "milestone",
-      label: `Run started · ${skill.name}`,
-      detail: input.prompt,
-    });
+    const id = genId("run");
+    const agentName = input.agentName ?? "claude-opus-4-7";
+    const pricingMode = input.pricingMode ?? "time_plus_tokens";
+    const rateUsd = client.hourlyRate * skill.rateModifier;
+    const rows = (await sql`
+      INSERT INTO run (
+        id, user_id, client_id, project_id, skill_id, agent_name, status,
+        prompt, cwd, pricing_mode,
+        baseline_hours, rate_usd
+      )
+      VALUES (
+        ${id}, ${userId}, ${input.clientId}, ${input.projectId}, ${input.skillId},
+        ${agentName}, 'running',
+        ${input.prompt ?? null}, ${input.cwd ?? null}, ${pricingMode},
+        ${skill.baselineHours}, ${rateUsd}
+      )
+      RETURNING id, client_id, project_id, skill_id, agent_name, status, prompt, cwd,
+                pricing_mode, started_at, ended_at, runtime_sec, active_sec,
+                tokens_in, tokens_out, cache_hits, cost_usd,
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+    `) as RunRow[];
+    const run = mapRun(rows[0]);
+    await sql`
+      INSERT INTO run_event (id, user_id, run_id, kind, label, detail)
+      VALUES (
+        ${genId("evt")}, ${userId}, ${run.id},
+        'milestone', ${`Run started · ${skill.name}`},
+        ${input.prompt ?? null}
+      )
+    `;
     return run;
   },
 
-  recordEvent: (input: {
-    runId: string;
-    kind: RunEventKind;
-    label: string;
-    detail?: string;
-    durationMs?: number;
-    tokensIn?: number;
-    tokensOut?: number;
-    activeMs?: number;
-  }) => {
-    const s = getStore();
-    const run = s.runs.find((r) => r.id === input.runId);
+  async recordEvent(
+    userId: string,
+    input: {
+      runId: string;
+      kind: RunEventKind;
+      label: string;
+      detail?: string;
+      durationMs?: number;
+      tokensIn?: number;
+      tokensOut?: number;
+      activeMs?: number;
+    },
+  ): Promise<RunEvent> {
+    const run = await store.getRun(userId, input.runId);
     if (!run) throw new Error("Unknown run");
-    const event: RunEvent = {
-      id: genId("evt"),
-      runId: run.id,
-      ts: new Date().toISOString(),
-      kind: input.kind,
-      label: input.label,
-      detail: input.detail,
-      durationMs: input.durationMs,
-    };
-    s.events.push(event);
-    if (input.tokensIn) run.tokensIn += input.tokensIn;
-    if (input.tokensOut) run.tokensOut += input.tokensOut;
-    if (input.activeMs) run.activeSec += Math.round(input.activeMs / 1000);
-    run.costUsd = Number(
-      ((run.tokensIn * 3 + run.tokensOut * 15) / 1_000_000).toFixed(4),
-    );
-    run.runtimeSec = Math.round(
-      (Date.now() - new Date(run.startedAt).getTime()) / 1000,
-    );
-    return event;
-  },
-
-  requestApproval: (input: {
-    runId: string;
-    question: string;
-    context?: string;
-  }) => {
-    const s = getStore();
-    const run = s.runs.find((r) => r.id === input.runId);
-    if (!run) throw new Error("Unknown run");
-    const approval: Approval = {
-      id: genId("apr"),
-      runId: run.id,
-      question: input.question,
-      context: input.context,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    };
-    s.approvals.push(approval);
-    run.status = "awaiting_approval";
-    s.events.push({
-      id: genId("evt"),
-      runId: run.id,
-      ts: approval.createdAt,
-      kind: "approval_requested",
-      label: input.question,
-      detail: input.context,
-    });
-    return approval;
-  },
-
-  resolveApproval: (input: {
-    approvalId: string;
-    status: "approved" | "rejected";
-    resolvedBy?: string;
-  }) => {
-    const s = getStore();
-    const apr = s.approvals.find((a) => a.id === input.approvalId);
-    if (!apr) throw new Error("Unknown approval");
-    apr.status = input.status;
-    apr.resolvedAt = new Date().toISOString();
-    apr.resolvedBy = input.resolvedBy;
-    const run = s.runs.find((r) => r.id === apr.runId);
-    if (run) {
-      run.status = input.status === "approved" ? "running" : "cancelled";
-      s.events.push({
-        id: genId("evt"),
-        runId: run.id,
-        ts: apr.resolvedAt!,
-        kind: "approval_resolved",
-        label: `${input.status === "approved" ? "Approved" : "Rejected"}: ${apr.question}`,
-      });
+    const id = genId("evt");
+    const rows = (await sql`
+      INSERT INTO run_event (id, user_id, run_id, kind, label, detail, duration_ms)
+      VALUES (
+        ${id}, ${userId}, ${input.runId},
+        ${input.kind}, ${input.label},
+        ${input.detail ?? null}, ${input.durationMs ?? null}
+      )
+      RETURNING id, run_id, ts, kind, label, detail, duration_ms
+    `) as RunEventRow[];
+    const tokensIn = input.tokensIn ?? 0;
+    const tokensOut = input.tokensOut ?? 0;
+    const activeAdd = Math.round((input.activeMs ?? 0) / 1000);
+    if (tokensIn || tokensOut || activeAdd) {
+      await sql`
+        UPDATE run
+        SET tokens_in = tokens_in + ${tokensIn},
+            tokens_out = tokens_out + ${tokensOut},
+            active_sec = active_sec + ${activeAdd},
+            cost_usd = ROUND(((tokens_in + ${tokensIn}) * 3 + (tokens_out + ${tokensOut}) * 15)::numeric / 1000000, 4),
+            runtime_sec = GREATEST(EXTRACT(EPOCH FROM (NOW() - started_at))::int, runtime_sec)
+        WHERE user_id = ${userId} AND id = ${input.runId}
+      `;
+    } else {
+      await sql`
+        UPDATE run
+        SET runtime_sec = GREATEST(EXTRACT(EPOCH FROM (NOW() - started_at))::int, runtime_sec)
+        WHERE user_id = ${userId} AND id = ${input.runId}
+      `;
     }
+    return mapRunEvent(rows[0]);
+  },
+
+  async requestApproval(
+    userId: string,
+    input: { runId: string; question: string; context?: string },
+  ): Promise<Approval> {
+    const run = await store.getRun(userId, input.runId);
+    if (!run) throw new Error("Unknown run");
+    const id = genId("apr");
+    const rows = (await sql`
+      INSERT INTO approval (id, user_id, run_id, question, context, status)
+      VALUES (${id}, ${userId}, ${input.runId}, ${input.question}, ${input.context ?? null}, 'pending')
+      RETURNING id, run_id, question, context, status, created_at, resolved_at, resolved_by
+    `) as ApprovalRow[];
+    await sql`UPDATE run SET status = 'awaiting_approval' WHERE user_id = ${userId} AND id = ${input.runId}`;
+    await sql`
+      INSERT INTO run_event (id, user_id, run_id, kind, label, detail)
+      VALUES (${genId("evt")}, ${userId}, ${input.runId}, 'approval_requested', ${input.question}, ${input.context ?? null})
+    `;
+    return mapApproval(rows[0]);
+  },
+
+  async resolveApproval(
+    userId: string,
+    input: {
+      approvalId: string;
+      status: "approved" | "rejected";
+      resolvedBy?: string;
+    },
+  ): Promise<Approval> {
+    const rows = (await sql`
+      UPDATE approval
+      SET status = ${input.status},
+          resolved_at = NOW(),
+          resolved_by = ${input.resolvedBy ?? null}
+      WHERE user_id = ${userId} AND id = ${input.approvalId}
+      RETURNING id, run_id, question, context, status, created_at, resolved_at, resolved_by
+    `) as ApprovalRow[];
+    if (!rows[0]) throw new Error("Unknown approval");
+    const apr = mapApproval(rows[0]);
+    const nextRunStatus = input.status === "approved" ? "running" : "cancelled";
+    await sql`UPDATE run SET status = ${nextRunStatus} WHERE user_id = ${userId} AND id = ${apr.runId}`;
+    await sql`
+      INSERT INTO run_event (id, user_id, run_id, kind, label)
+      VALUES (
+        ${genId("evt")}, ${userId}, ${apr.runId},
+        'approval_resolved',
+        ${`${input.status === "approved" ? "Approved" : "Rejected"}: ${apr.question}`}
+      )
+    `;
     return apr;
   },
 
-  endRun: (input: {
-    runId: string;
-    status: "shipped" | "failed" | "cancelled";
-    deliverableUrl?: string;
-    notes?: string;
-  }) => {
-    const s = getStore();
-    const run = s.runs.find((r) => r.id === input.runId);
+  async endRun(
+    userId: string,
+    input: {
+      runId: string;
+      status: "shipped" | "failed" | "cancelled";
+      deliverableUrl?: string;
+      notes?: string;
+    },
+  ): Promise<Run> {
+    const run = await store.getRun(userId, input.runId);
     if (!run) throw new Error("Unknown run");
-    run.status = input.status;
-    run.endedAt = new Date().toISOString();
-    run.deliverableUrl = input.deliverableUrl;
-    run.notes = input.notes;
-    run.runtimeSec = Math.round(
-      (new Date(run.endedAt).getTime() - new Date(run.startedAt).getTime()) / 1000,
-    );
+    const startedAt = new Date(run.startedAt).getTime();
+    const runtimeSec = Math.round((Date.now() - startedAt) / 1000);
+    let billable = 0;
     if (input.status === "shipped") {
-      const runtimeHours = run.runtimeSec / 3600;
-      if (run.pricingMode === "baseline") {
-        run.billableUsd = Number((run.baselineHours * run.rateUsd).toFixed(2));
-      } else {
-        run.billableUsd = Number(
-          (runtimeHours * run.rateUsd + run.costUsd).toFixed(2),
-        );
-      }
+      const runtimeHours = runtimeSec / 3600;
+      billable =
+        run.pricingMode === "baseline"
+          ? Number((run.baselineHours * run.rateUsd).toFixed(2))
+          : Number((runtimeHours * run.rateUsd + run.costUsd).toFixed(2));
     }
-    s.events.push({
-      id: genId("evt"),
-      runId: run.id,
-      ts: run.endedAt,
-      kind: "milestone",
-      label: `Run ${input.status}`,
-      detail: input.deliverableUrl,
-    });
-    return run;
+    const rows = (await sql`
+      UPDATE run
+      SET status = ${input.status},
+          ended_at = NOW(),
+          runtime_sec = ${runtimeSec},
+          deliverable_url = ${input.deliverableUrl ?? null},
+          notes = ${input.notes ?? null},
+          billable_usd = ${billable}
+      WHERE user_id = ${userId} AND id = ${input.runId}
+      RETURNING id, client_id, project_id, skill_id, agent_name, status, prompt, cwd,
+                pricing_mode, started_at, ended_at, runtime_sec, active_sec,
+                tokens_in, tokens_out, cache_hits, cost_usd,
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+    `) as RunRow[];
+    await sql`
+      INSERT INTO run_event (id, user_id, run_id, kind, label, detail)
+      VALUES (
+        ${genId("evt")}, ${userId}, ${input.runId},
+        'milestone', ${`Run ${input.status}`},
+        ${input.deliverableUrl ?? null}
+      )
+    `;
+    return mapRun(rows[0]);
   },
 
-  listApprovals: (status?: "pending" | "approved" | "rejected") => {
-    const s = getStore();
-    return status
-      ? s.approvals.filter((a) => a.status === status)
-      : s.approvals.slice();
+  // ─── Approvals ─────────────────────────────────────────────
+  async listApprovals(
+    userId: string,
+    status?: ApprovalStatus,
+  ): Promise<Approval[]> {
+    const rows = (status
+      ? await sql`
+          SELECT id, run_id, question, context, status, created_at, resolved_at, resolved_by
+          FROM approval
+          WHERE user_id = ${userId} AND status = ${status}
+          ORDER BY created_at DESC
+        `
+      : await sql`
+          SELECT id, run_id, question, context, status, created_at, resolved_at, resolved_by
+          FROM approval
+          WHERE user_id = ${userId}
+          ORDER BY created_at DESC
+        `) as ApprovalRow[];
+    return rows.map(mapApproval);
   },
 
-  listInvoices: (clientId?: string) => {
-    const s = getStore();
-    return clientId
-      ? s.invoices.filter((i) => i.clientId === clientId)
-      : s.invoices.slice();
+  // ─── Invoices ──────────────────────────────────────────────
+  async listInvoices(userId: string, clientId?: string): Promise<Invoice[]> {
+    const rows = (clientId
+      ? await sql`
+          SELECT id, client_id, number, status, period_start, period_end,
+                 issued_at, due_at, paid_at, line_items,
+                 subtotal_usd, tax_usd, total_usd
+          FROM invoice
+          WHERE user_id = ${userId} AND client_id = ${clientId}
+          ORDER BY period_end DESC
+        `
+      : await sql`
+          SELECT id, client_id, number, status, period_start, period_end,
+                 issued_at, due_at, paid_at, line_items,
+                 subtotal_usd, tax_usd, total_usd
+          FROM invoice
+          WHERE user_id = ${userId}
+          ORDER BY period_end DESC
+        `) as InvoiceRow[];
+    return rows.map(mapInvoice);
   },
-  getInvoice: (id: string) => getStore().invoices.find((i) => i.id === id),
 
-  leverage: (windowDays = 30) => {
-    const s = getStore();
-    const cutoff = Date.now() - windowDays * DAY;
-    const rows = s.runs.filter(
-      (r) =>
-        new Date(r.startedAt).getTime() >= cutoff &&
-        r.status === "shipped",
-    );
-    const runtimeHours = rows.reduce((acc, r) => acc + r.runtimeSec / 3600, 0);
-    const activeHours = rows.reduce((acc, r) => acc + r.activeSec / 3600, 0);
-    const effectiveHours = rows.reduce((acc, r) => acc + r.baselineHours, 0);
-    const billableUsd = rows.reduce((acc, r) => acc + r.billableUsd, 0);
-    const costUsd = rows.reduce((acc, r) => acc + r.costUsd, 0);
+  async getInvoice(
+    userId: string,
+    id: string,
+  ): Promise<Invoice | undefined> {
+    const rows = (await sql`
+      SELECT id, client_id, number, status, period_start, period_end,
+             issued_at, due_at, paid_at, line_items,
+             subtotal_usd, tax_usd, total_usd
+      FROM invoice
+      WHERE user_id = ${userId} AND id = ${id}
+      LIMIT 1
+    `) as InvoiceRow[];
+    return rows[0] ? mapInvoice(rows[0]) : undefined;
+  },
+
+  async createInvoice(
+    userId: string,
+    input: { clientId: string; windowDays?: number; taxPct?: number },
+  ): Promise<Invoice> {
+    const client = await store.getClient(userId, input.clientId);
+    if (!client) throw new Error("Unknown client");
+    const win = input.windowDays ?? 30;
+    const cutoff = new Date(Date.now() - win * DAY).toISOString();
+    const eligible = (await sql`
+      SELECT r.id, r.skill_id, r.baseline_hours, r.rate_usd, r.billable_usd,
+             s.name AS skill_name
+      FROM run r
+      JOIN skill s ON s.id = r.skill_id
+      WHERE r.user_id = ${userId}
+        AND r.client_id = ${input.clientId}
+        AND r.status = 'shipped'
+        AND r.started_at >= ${cutoff}
+        AND NOT EXISTS (
+          SELECT 1 FROM invoice i, jsonb_array_elements(i.line_items) li
+          WHERE i.user_id = ${userId}
+            AND (li ->> 'runId') = r.id
+        )
+      ORDER BY r.started_at ASC
+    `) as Array<{
+      id: string;
+      skill_id: string;
+      baseline_hours: string;
+      rate_usd: string;
+      billable_usd: string;
+      skill_name: string;
+    }>;
+    if (eligible.length === 0) {
+      throw new Error("No uninvoiced shipped runs for this client in the window");
+    }
+    const lineItems: InvoiceLineItem[] = eligible.map((r) => ({
+      runId: r.id,
+      skillName: r.skill_name,
+      description: `${r.skill_name} — run ${r.id}`,
+      hours: num(r.baseline_hours),
+      rateUsd: num(r.rate_usd),
+      amountUsd: num(r.billable_usd),
+    }));
+    const subtotal = lineItems.reduce((s, li) => s + li.amountUsd, 0);
+    const taxPct = Math.max(0, input.taxPct ?? 0);
+    const tax = Number(((subtotal * taxPct) / 100).toFixed(2));
+    const total = Number((subtotal + tax).toFixed(2));
+    const now = new Date();
+    const numCount = (await sql`
+      SELECT COUNT(*)::int AS n FROM invoice WHERE user_id = ${userId}
+    `) as Array<{ n: number }>;
+    const numSeq = (numCount[0]?.n ?? 0) + 1;
+    const invoiceNumber = `INV-${now.getUTCFullYear()}-${String(100 + numSeq).padStart(4, "0")}`;
+    const id = genId("inv");
+    const periodStart = new Date(Date.now() - win * DAY).toISOString();
+    const periodEnd = now.toISOString();
+    const dueAt = new Date(Date.now() + 14 * DAY).toISOString();
+    const rows = (await sql`
+      INSERT INTO invoice (
+        id, user_id, client_id, number, status,
+        period_start, period_end, due_at,
+        line_items, subtotal_usd, tax_usd, total_usd
+      )
+      VALUES (
+        ${id}, ${userId}, ${input.clientId}, ${invoiceNumber}, 'draft',
+        ${periodStart}, ${periodEnd}, ${dueAt},
+        ${JSON.stringify(lineItems)}::jsonb,
+        ${subtotal.toFixed(2)}, ${tax.toFixed(2)}, ${total.toFixed(2)}
+      )
+      RETURNING id, client_id, number, status, period_start, period_end,
+                issued_at, due_at, paid_at, line_items,
+                subtotal_usd, tax_usd, total_usd
+    `) as InvoiceRow[];
+    return mapInvoice(rows[0]);
+  },
+
+  async issueInvoice(userId: string, id: string): Promise<Invoice> {
+    const inv = await store.getInvoice(userId, id);
+    if (!inv) throw new Error("Unknown invoice");
+    if (inv.status !== "draft") throw new Error("Only draft invoices can be issued");
+    const dueAt = inv.dueAt ?? new Date(Date.now() + 14 * DAY).toISOString();
+    const rows = (await sql`
+      UPDATE invoice
+      SET status = 'sent',
+          issued_at = NOW(),
+          due_at = ${dueAt}
+      WHERE user_id = ${userId} AND id = ${id}
+      RETURNING id, client_id, number, status, period_start, period_end,
+                issued_at, due_at, paid_at, line_items,
+                subtotal_usd, tax_usd, total_usd
+    `) as InvoiceRow[];
+    return mapInvoice(rows[0]);
+  },
+
+  async payInvoice(userId: string, id: string): Promise<Invoice> {
+    const rows = (await sql`
+      UPDATE invoice
+      SET status = 'paid',
+          paid_at = NOW(),
+          issued_at = COALESCE(issued_at, NOW())
+      WHERE user_id = ${userId} AND id = ${id}
+      RETURNING id, client_id, number, status, period_start, period_end,
+                issued_at, due_at, paid_at, line_items,
+                subtotal_usd, tax_usd, total_usd
+    `) as InvoiceRow[];
+    if (!rows[0]) throw new Error("Unknown invoice");
+    return mapInvoice(rows[0]);
+  },
+
+  // ─── Leverage ──────────────────────────────────────────────
+  async leverage(
+    userId: string,
+    windowDays = 30,
+  ): Promise<LeverageSnapshot> {
+    const cutoff = new Date(Date.now() - windowDays * DAY).toISOString();
+    const rows = (await sql`
+      SELECT
+        COUNT(*)::int AS runs,
+        COALESCE(SUM(runtime_sec)::numeric / 3600, 0) AS runtime_hours,
+        COALESCE(SUM(active_sec)::numeric / 3600, 0) AS active_hours,
+        COALESCE(SUM(baseline_hours), 0) AS effective_hours,
+        COALESCE(SUM(billable_usd), 0) AS billable_usd,
+        COALESCE(SUM(cost_usd), 0) AS cost_usd
+      FROM run
+      WHERE user_id = ${userId}
+        AND status = 'shipped'
+        AND started_at >= ${cutoff}
+    `) as Array<{
+      runs: number;
+      runtime_hours: string;
+      active_hours: string;
+      effective_hours: string;
+      billable_usd: string;
+      cost_usd: string;
+    }>;
+    const r = rows[0];
+    const runtimeHours = num(r?.runtime_hours);
+    const effectiveHours = num(r?.effective_hours);
+    const billableUsd = num(r?.billable_usd);
+    const costUsd = num(r?.cost_usd);
     const margin = billableUsd - costUsd;
     return {
       windowDays,
-      effectiveHours: Number(effectiveHours.toFixed(2)),
+      runs: r?.runs ?? 0,
       runtimeHours: Number(runtimeHours.toFixed(2)),
-      activeHours: Number(activeHours.toFixed(2)),
-      multiplier: runtimeHours > 0 ? Number((effectiveHours / runtimeHours).toFixed(2)) : 0,
+      activeHours: Number(num(r?.active_hours).toFixed(2)),
+      effectiveHours: Number(effectiveHours.toFixed(2)),
+      multiplier:
+        runtimeHours > 0 ? Number((effectiveHours / runtimeHours).toFixed(2)) : 0,
       billableUsd: Number(billableUsd.toFixed(2)),
       costUsd: Number(costUsd.toFixed(4)),
       marginUsd: Number(margin.toFixed(2)),
-      marginPct: billableUsd > 0 ? Number(((margin / billableUsd) * 100).toFixed(2)) : 0,
-      runs: rows.length,
+      marginPct:
+        billableUsd > 0
+          ? Number(((margin / billableUsd) * 100).toFixed(2))
+          : 0,
     };
   },
 };
+
+export type Store = typeof store;

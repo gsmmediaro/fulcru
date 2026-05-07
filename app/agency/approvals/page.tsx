@@ -1,23 +1,30 @@
 import { RiShieldCheckLine } from "@remixicon/react";
 import { AppShell } from "@/components/layout/app-shell";
-import { api } from "@/lib/agency/store";
+import { getApi } from "@/lib/agency/server-api";
 import { ApprovalsView } from "@/components/agency/approvals-view";
+import { getT } from "@/lib/i18n/server";
 import { cn } from "@/lib/cn";
 
-export default function ApprovalsPage() {
-  const all = api.listApprovals();
+export default async function ApprovalsPage() {
+  const { t } = await getT();
+  const api = await getApi();
+  const all = await api.listApprovals();
   const pendingApprovals = all.filter((a) => a.status === "pending");
   const resolvedApprovals = all.filter((a) => a.status !== "pending");
 
-  const enrich = (a: (typeof all)[number]) => {
-    const run = api.getRun(a.runId) ?? null;
-    const skill = run ? (api.getSkill(run.skillId) ?? null) : null;
-    const client = run ? (api.getClient(run.clientId) ?? null) : null;
+  const enrich = async (a: (typeof all)[number]) => {
+    const run = (await api.getRun(a.runId)) ?? null;
+    const [skill, client] = await Promise.all([
+      run ? api.getSkill(run.skillId).then((v) => v ?? null) : Promise.resolve(null),
+      run ? api.getClient(run.clientId).then((v) => v ?? null) : Promise.resolve(null),
+    ]);
     return { approval: a, run, skill, client };
   };
 
-  const pending = pendingApprovals.map(enrich);
-  const resolved = resolvedApprovals.map(enrich);
+  const [pending, resolved] = await Promise.all([
+    Promise.all(pendingApprovals.map(enrich)),
+    Promise.all(resolvedApprovals.map(enrich)),
+  ]);
 
   const now = Date.now();
   const avgWaitMinutes =
@@ -44,11 +51,11 @@ export default function ApprovalsPage() {
           <RiShieldCheckLine size={20} />
         </span>
         <div className="flex flex-col">
-          <h1 className="text-[26px] font-medium leading-[34px] tracking-tight sm:text-[28px] md:text-[32px] md:leading-[42px]">
-            Approvals
+          <h1 className="text-[26px] font-semibold leading-[32px] tracking-tight sm:text-[28px] sm:leading-[34px]">
+            {t("approvals.title")}
           </h1>
           <p className="mt-[2px] text-[13px] text-[var(--color-text-soft)]">
-            Human-in-the-loop gates flagged by agent runs.
+            {t("approvals.subtitle")}
           </p>
         </div>
       </div>

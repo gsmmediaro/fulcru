@@ -27,7 +27,7 @@ export function MetricRow({
   return (
     <div
       className={cn(
-        "rounded-[12px] bg-[var(--color-bg-surface)] p-[16px]",
+        "rounded-[8px] bg-[var(--color-bg-surface)] p-[16px]",
         "ring-1 ring-[var(--color-stroke-soft)]",
         className,
       )}

@@ -4,8 +4,10 @@ import * as React from "react";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 import { MobileDrawer } from "./mobile-drawer";
+import { useLocale } from "@/lib/i18n/provider";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const { t } = useLocale();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
   // Close drawer when viewport widens past xl (≥1280px)
@@ -34,16 +36,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </main>
           <footer className="border-t border-[var(--color-stroke-soft)] px-[16px] py-[18px] sm:px-[24px] lg:px-[32px]">
             <div className="mx-auto flex w-full max-w-[1136px] flex-col gap-[12px] text-[12px] text-[var(--color-text-soft)] sm:flex-row sm:items-center sm:justify-between">
-              <span>Fulcra © {new Date().getFullYear()} · Bill the leverage.</span>
+              <span>{t("footer.tagline", { year: new Date().getFullYear() })}</span>
               <div className="flex flex-wrap items-center gap-x-[16px] gap-y-[6px] sm:gap-x-[20px]">
                 <a className="hover:text-[var(--color-text-strong)]" href="#">
-                  Terms of Service
+                  {t("footer.terms")}
                 </a>
                 <a className="hover:text-[var(--color-text-strong)]" href="#">
-                  Privacy Policy
+                  {t("footer.privacy")}
                 </a>
                 <a className="hover:text-[var(--color-text-strong)]" href="#">
-                  Acceptable Use Policy
+                  {t("footer.aup")}
                 </a>
               </div>
             </div>

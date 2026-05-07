@@ -2,7 +2,8 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { tokenCostUsd } from "./pricing";
-import { api, getStore } from "./store";
+import { sql } from "@/lib/db";
+import { store } from "./store";
 import type { Run, RunEvent } from "./types";
 
 export type EnrichmentResult = {
@@ -216,15 +217,17 @@ export function parseSession(filePath: string): SessionStats {
   };
 }
 
-export function enrichRunFromSession(input: {
-  runId: string;
-  cwd?: string;
-  sinceIso?: string;
-  untilIso?: string;
-  filePath?: string;
-}): EnrichmentResult {
-  const store = getStore();
-  const run = store.runs.find((r) => r.id === input.runId);
+export async function enrichRunFromSession(
+  userId: string,
+  input: {
+    runId: string;
+    cwd?: string;
+    sinceIso?: string;
+    untilIso?: string;
+    filePath?: string;
+  },
+): Promise<EnrichmentResult> {
+  const run = await store.getRun(userId, input.runId);
   if (!run) {
     return {
       runId: input.runId,
@@ -321,22 +324,28 @@ export function enrichRunFromSession(input: {
     });
   }
 
-  run.tokensIn = totalIn + totalCw;
-  run.tokensOut = totalOut;
-  run.cacheHits = totalCr;
-  run.costUsd = Number(totalCost.toFixed(4));
-  if (run.cwd === undefined && cwd) run.cwd = cwd;
-
+  const tokensIn = totalIn + totalCw;
+  const tokensOut = totalOut;
+  const cacheHits = totalCr;
+  const costUsd = Number(totalCost.toFixed(4));
+  let billableUsd = run.billableUsd;
   if (run.status === "shipped") {
     const runtimeHours = run.runtimeSec / 3600;
-    if (run.pricingMode === "baseline") {
-      run.billableUsd = Number((run.baselineHours * run.rateUsd).toFixed(2));
-    } else {
-      run.billableUsd = Number(
-        (runtimeHours * run.rateUsd + run.costUsd).toFixed(2),
-      );
-    }
+    billableUsd =
+      run.pricingMode === "baseline"
+        ? Number((run.baselineHours * run.rateUsd).toFixed(2))
+        : Number((runtimeHours * run.rateUsd + costUsd).toFixed(2));
   }
+  await sql`
+    UPDATE run
+    SET tokens_in = ${tokensIn},
+        tokens_out = ${tokensOut},
+        cache_hits = ${cacheHits},
+        cost_usd = ${costUsd},
+        billable_usd = ${billableUsd},
+        cwd = COALESCE(cwd, ${cwd ?? null})
+    WHERE user_id = ${userId} AND id = ${run.id}
+  `;
 
   return {
     runId: run.id,
@@ -345,106 +354,139 @@ export function enrichRunFromSession(input: {
     tokensOut: totalOut,
     cacheWrite: totalCw,
     cacheRead: totalCr,
-    tokenCostUsd: Number(totalCost.toFixed(4)),
+    tokenCostUsd: costUsd,
     modelTotals: modelMsgs,
     matchedEvents: matched,
     enriched: true,
   };
 }
 
-export function importSessionAsRun(input: {
-  stats: SessionStats;
-  clientId: string;
-  projectId: string;
-  skillId: string;
-  agentName?: string;
-  prompt?: string;
-  hourlyRate?: number;
-  pricingMode?: "time_plus_tokens" | "baseline";
-}): { run: Run; events: RunEvent[] } {
-  const s = input.stats;
-  const store = getStore();
-  const client = store.clients.find((c) => c.id === input.clientId);
-  const skill = store.skills.find((sk) => sk.id === input.skillId);
-  if (!client || !skill) throw new Error("Unknown client or skill");
+function genId(prefix: string): string {
+  return `${prefix}_${Math.random().toString(36).slice(2, 8)}${Date.now()
+    .toString(36)
+    .slice(-4)}`;
+}
 
-  const existing = store.runs.find(
-    (r) => r.notes && r.notes.includes(`session:${s.sessionId}`),
-  );
-  if (existing) {
-    store.runs = store.runs.filter((r) => r.id !== existing.id);
-    store.events = store.events.filter((e) => e.runId !== existing.id);
+export async function importSessionAsRun(
+  userId: string,
+  input: {
+    stats: SessionStats;
+    clientId: string;
+    projectId: string;
+    skillId: string;
+    agentName?: string;
+    prompt?: string;
+    hourlyRate?: number;
+    pricingMode?: "time_plus_tokens" | "baseline";
+  },
+): Promise<{ run: Run; events: RunEvent[] }> {
+  const s = input.stats;
+  const [client, project, skill] = await Promise.all([
+    store.getClient(userId, input.clientId),
+    store.getProject(userId, input.projectId),
+    store.getSkill(userId, input.skillId),
+  ]);
+  if (!client || !project || !skill) {
+    throw new Error("Unknown client / project / skill");
   }
 
-  const run = api.startRun({
-    clientId: input.clientId,
-    projectId: input.projectId,
-    skillId: input.skillId,
-    agentName: input.agentName ?? Object.keys(s.modelTotals)[0] ?? "claude-opus-4-7",
-    prompt: input.prompt ?? `Imported Claude Code session ${s.sessionId.slice(0, 8)}`,
-  });
+  // Re-import: drop any prior run referencing this sessionId
+  const sessionTag = `session:${s.sessionId}`;
+  await sql`
+    DELETE FROM run
+    WHERE user_id = ${userId}
+      AND notes LIKE ${`%${sessionTag}%`}
+  `;
 
-  run.startedAt = s.startedAt;
-  run.endedAt = s.endedAt;
-  run.runtimeSec = s.wallSec;
-  run.activeSec = s.activeSec;
-  run.tokensIn = s.tokensIn + s.cacheWrite;
-  run.tokensOut = s.tokensOut;
-  run.cacheHits = s.cacheRead;
-  run.costUsd = s.tokenCostUsd;
-  run.notes = `session:${s.sessionId} cwd:${s.cwd ?? "?"} model:${Object.keys(s.modelTotals).join(",")}`;
-
+  const runId = genId("run");
+  const agentName =
+    input.agentName ?? Object.keys(s.modelTotals)[0] ?? "claude-opus-4-7";
   const rateUsd = input.hourlyRate ?? client.hourlyRate * skill.rateModifier;
-  run.rateUsd = rateUsd;
-
+  const tokensIn = s.tokensIn + s.cacheWrite;
+  const tokensOut = s.tokensOut;
+  const cacheHits = s.cacheRead;
+  const costUsd = s.tokenCostUsd;
   const activeHours = s.activeSec / 3600;
   const mode = input.pricingMode ?? "time_plus_tokens";
   let billable: number;
+  let baselineHours: number;
   if (mode === "time_plus_tokens") {
-    billable = activeHours * rateUsd + s.tokenCostUsd;
-    run.baselineHours = Number(activeHours.toFixed(3));
+    billable = activeHours * rateUsd + costUsd;
+    baselineHours = Number(activeHours.toFixed(3));
   } else {
     billable = skill.baselineHours * rateUsd;
-    run.baselineHours = skill.baselineHours;
+    baselineHours = skill.baselineHours;
   }
-  run.billableUsd = Number(billable.toFixed(2));
-  run.status = "shipped";
+  billable = Number(billable.toFixed(2));
+  const notes = `${sessionTag} cwd:${s.cwd ?? "?"} model:${Object.keys(s.modelTotals).join(",")}`;
+
+  await sql`
+    INSERT INTO run (
+      id, user_id, client_id, project_id, skill_id, agent_name, status,
+      prompt, cwd, pricing_mode,
+      started_at, ended_at, runtime_sec, active_sec,
+      tokens_in, tokens_out, cache_hits, cost_usd,
+      baseline_hours, rate_usd, billable_usd, notes
+    )
+    VALUES (
+      ${runId}, ${userId}, ${client.id}, ${project.id}, ${skill.id},
+      ${agentName}, 'shipped',
+      ${input.prompt ?? `Imported Claude Code session ${s.sessionId.slice(0, 8)}`},
+      ${s.cwd ?? null}, ${mode},
+      ${s.startedAt}, ${s.endedAt}, ${s.wallSec}, ${s.activeSec},
+      ${tokensIn}, ${tokensOut}, ${cacheHits}, ${costUsd},
+      ${baselineHours}, ${rateUsd}, ${billable}, ${notes}
+    )
+  `;
 
   const t0 = Date.parse(s.startedAt);
-  const evt = (offsetSec: number, kind: RunEvent["kind"], label: string, detail?: string) => {
-    store.events.push({
-      id: `evt_${run.id}_${kind}_${offsetSec}`,
-      runId: run.id,
-      ts: new Date(t0 + offsetSec * 1000).toISOString(),
-      kind,
-      label,
-      detail,
-    });
-  };
+  const events: Array<{
+    id: string;
+    ts: string;
+    kind: RunEvent["kind"];
+    label: string;
+    detail: string | null;
+  }> = [
+    {
+      id: genId("evt"),
+      ts: new Date(t0).toISOString(),
+      kind: "milestone",
+      label: `Session started · ${s.sessionId.slice(0, 8)}`,
+      detail: s.cwd ?? null,
+    },
+    {
+      id: genId("evt"),
+      ts: new Date(t0 + Math.round(s.wallSec * 0.25) * 1000).toISOString(),
+      kind: "tool_call",
+      label: `${s.toolUses} tool calls · ${s.fileEdits} file edits`,
+      detail: Object.entries(s.modelTotals)
+        .map(([m, x]) => `${m}: ${x.messages} msgs`)
+        .join(" · "),
+    },
+    {
+      id: genId("evt"),
+      ts: new Date(t0 + Math.round(s.wallSec * 0.5) * 1000).toISOString(),
+      kind: "decision",
+      label: "Token throughput",
+      detail: `${(s.tokensIn / 1000).toFixed(0)}k in · ${(s.tokensOut / 1000).toFixed(0)}k out · ${(s.cacheRead / 1_000_000).toFixed(2)}M cached reads`,
+    },
+    {
+      id: genId("evt"),
+      ts: new Date(t0 + s.wallSec * 1000).toISOString(),
+      kind: "milestone",
+      label: `Session ended · $${costUsd.toFixed(2)} compute · $${billable.toFixed(2)} billable`,
+      detail: null,
+    },
+  ];
+  for (const e of events) {
+    await sql`
+      INSERT INTO run_event (id, user_id, run_id, ts, kind, label, detail)
+      VALUES (${e.id}, ${userId}, ${runId}, ${e.ts}, ${e.kind}, ${e.label}, ${e.detail})
+    `;
+  }
 
-  evt(0, "milestone", `Session started · ${s.sessionId.slice(0, 8)}`, s.cwd);
-  evt(
-    Math.round(s.wallSec * 0.25),
-    "tool_call",
-    `${s.toolUses} tool calls · ${s.fileEdits} file edits`,
-    Object.entries(s.modelTotals)
-      .map(([m, x]) => `${m}: ${x.messages} msgs`)
-      .join(" · "),
-  );
-  evt(
-    Math.round(s.wallSec * 0.5),
-    "decision",
-    "Token throughput",
-    `${(s.tokensIn / 1000).toFixed(0)}k in · ${(s.tokensOut / 1000).toFixed(0)}k out · ${(s.cacheRead / 1_000_000).toFixed(2)}M cached reads`,
-  );
-  evt(
-    s.wallSec,
-    "milestone",
-    `Session ended · $${run.costUsd.toFixed(2)} compute · $${run.billableUsd.toFixed(2)} billable`,
-  );
-
-  return {
-    run,
-    events: store.events.filter((e) => e.runId === run.id),
-  };
+  const run = await store.getRun(userId, runId);
+  if (!run) throw new Error("Failed to create run");
+  const evRows = await store.listRunEvents(userId, runId);
+  return { run, events: evRows };
 }

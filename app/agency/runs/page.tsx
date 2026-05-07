@@ -1,16 +1,22 @@
 import { RiPulseLine } from "@remixicon/react";
 import { AppShell } from "@/components/layout/app-shell";
-import { api } from "@/lib/agency/store";
+import { getApi } from "@/lib/agency/server-api";
 import { KpiCard } from "@/components/agency/kpi-card";
 import { RunsTable } from "@/components/agency/runs-table";
 import { formatCurrency } from "@/lib/agency/format";
+import { getT } from "@/lib/i18n/server";
 import { cn } from "@/lib/cn";
 
-export default function RunsPage() {
-  const runs = api.listRuns();
-  const clients = api.listClients();
-  const projects = api.listProjects();
-  const skills = api.listSkills();
+export default async function RunsPage() {
+  const { t } = await getT();
+  const api = await getApi();
+  const [runs, clients, projects, skills, leverage7] = await Promise.all([
+    api.listRuns(),
+    api.listClients(),
+    api.listProjects(),
+    api.listSkills(),
+    api.leverage(7),
+  ]);
 
   const activeRuns = runs.filter((r) => r.status === "running").length;
   const awaiting = runs.filter((r) => r.status === "awaiting_approval").length;
@@ -30,8 +36,6 @@ export default function RunsPage() {
     last24Shipped.reduce((s, r) => s + r.billableUsd, 0) -
     last24Shipped.reduce((s, r) => s + r.costUsd, 0);
 
-  const leverage7 = api.leverage(7);
-
   return (
     <AppShell>
       <div className="flex items-center gap-[14px]">
@@ -44,11 +48,11 @@ export default function RunsPage() {
           <RiPulseLine size={20} />
         </span>
         <div className="flex flex-col">
-          <h1 className="text-[26px] font-medium leading-[34px] tracking-tight sm:text-[28px] md:text-[32px] md:leading-[42px]">
-            Runs
+          <h1 className="text-[26px] font-semibold leading-[32px] tracking-tight sm:text-[28px] sm:leading-[34px]">
+            {t("runs.title")}
           </h1>
           <p className="mt-[2px] text-[13px] text-[var(--color-text-soft)]">
-            Live agent runs and the billable work they produce.
+            {t("runs.subtitle")}
           </p>
         </div>
       </div>
@@ -56,26 +60,30 @@ export default function RunsPage() {
       <div className="enter-stagger mt-[24px] flex flex-col gap-[16px] sm:gap-[20px]">
         <div className="grid grid-cols-1 gap-[12px] sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard
-            label="Active runs"
+            label={t("runs.kpi.active")}
             value={activeRuns}
-            hint="agents working right now"
+            hint={t("runs.kpi.activeHint")}
           />
           <KpiCard
-            label="Awaiting approval"
+            label={t("runs.kpi.awaiting")}
             value={awaiting}
             deltaTone={awaiting > 0 ? "negative" : "neutral"}
-            delta={awaiting > 0 ? "needs review" : "clear"}
+            delta={
+              awaiting > 0
+                ? t("runs.kpi.awaiting.needs")
+                : t("runs.kpi.awaiting.clear")
+            }
           />
           <KpiCard
-            label="Effective hours · 24h"
+            label={t("runs.kpi.eff")}
             value={`${effectiveHours24.toFixed(0)}h`}
-            hint={`${last24Shipped.length} runs shipped`}
+            hint={t("runs.kpi.effHint", { n: last24Shipped.length })}
           />
           <KpiCard
-            label="Margin · 24h"
+            label={t("runs.kpi.margin")}
             value={formatCurrency(margin24, 0)}
             deltaTone="positive"
-            delta={`${leverage7.multiplier}× leverage · 7d`}
+            delta={t("runs.kpi.marginDelta", { x: leverage7.multiplier })}
           />
         </div>
 

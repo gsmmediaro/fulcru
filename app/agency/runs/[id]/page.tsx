@@ -8,7 +8,7 @@ import {
 } from "@remixicon/react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/agency/store";
+import { getApi } from "@/lib/agency/server-api";
 import { StatusPill } from "@/components/agency/status-pill";
 import { AgentAvatar } from "@/components/agency/agent-avatar";
 import { MetricRow } from "@/components/agency/metric-row";
@@ -27,13 +27,16 @@ export default async function RunDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const run = api.getRun(id);
+  const api = await getApi();
+  const run = await api.getRun(id);
   if (!run) notFound();
 
-  const client = api.getClient(run.clientId);
-  const project = api.getProject(run.projectId);
-  const skill = api.getSkill(run.skillId);
-  const events = api.listRunEvents(run.id);
+  const [client, project, skill, events] = await Promise.all([
+    api.getClient(run.clientId),
+    api.getProject(run.projectId),
+    api.getSkill(run.skillId),
+    api.listRunEvents(run.id),
+  ]);
 
   const runtimeHours = run.runtimeSec / 3600;
   const activeHours = run.activeSec / 3600;
@@ -183,7 +186,7 @@ export default async function RunDetailPage({
 
         <div
           className={cn(
-            "rounded-[12px] p-[20px] ring-1",
+            "rounded-[8px] p-[20px] ring-1",
             "bg-[color-mix(in_oklab,var(--color-brand-400)_8%,var(--color-bg-surface))]",
             "ring-[color-mix(in_oklab,var(--color-brand-400)_28%,transparent)]",
           )}
@@ -346,7 +349,7 @@ function SidebarCard({
   return (
     <div
       className={cn(
-        "rounded-[12px] bg-[var(--color-bg-surface)] p-[16px]",
+        "rounded-[8px] bg-[var(--color-bg-surface)] p-[16px]",
         "ring-1 ring-[var(--color-stroke-soft)]",
       )}
     >

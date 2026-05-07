@@ -19,7 +19,7 @@ export const DropdownContent = React.forwardRef<
       align={align}
       className={cn(
         "z-50 min-w-[200px] overflow-hidden",
-        "rounded-[10px] bg-[var(--color-bg-surface-elevated)] p-[6px]",
+        "rounded-[6px] bg-[var(--color-bg-surface-elevated)] p-[6px]",
         "ring-1 ring-[var(--color-stroke-sub)]",
         "shadow-[var(--shadow-regular-lg)]",
         className,

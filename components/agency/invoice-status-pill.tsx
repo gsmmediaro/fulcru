@@ -1,11 +1,14 @@
+"use client";
+
 import { cn } from "@/lib/cn";
+import { useLocale } from "@/lib/i18n/provider";
 import type { InvoiceStatus } from "@/lib/agency/types";
 
-const LABELS: Record<InvoiceStatus, string> = {
-  draft: "Draft",
-  sent: "Sent",
-  paid: "Paid",
-  overdue: "Overdue",
+const KEYS: Record<InvoiceStatus, string> = {
+  draft: "invoiceStatus.draft",
+  sent: "invoiceStatus.sent",
+  paid: "invoiceStatus.paid",
+  overdue: "invoiceStatus.overdue",
 };
 
 const CLASSES: Record<InvoiceStatus, string> = {
@@ -24,6 +27,7 @@ export function InvoiceStatusPill({
   status: InvoiceStatus;
   className?: string;
 }) {
+  const { t } = useLocale();
   return (
     <span
       className={cn(
@@ -32,7 +36,7 @@ export function InvoiceStatusPill({
         className,
       )}
     >
-      {LABELS[status]}
+      {t(KEYS[status])}
     </span>
   );
 }

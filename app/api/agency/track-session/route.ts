@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth-server";
 import {
   findSessionJsonl,
   importSessionAsRun,
@@ -23,6 +24,12 @@ type Body = {
 };
 
 export async function POST(req: Request) {
+  const session = await getSession();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  const userId = session.user.id;
+
   let body: Body;
   try {
     body = (await req.json()) as Body;
@@ -48,7 +55,7 @@ export async function POST(req: Request) {
     if (body.dryRun) {
       return NextResponse.json({ stats }, { headers: { "cache-control": "no-store" } });
     }
-    const { run, events } = importSessionAsRun({
+    const { run, events } = await importSessionAsRun(userId, {
       stats,
       clientId: body.clientId,
       projectId: body.projectId,

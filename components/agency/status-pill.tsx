@@ -29,34 +29,15 @@ export function StatusPill({
   status: RunStatus;
   className?: string;
 }) {
-  const showDot = status === "running" || status === "awaiting_approval";
-  const dotColor =
-    status === "running"
-      ? "var(--color-brand-400)"
-      : status === "awaiting_approval"
-        ? "#f59e0b"
-        : "var(--color-text-soft)";
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-[6px] rounded-[6px] px-[8px] py-[3px]",
+        "inline-flex items-center rounded-[6px] px-[8px] py-[3px]",
         "text-[11px] font-semibold ring-1",
         STATUS_CLASSES[status],
         className,
       )}
     >
-      {showDot ? (
-        <span className="relative inline-flex size-[6px] items-center justify-center">
-          <span
-            className="breathe-dot absolute inline-flex size-[6px] rounded-full"
-            style={{ backgroundColor: dotColor }}
-          />
-          <span
-            className="relative inline-flex size-[6px] rounded-full"
-            style={{ backgroundColor: dotColor }}
-          />
-        </span>
-      ) : null}
       {STATUS_LABEL[status]}
     </span>
   );

@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { RiBillLine, RiAddLine } from "@remixicon/react";
+import { RiBillLine } from "@remixicon/react";
 import { AppShell } from "@/components/layout/app-shell";
-import { Button } from "@/components/ui/button";
 import { ClientAvatar } from "@/components/agency/client-avatar";
 import { InvoiceStatusPill } from "@/components/agency/invoice-status-pill";
-import { api } from "@/lib/agency/store";
+import { NewInvoiceButton } from "@/components/agency/new-invoice-modal";
+import { getApi } from "@/lib/agency/server-api";
+import { getT } from "@/lib/i18n/server";
 import { cn } from "@/lib/cn";
 
 const usd = new Intl.NumberFormat("en-US", {
@@ -20,11 +21,18 @@ function fmtDate(iso?: string) {
   return new Date(iso).toISOString().slice(0, 10);
 }
 
-export default function InvoicesPage() {
-  const invoices = api.listInvoices().slice().sort((a, b) =>
-    (b.issuedAt ?? b.periodEnd).localeCompare(a.issuedAt ?? a.periodEnd),
-  );
-  const clients = api.listClients();
+export default async function InvoicesPage() {
+  const { t } = await getT();
+  const api = await getApi();
+  const [invoicesRaw, clients] = await Promise.all([
+    api.listInvoices(),
+    api.listClients(),
+  ]);
+  const invoices = invoicesRaw
+    .slice()
+    .sort((a, b) =>
+      (b.issuedAt ?? b.periodEnd).localeCompare(a.issuedAt ?? a.periodEnd),
+    );
   const clientMap = new Map(clients.map((c) => [c.id, c]));
 
   const outstanding = invoices
@@ -50,41 +58,47 @@ export default function InvoicesPage() {
           <span className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-100)] text-[var(--color-brand-400)]">
             <RiBillLine size={20} />
           </span>
-          <div>
-            <h1 className="text-[26px] font-medium leading-[34px] tracking-tight sm:text-[28px] md:text-[32px] md:leading-[42px]">
-              Invoices
+          <div className="flex flex-col">
+            <h1 className="text-[26px] font-semibold leading-[32px] tracking-tight sm:text-[28px] sm:leading-[34px]">
+              {t("invoices.title")}
             </h1>
-            <p className="mt-[4px] text-[13px] text-[var(--color-text-soft)]">
-              Periodic billing pulled from shipped runs.
+            <p className="mt-[2px] text-[13px] leading-[18px] text-[var(--color-text-soft)]">
+              {t("invoices.subtitle")}
             </p>
           </div>
         </div>
-        <Button variant="outline" leadingIcon={<RiAddLine size={16} />}>
-          New invoice
-        </Button>
+        <NewInvoiceButton clients={clients} />
       </div>
 
       <div className="mt-[24px] grid grid-cols-1 gap-[12px] sm:grid-cols-3">
-        <Stat label="Outstanding" value={usd.format(outstanding)} />
-        <Stat label="Paid · 30d" value={usd.format(paid30)} accent="green" />
-        <Stat label="Overdue" value={`${overdue}`} accent={overdue > 0 ? "rose" : undefined} />
+        <Stat label={t("invoices.outstanding")} value={usd.format(outstanding)} />
+        <Stat label={t("invoices.paid30")} value={usd.format(paid30)} accent="green" />
+        <Stat
+          label={t("invoices.overdue")}
+          value={`${overdue}`}
+          accent={overdue > 0 ? "rose" : undefined}
+        />
       </div>
 
-      <section className="mt-[20px] rounded-[12px] bg-[var(--color-bg-surface)] p-[16px] ring-1 ring-[var(--color-stroke-soft)] sm:p-[20px]">
+      <section className="mt-[20px] rounded-[8px] bg-[var(--color-bg-surface)] p-[16px] ring-1 ring-[var(--color-stroke-soft)] sm:p-[20px]">
         <header className="mb-[12px]">
-          <h2 className="tp-overline text-[var(--color-brand-400)]">All invoices</h2>
+          <h2 className="tp-overline text-[var(--color-brand-400)]">
+            {t("invoices.all")}
+          </h2>
         </header>
         <div className="scrollbar-thin overflow-x-auto">
           <table className="w-full min-w-[860px] text-[13px]">
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-[0.04em] text-[var(--color-text-soft)]">
-                <Th>Number</Th>
-                <Th>Client</Th>
-                <Th>Period</Th>
-                <Th>Issued</Th>
-                <Th>Due</Th>
-                <Th>Status</Th>
-                <th className="px-[12px] pb-[10px] text-right font-semibold">Total</th>
+                <Th>{t("invoices.col.number")}</Th>
+                <Th>{t("invoices.col.client")}</Th>
+                <Th>{t("invoices.col.period")}</Th>
+                <Th>{t("invoices.col.issued")}</Th>
+                <Th>{t("invoices.col.due")}</Th>
+                <Th>{t("invoices.col.status")}</Th>
+                <th className="px-[12px] pb-[10px] text-right font-semibold">
+                  {t("invoices.col.total")}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -154,7 +168,7 @@ function Stat({
   accent?: "green" | "rose";
 }) {
   return (
-    <div className="rounded-[12px] bg-[var(--color-bg-surface)] p-[16px] ring-1 ring-[var(--color-stroke-soft)]">
+    <div className="rounded-[8px] bg-[var(--color-bg-surface)] p-[16px] ring-1 ring-[var(--color-stroke-soft)]">
       <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--color-text-soft)]">
         {label}
       </div>

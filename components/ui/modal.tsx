@@ -50,7 +50,7 @@ export function Modal({
   return createPortal(
     <div
       className={cn(
-        "fixed inset-0 z-[90] flex items-start justify-center p-[16px] sm:p-[24px]",
+        "fixed inset-0 z-[90] flex items-center justify-center p-[16px] sm:p-[24px]",
         "bg-black/62 backdrop-blur-[2px]",
         "data-[state=open]:animate-in data-[state=open]:fade-in-0",
       )}
@@ -67,8 +67,8 @@ export function Modal({
         tabIndex={-1}
         style={{ maxWidth: `${width}px` }}
         className={cn(
-          "modal-rise relative mt-[4vh] flex w-full flex-col overflow-hidden",
-          "rounded-[12px] bg-[var(--color-bg-surface)] outline-none",
+          "modal-rise relative flex w-full flex-col overflow-hidden",
+          "rounded-[8px] bg-[var(--color-bg-surface)] outline-none",
           "ring-1 ring-[var(--color-stroke-soft)]",
           "shadow-[0_18px_40px_rgb(0_0_0/0.48)]",
           "max-h-[min(810px,calc(100dvh-48px))]",

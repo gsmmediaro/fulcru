@@ -1,6 +1,10 @@
 import { NextRequest } from "next/server";
-import { api } from "@/lib/agency/store";
+import { bindApi, type BoundApi } from "@/lib/agency/server-api";
 import { enrichRunFromSession } from "@/lib/agency/session-importer";
+import {
+  extractBearerToken,
+  resolveUserIdFromKey,
+} from "@/lib/agency/mcp-keys";
 import type { RunEventKind } from "@/lib/agency/types";
 
 export const runtime = "nodejs";
@@ -20,7 +24,7 @@ type JsonRpcError = {
 };
 
 const SERVER_NAME = "agency-runs";
-const SERVER_VERSION = "0.1.0";
+const SERVER_VERSION = "0.2.0";
 const PROTOCOL_VERSION = "2025-06-18";
 
 const EVENT_KINDS: RunEventKind[] = [
@@ -176,22 +180,14 @@ const TOOLS = [
 ];
 
 function rpcResult(id: string | number | null | undefined, result: unknown) {
-  return {
-    jsonrpc: "2.0" as const,
-    id: id ?? null,
-    result,
-  };
+  return { jsonrpc: "2.0" as const, id: id ?? null, result };
 }
 
 function rpcError(
   id: string | number | null | undefined,
   error: JsonRpcError,
 ) {
-  return {
-    jsonrpc: "2.0" as const,
-    id: id ?? null,
-    error,
-  };
+  return { jsonrpc: "2.0" as const, id: id ?? null, error };
 }
 
 function jsonResponse(body: unknown, init?: ResponseInit) {
@@ -213,10 +209,12 @@ function asNumber(v: unknown): number | undefined {
   return typeof v === "number" && Number.isFinite(v) ? v : undefined;
 }
 
-function callTool(
+async function callTool(
+  userId: string,
+  api: BoundApi,
   name: string,
   args: Record<string, unknown>,
-): unknown {
+): Promise<unknown> {
   switch (name) {
     case "list_clients":
       return api.listClients();
@@ -291,26 +289,27 @@ function callTool(
       if (!["shipped", "failed", "cancelled"].includes(status)) {
         throw new Error("status must be shipped|failed|cancelled");
       }
-      const ended = api.endRun({
+      const ended = await api.endRun({
         runId,
         status: status as "shipped" | "failed" | "cancelled",
         deliverableUrl: asString(args.deliverableUrl),
         notes: asString(args.notes),
       });
-      const enrichment = enrichRunFromSession({
+      const enrichment = await enrichRunFromSession(userId, {
         runId,
         cwd: asString(args.cwd),
       });
-      const finalRun = api.getRun(runId);
+      const finalRun = await api.getRun(runId);
       return { run: finalRun ?? ended, enrichment };
     }
 
     case "get_run": {
       const runId = asString(args.runId);
       if (!runId) throw new Error("runId is required");
-      const run = api.getRun(runId);
+      const run = await api.getRun(runId);
       if (!run) throw new Error(`Run not found: ${runId}`);
-      return { run, events: api.listRunEvents(runId) };
+      const events = await api.listRunEvents(runId);
+      return { run, events };
     }
 
     default:
@@ -318,11 +317,14 @@ function callTool(
   }
 }
 
-function handleRpc(msg: JsonRpcRequest): unknown | null {
+async function handleRpc(
+  msg: JsonRpcRequest,
+  userId: string | null,
+  api: BoundApi | null,
+): Promise<unknown | null> {
   const { id, method } = msg;
   const params = (msg.params ?? {}) as Record<string, unknown>;
 
-  // Notifications: no id, no response.
   const isNotification = id === undefined || id === null;
 
   if (method === "initialize") {
@@ -334,25 +336,34 @@ function handleRpc(msg: JsonRpcRequest): unknown | null {
   }
 
   if (method === "notifications/initialized" || method === "initialized") {
-    return null; // notification, no response
+    return null;
   }
 
   if (method === "tools/list") {
     return rpcResult(id, { tools: TOOLS });
   }
 
+  if (method === "ping") {
+    return rpcResult(id, {});
+  }
+
   if (method === "tools/call") {
+    if (!api || !userId) {
+      return rpcError(id, {
+        code: -32001,
+        message:
+          "Unauthorized: missing or invalid Bearer token. Generate a key in the Fulcra dashboard and add it as `Authorization: Bearer <key>`.",
+      });
+    }
     const name = asString(params.name);
     const args = (params.arguments ?? {}) as Record<string, unknown>;
     if (!name) {
       return rpcError(id, { code: -32602, message: "Missing tool name" });
     }
     try {
-      const result = callTool(name, args);
+      const result = await callTool(userId, api, name, args);
       return rpcResult(id, {
-        content: [
-          { type: "text", text: JSON.stringify(result, null, 2) },
-        ],
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       });
     } catch (e) {
       return rpcResult(id, {
@@ -360,10 +371,6 @@ function handleRpc(msg: JsonRpcRequest): unknown | null {
         isError: true,
       });
     }
-  }
-
-  if (method === "ping") {
-    return rpcResult(id, {});
   }
 
   if (isNotification) return null;
@@ -379,6 +386,7 @@ export async function GET() {
     version: SERVER_VERSION,
     transport: "http",
     endpoint: "/api/mcp",
+    auth: "Bearer <fcr_…> (issued via /agency)",
   });
 }
 
@@ -394,10 +402,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const token = extractBearerToken(req.headers);
+  const userId = token ? await resolveUserIdFromKey(token) : null;
+  const api = userId ? bindApi(userId) : null;
+
   if (Array.isArray(payload)) {
-    const responses = payload
-      .map((m) => handleRpc(m as JsonRpcRequest))
-      .filter((r): r is NonNullable<typeof r> => r !== null);
+    const responses: unknown[] = [];
+    for (const m of payload) {
+      const r = await handleRpc(m as JsonRpcRequest, userId, api);
+      if (r !== null) responses.push(r);
+    }
     if (responses.length === 0) {
       return new Response(null, { status: 202 });
     }
@@ -414,15 +428,12 @@ export async function POST(req: NextRequest) {
   const msg = payload as JsonRpcRequest;
   if (msg.jsonrpc !== "2.0" || typeof msg.method !== "string") {
     return jsonResponse(
-      rpcError(msg.id ?? null, {
-        code: -32600,
-        message: "Invalid Request",
-      }),
+      rpcError(msg.id ?? null, { code: -32600, message: "Invalid Request" }),
       { status: 400 },
     );
   }
 
-  const response = handleRpc(msg);
+  const response = await handleRpc(msg, userId, api);
   if (response === null) {
     return new Response(null, { status: 202 });
   }

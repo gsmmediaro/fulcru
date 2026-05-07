@@ -237,22 +237,6 @@ p {
    Delight primitives
    ────────────────────────────────────────────────────────── */
 
-/* Breathing pulse — for status indicators (softer than ping) */
-@keyframes breathe {
-  0%,
-  100% {
-    opacity: 0.35;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.85;
-    transform: scale(1.6);
-  }
-}
-.breathe-dot {
-  animation: breathe 2.4s ease-in-out infinite;
-}
-
 /* Single 360° rotation — for refresh confirmations */
 @keyframes spin-once {
   from {
@@ -397,7 +381,6 @@ p {
 
 @media (prefers-reduced-motion: reduce) {
   .enter-stagger > *,
-  .breathe-dot,
   .spin-once,
   .count-in,
   .chart-draw,
@@ -512,3 +495,24 @@ button {
 .recharts-tooltip-wrapper {
   outline: none !important;
 }
+
+
+/* Print: invoice document */
+@media print {
+  body { background: #ffffff !important; }
+  aside, header.sticky, footer, .scrollbar-thin > footer, .print\:hidden { display: none !important; }
+  main { padding: 0 !important; }
+  .invoice-doc {
+    background: #ffffff !important;
+    color: #111827 !important;
+    box-shadow: none !important;
+    --color-bg-surface: #ffffff;
+    --color-text-strong: #111827;
+    --color-text-sub: #1f2937;
+    --color-text-soft: #4b5563;
+    --color-stroke-soft: #e5e7eb;
+    --color-stroke-sub: #d1d5db;
+  }
+  .invoice-doc * { color-scheme: light; }
+}
+

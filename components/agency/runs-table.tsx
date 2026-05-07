@@ -75,7 +75,7 @@ export function RunsTable({ runs, clients, projects, skills }: Props) {
   return (
     <section
       className={cn(
-        "rounded-[12px] bg-[var(--color-bg-surface)]",
+        "rounded-[8px] bg-[var(--color-bg-surface)]",
         "ring-1 ring-[var(--color-stroke-soft)]",
       )}
     >

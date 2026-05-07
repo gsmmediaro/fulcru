@@ -82,7 +82,7 @@ function CardList({
     return (
       <div
         className={cn(
-          "rounded-[12px] p-[32px] text-center ring-1",
+          "rounded-[8px] p-[32px] text-center ring-1",
           mode === "pending"
             ? "bg-[color-mix(in_oklab,var(--color-brand-400)_5%,var(--color-bg-surface))] ring-[color-mix(in_oklab,var(--color-brand-400)_18%,transparent)]"
             : "bg-[var(--color-bg-surface)] ring-[var(--color-stroke-soft)]",
@@ -139,7 +139,7 @@ function ApprovalCard({
   return (
     <article
       className={cn(
-        "rounded-[12px] bg-[var(--color-bg-surface)] p-[20px]",
+        "rounded-[8px] bg-[var(--color-bg-surface)] p-[20px]",
         "ring-1 ring-[var(--color-stroke-soft)]",
         "transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:ring-[var(--color-stroke-sub)]",
         pending !== null && "opacity-60",

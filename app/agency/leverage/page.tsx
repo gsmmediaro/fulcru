@@ -6,7 +6,8 @@ import {
   MarginBarChart,
   type LeverageDailyPoint,
 } from "@/components/agency/leverage-chart";
-import { api } from "@/lib/agency/store";
+import { getApi } from "@/lib/agency/server-api";
+import { getT } from "@/lib/i18n/server";
 import { cn } from "@/lib/cn";
 
 const usd = new Intl.NumberFormat("en-US", {
@@ -34,15 +35,19 @@ export default async function LeveragePage({
 }: {
   searchParams: Promise<{ windowDays?: string }>;
 }) {
+  const { t } = await getT();
   const sp = await searchParams;
   const windowDays =
     sp?.windowDays && [7, 30, 90].includes(Number(sp.windowDays))
       ? Number(sp.windowDays)
       : 30;
 
-  const lev = api.leverage(windowDays);
-  const allRuns = api.listRuns();
-  const skills = api.listSkills();
+  const api = await getApi();
+  const [lev, allRuns, skills] = await Promise.all([
+    api.leverage(windowDays),
+    api.listRuns(),
+    api.listSkills(),
+  ]);
 
   const cutoff = Date.now() - windowDays * DAY;
   const runs = allRuns.filter(
@@ -95,13 +100,12 @@ export default async function LeveragePage({
           <span className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-100)] text-[var(--color-brand-400)]">
             <RiBarChartBoxLine size={20} />
           </span>
-          <div>
-            <h1 className="text-[26px] font-medium leading-[34px] tracking-tight sm:text-[28px] md:text-[32px] md:leading-[42px]">
-              Leverage
+          <div className="flex flex-col">
+            <h1 className="text-[26px] font-semibold leading-[32px] tracking-tight sm:text-[28px] sm:leading-[34px]">
+              {t("leverage.title")}
             </h1>
-            <p className="mt-[4px] text-[13px] text-[var(--color-text-soft)]">
-              How much human-equivalent work the agents shipped — and the margin
-              you keep.
+            <p className="mt-[2px] text-[13px] leading-[18px] text-[var(--color-text-soft)]">
+              {t("leverage.subtitle")}
             </p>
           </div>
         </div>
@@ -127,26 +131,28 @@ export default async function LeveragePage({
 
       <div className="enter-stagger mt-[24px] grid grid-cols-1 gap-[12px] sm:grid-cols-2 lg:grid-cols-4">
         <Hero
-          label="Effective hours"
+          label={t("leverage.hero.eff")}
           value={`${lev.effectiveHours.toFixed(0)}h`}
-          sub="human-equivalent shipped"
+          sub={t("leverage.hero.effSub")}
         />
         <Hero
-          label="Leverage"
+          label={t("leverage.hero.lev")}
           value={`${lev.multiplier.toFixed(1)}×`}
-          sub={`vs ${lev.runtimeHours.toFixed(1)}h runtime`}
+          sub={t("leverage.hero.levSub", { h: lev.runtimeHours.toFixed(1) })}
           accent
         />
         <Hero
-          label="Margin"
+          label={t("leverage.hero.margin")}
           value={usd.format(lev.marginUsd)}
-          sub={`${lev.marginPct.toFixed(1)}% of billable`}
+          sub={t("leverage.hero.marginSub", {
+            pct: lev.marginPct.toFixed(1),
+          })}
           pill={`${lev.marginPct.toFixed(0)}%`}
         />
         <Hero
-          label="Runs"
+          label={t("leverage.hero.runs")}
           value={`${lev.runs}`}
-          sub={`shipped in ${windowDays}d`}
+          sub={t("leverage.hero.runsSub", { d: windowDays })}
         />
       </div>
 
@@ -163,13 +169,13 @@ export default async function LeveragePage({
         </Card>
       </div>
 
-      <div className="mt-[20px] rounded-[12px] bg-[var(--color-bg-surface)] p-[20px] ring-1 ring-[var(--color-stroke-soft)]">
+      <div className="mt-[20px] rounded-[8px] bg-[var(--color-bg-surface)] p-[20px] ring-1 ring-[var(--color-stroke-soft)]">
         <header className="mb-[12px] flex items-center justify-between">
           <h2 className="tp-overline text-[var(--color-brand-400)]">
-            Top skills by effective hours
+            {t("leverage.topSkills")}
           </h2>
           <span className="text-[11px] text-[var(--color-text-soft)]">
-            window · {windowDays}d
+            {t("leverage.window", { d: windowDays })}
           </span>
         </header>
         <div className="scrollbar-thin overflow-x-auto">
@@ -242,7 +248,7 @@ function Hero({
   return (
     <div
       className={cn(
-        "rounded-[12px] bg-[var(--color-bg-surface)] p-[20px] ring-1 ring-[var(--color-stroke-soft)]",
+        "rounded-[8px] bg-[var(--color-bg-surface)] p-[20px] ring-1 ring-[var(--color-stroke-soft)]",
         accent && "ring-[color-mix(in_oklab,var(--color-brand-400)_28%,transparent)]",
       )}
     >
@@ -283,7 +289,7 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[12px] bg-[var(--color-bg-surface)] p-[20px] ring-1 ring-[var(--color-stroke-soft)]">
+    <section className="rounded-[8px] bg-[var(--color-bg-surface)] p-[20px] ring-1 ring-[var(--color-stroke-soft)]">
       <header className="mb-[12px] flex items-baseline justify-between">
         <h2 className="tp-overline text-[var(--color-brand-400)]">{title}</h2>
         {subtitle ? (

@@ -14,7 +14,7 @@ export function ClientAvatar({
   return (
     <span
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-[12px] font-semibold tracking-tight ring-1",
+        "flex shrink-0 items-center justify-center rounded-[8px] font-semibold tracking-tight ring-1",
         className,
       )}
       style={{

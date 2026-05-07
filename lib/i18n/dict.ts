@@ -1,0 +1,803 @@
+export type Locale = "en" | "ro";
+
+export const LOCALES: Locale[] = ["en", "ro"];
+export const LOCALE_LABELS: Record<Locale, string> = {
+  en: "English",
+  ro: "Română",
+};
+
+type Dict = Record<string, string>;
+
+const en: Dict = {
+  // Sidebar / nav
+  "nav.home": "Home",
+  "nav.runs": "Runs",
+  "nav.leverage": "Leverage",
+  "nav.approvals": "Approvals",
+  "nav.catalog": "Catalog",
+  "nav.skills": "Skills",
+  "nav.clients": "Clients",
+  "nav.projects": "Projects",
+  "nav.invoices": "Invoices",
+  "sidebar.connect": "Connect Claude Code",
+  "sidebar.connectMcp": "Connect MCP",
+  "sidebar.connected": "Connected",
+  "sidebar.reconnect": "Reconnect MCP",
+  "mcpModal.title": "Connect Claude Code",
+  "mcpModal.subtitle":
+    "Run this command in your terminal to register the MCP server with Claude Code.",
+  "mcpModal.commandLabel": "Command",
+  "mcpModal.serverLabel": "Server URL",
+  "mcpModal.copy": "Copy",
+  "mcpModal.copied": "Copied",
+  "mcpModal.openEndpoint": "Open endpoint",
+  "mcpModal.statusOk": "Server reachable",
+  "mcpModal.statusFail": "Server unreachable",
+  "mcpModal.statusChecking": "Checking…",
+  "mcpModal.help":
+    "Once added, every Claude Code session run from your terminal can call run_start / run_event / run_end and will be tracked here automatically.",
+  "mcpModal.step1": "Copy the command above.",
+  "mcpModal.step2": "Run it in your terminal — it registers the MCP server with Claude Code globally.",
+  "mcpModal.step3":
+    "Start a Claude Code session from any project. Runs are tracked here automatically.",
+  "mcpModal.close": "Close",
+  "mcpModal.keyLoading": "Looking up your MCP key…",
+  "mcpModal.keyNone": "No MCP key yet. Generate one to authorize Claude Code.",
+  "mcpModal.keyStored": "An MCP key already exists for this account.",
+  "mcpModal.keyFresh": "New key generated — save it now.",
+  "mcpModal.keyOnceWarning":
+    "We never store the plain key. If you lose it, generate a new one (the old still works until revoked).",
+  "mcpModal.keyGenerate": "Generate key",
+  "mcpModal.keyGenerating": "Generating…",
+  "mcpModal.keyNew": "New key",
+  "mcpModal.keyError": "Couldn't load your keys: {reason}",
+
+  // Topbar
+  "topbar.workspace": "Dictando Agency",
+  "topbar.menu.account": "Account settings",
+  "topbar.menu.billing": "Billing",
+  "topbar.menu.api": "API keys",
+  "topbar.menu.signout": "Sign out",
+  "topbar.notifications": "Notifications",
+  "topbar.openMenu": "Open navigation menu",
+
+  // Footer
+  "footer.tagline": "Fulcra © {year} · Bill the leverage.",
+  "footer.terms": "Terms of Service",
+  "footer.privacy": "Privacy Policy",
+  "footer.aup": "Acceptable Use Policy",
+
+  // Pages: Home
+  "home.title": "Home",
+  "home.invoices": "Invoices",
+  "home.outstanding": "{amount} out",
+  "home.mcpStatus": "MCP status",
+  "home.runs.eyebrow": "{active} active · {total} total",
+  "home.runs.b1": "Live agent runs with full timeline",
+  "home.runs.b2": "Tokens, runtime, and billable per run",
+  "home.runs.b3": "Filter by client, project, status",
+  "home.runs.cta": "Open Runs",
+  "home.leverage.eyebrow": "{x}× over 30d",
+  "home.leverage.b1": "{h}h effective",
+  "home.leverage.b2": "{amount} billable",
+  "home.leverage.b3": "{pct}% margin",
+  "home.leverage.cta": "Open Leverage",
+  "home.approvals.pending": "{n} pending",
+  "home.approvals.clear": "All clear",
+  "home.approvals.b1": "Destructive actions gated by review",
+  "home.approvals.b2": "Approve or reject inline",
+  "home.approvals.b3": "Audit-ready event log",
+  "home.approvals.cta": "Review Approvals",
+  "home.clients.eyebrow": "{n} clients",
+  "home.clients.b1": "Per-client rate and run history",
+  "home.clients.b2": "Effective hours and billable · 30d",
+  "home.clients.b3": "Drill into projects and runs",
+  "home.clients.cta": "Open Clients",
+  "home.projects.eyebrow": "{n} streams",
+  "home.projects.b1": "Work streams grouped by client",
+  "home.projects.b2": "Runs filed under projects",
+  "home.projects.b3": "Per-project billable totals",
+  "home.projects.cta": "Open Projects",
+  "home.skills.eyebrow": "{n} skills",
+  "home.skills.b1": "Baseline hours per deliverable",
+  "home.skills.b2": "Rate modifier per skill",
+  "home.skills.b3": "Tagged for easy matching",
+  "home.skills.cta": "Open Skills",
+  "home.connect.title": "Connect Claude Code",
+  "home.connect.eyebrow": "One MCP endpoint",
+  "home.connect.body":
+    "Wire your agent to /api/mcp and every run is automatically tracked, priced, and billable.",
+
+  // Pages: Runs
+  "runs.title": "Runs",
+  "runs.subtitle": "Live agent runs and the billable work they produce.",
+  "runs.kpi.active": "Active runs",
+  "runs.kpi.activeHint": "agents working right now",
+  "runs.kpi.awaiting": "Awaiting approval",
+  "runs.kpi.awaiting.needs": "needs review",
+  "runs.kpi.awaiting.clear": "clear",
+  "runs.kpi.eff": "Effective hours · 24h",
+  "runs.kpi.effHint": "{n} runs shipped",
+  "runs.kpi.margin": "Margin · 24h",
+  "runs.kpi.marginDelta": "{x}× leverage · 7d",
+
+  // Pages: Leverage
+  "leverage.title": "Leverage",
+  "leverage.subtitle":
+    "How much human-equivalent work the agents shipped — and the margin you keep.",
+  "leverage.hero.eff": "Effective hours",
+  "leverage.hero.effSub": "human-equivalent shipped",
+  "leverage.hero.lev": "Leverage",
+  "leverage.hero.levSub": "vs {h}h runtime",
+  "leverage.hero.margin": "Margin",
+  "leverage.hero.marginSub": "{pct}% of billable",
+  "leverage.hero.runs": "Runs",
+  "leverage.hero.runsSub": "shipped in {d}d",
+  "leverage.topSkills": "Top skills by effective hours",
+  "leverage.window": "window · {d}d",
+
+  // Pages: Approvals
+  "approvals.title": "Approvals",
+  "approvals.subtitle": "Human-in-the-loop gates flagged by agent runs.",
+
+  // Pages: Clients
+  "clients.title": "Clients",
+  "clients.subtitle": "The companies the agency ships work for.",
+  "clients.new": "New client",
+  "clients.activeRuns": "Active runs",
+  "clients.eff30": "Eff. hours · 30d",
+  "clients.bill30": "Billable · 30d",
+  "clients.viewRuns": "View runs",
+  "clients.projectsCount": "{n} project",
+  "clients.projectsCountPl": "{n} projects",
+
+  // Pages: Projects
+  "projects.title": "Projects",
+  "projects.subtitle": "Per-client work streams. Runs are filed under projects.",
+  "projects.new": "New project",
+  "projects.runs": "Runs",
+  "projects.eff": "Eff. hours",
+  "projects.bill": "Billable",
+  "projects.viewRuns": "View runs",
+
+  // Pages: Skills
+  "skills.title": "Skills",
+  "skills.subtitle":
+    "Skills are the billing primitive — each one carries a baseline-hours estimate and rate modifier.",
+  "skills.new": "Create skill",
+  "skills.totalSkills": "Total skills",
+  "skills.avgBaseline": "Avg baseline hours",
+  "skills.avgRate": "Avg rate modifier",
+  "skills.baseline": "baseline",
+  "skills.rate": "{x}× rate",
+
+  // Pages: Invoices (list)
+  "invoices.title": "Invoices",
+  "invoices.subtitle": "Periodic billing pulled from shipped runs.",
+  "invoices.new": "New invoice",
+  "invoices.outstanding": "Outstanding",
+  "invoices.paid30": "Paid · 30d",
+  "invoices.overdue": "Overdue",
+  "invoices.all": "All invoices",
+  "invoices.col.number": "Number",
+  "invoices.col.client": "Client",
+  "invoices.col.period": "Period",
+  "invoices.col.issued": "Issued",
+  "invoices.col.due": "Due",
+  "invoices.col.status": "Status",
+  "invoices.col.total": "Total",
+
+  // Invoice statuses
+  "invoiceStatus.draft": "Draft",
+  "invoiceStatus.sent": "Sent",
+  "invoiceStatus.paid": "Paid",
+  "invoiceStatus.overdue": "Overdue",
+
+  // Invoice detail (real invoice document)
+  "invoice.title": "Tax invoice",
+  "invoice.back": "All invoices",
+  "invoice.print": "Print",
+  "invoice.issue": "Issue invoice",
+  "invoice.markPaid": "Mark as paid",
+  "invoice.markPaidShort": "Mark paid",
+  "invoice.number": "Invoice no.",
+  "invoice.issuedAt": "Issued",
+  "invoice.dueAt": "Due date",
+  "invoice.paidAt": "Paid",
+  "invoice.period": "Period",
+  "invoice.from": "Supplier",
+  "invoice.to": "Bill to",
+  "invoice.lineItems": "Line items",
+  "invoice.col.no": "#",
+  "invoice.col.skill": "Service",
+  "invoice.col.description": "Description",
+  "invoice.col.hours": "Hours",
+  "invoice.col.rate": "Rate",
+  "invoice.col.amount": "Amount",
+  "invoice.subtotal": "Subtotal (excl. tax)",
+  "invoice.tax": "VAT",
+  "invoice.total": "Total due",
+  "invoice.paymentTerms": "Payment terms",
+  "invoice.paymentBody":
+    "Payment due within 14 days of issue. Bank transfer to the IBAN below. Please reference the invoice number.",
+  "invoice.cui": "Tax ID",
+  "invoice.bank": "Bank",
+  "invoice.iban": "IBAN",
+  "invoice.address": "Address",
+  "invoice.email": "Email",
+
+  // Modal — common
+  "modal.cancel": "Cancel",
+  "modal.creating": "Creating…",
+  "modal.required": "{field} is required",
+
+  // New client modal
+  "newClient.title": "New client",
+  "newClient.subtitle": "Add a company you ship work for.",
+  "newClient.name": "Company name",
+  "newClient.namePh": "Acme Robotics",
+  "newClient.initials": "Initials (optional)",
+  "newClient.rate": "Hourly rate (USD)",
+  "newClient.color": "Accent color",
+  "newClient.submit": "Create client",
+
+  // New project modal
+  "newProject.title": "New project",
+  "newProject.subtitle":
+    "A work stream filed under a client. Runs are tracked here.",
+  "newProject.client": "Client",
+  "newProject.clientPh": "Choose a client",
+  "newProject.name": "Project name",
+  "newProject.namePh": "Q3 launch site",
+  "newProject.desc": "Description (optional)",
+  "newProject.descPh": "What is this project about?",
+  "newProject.color": "Color",
+  "newProject.submit": "Create project",
+
+  // New skill modal
+  "newSkill.title": "Create skill",
+  "newSkill.subtitle":
+    "Skills are the billing primitive — baseline hours × rate × modifier.",
+  "newSkill.name": "Skill name",
+  "newSkill.namePh": "Landing page redesign",
+  "newSkill.desc": "Description",
+  "newSkill.descPh": "What's delivered when this skill ships?",
+  "newSkill.category": "Category",
+  "newSkill.baseline": "Baseline hrs",
+  "newSkill.modifier": "Rate modifier",
+  "newSkill.tags": "Tags (comma-separated)",
+  "newSkill.submit": "Create skill",
+
+  // New invoice modal
+  "newInvoice.title": "New invoice",
+  "newInvoice.subtitle":
+    "Bundles uninvoiced shipped runs in the window into a draft invoice.",
+  "newInvoice.client": "Client",
+  "newInvoice.clientPh": "Choose a client",
+  "newInvoice.window": "Window (days)",
+  "newInvoice.tax": "VAT (%)",
+  "newInvoice.eligible": "Eligible runs",
+  "newInvoice.subtotal": "Subtotal",
+  "newInvoice.taxRow": "VAT",
+  "newInvoice.total": "Total",
+  "newInvoice.submit": "Create draft",
+
+  // Auth — shared
+  "auth.copyright": "Fulcra © {year}",
+  "auth.tagline": "Bill the leverage.",
+  "auth.taglineBody":
+    "Run, approve, invoice — every Claude session, every billable hour, every shipped outcome. The agency dashboard for AI work.",
+  "auth.feature.track.title": "Track",
+  "auth.feature.track.body":
+    "Every run, every token, every cost — captured automatically via the MCP.",
+  "auth.feature.approve.title": "Approve",
+  "auth.feature.approve.body":
+    "Hold AI before it ships. One-click approve or reject, with full context.",
+  "auth.feature.invoice.title": "Invoice",
+  "auth.feature.invoice.body":
+    "Convert shipped runs into fiscal invoices — Romanian-compliant, one click.",
+  "auth.orWith": "or with email",
+  "auth.email": "Email",
+  "auth.password": "Password",
+  "auth.firstName": "First name",
+  "auth.lastName": "Last name",
+  "auth.company": "Company (optional)",
+  "auth.required": "Required",
+  "auth.passwordHint": "At least 8 characters",
+  "auth.passwordShow": "Show password",
+  "auth.passwordHide": "Hide password",
+  "auth.langEn": "English",
+  "auth.langRo": "Română",
+
+  // Sign-in
+  "signin.title": "Login",
+  "signin.noAccount": "Don't have an account?",
+  "signin.signUpLink": "Sign up",
+  "signin.continueGoogle": "Login with Google",
+  "signin.submit": "Login",
+  "signin.forgot": "Forgot password?",
+  "signin.signingIn": "Signing in…",
+  "signin.invalid": "Wrong email or password.",
+  "signin.unknownError": "Couldn't sign you in. Try again.",
+  "signin.terms":
+    "By continuing you agree to our terms and acknowledge our privacy policy.",
+
+  // Sign-up
+  "signup.title": "Sign up",
+  "signup.haveAccount": "Already have an account?",
+  "signup.logInLink": "Log in",
+  "signup.continueGoogle": "Sign up with Google",
+  "signup.submit": "Sign up",
+  "signup.creating": "Creating your account…",
+  "signup.taken": "An account with that email already exists.",
+  "signup.weakPassword": "Choose a stronger password (8+ characters).",
+  "signup.unknownError": "Couldn't create your account. Try again.",
+  "signup.consent":
+    "By clicking Sign up you agree to Fulcra's {terms} and {privacy}.",
+  "signup.terms": "Terms",
+  "signup.privacy": "Privacy Policy",
+
+  // Onboarding shell
+  "onb.step": "Step {n}",
+  "onb.of": "of {n}",
+  "onb.back": "Back",
+  "onb.next": "Continue",
+  "onb.finish": "Finish",
+  "onb.welcome": "Welcome, {name}",
+  "onb.preparing": "Preparing your workspace…",
+
+  // Step 1 — agency size
+  "onb.s1.q1": "How large is your agency?",
+  "onb.s1.q2": "How many clients do you serve at once?",
+  "onb.size.solo": "Just me",
+  "onb.size.s_2_5": "2 – 5",
+  "onb.size.s_6_20": "6 – 20",
+  "onb.size.s_21_50": "21 – 50",
+  "onb.size.s_51_plus": "51+",
+  "onb.cc.c_1": "1",
+  "onb.cc.c_2_5": "2 – 5",
+  "onb.cc.c_6_15": "6 – 15",
+  "onb.cc.c_16_50": "16 – 50",
+  "onb.cc.c_50_plus": "50+",
+
+  // Step 2 — service category
+  "onb.s2.q": "What's the main service you deliver?",
+  "onb.svc.web_dev": "Web development",
+  "onb.svc.design": "Design / branding",
+  "onb.svc.content": "Content & SEO",
+  "onb.svc.marketing": "Marketing & ads",
+  "onb.svc.data": "Data & automation",
+  "onb.svc.consulting": "Consulting",
+  "onb.svc.ops": "Ops & DevOps",
+  "onb.svc.other": "Something else",
+  "onb.svc.otherPlaceholder": "Tell us in 2–3 words",
+
+  // Step 3 — use cases
+  "onb.s3.q": "What will you use Fulcra for?",
+  "onb.s3.hint": "Pick all that apply",
+  "onb.uc.track_runs": "Track AI run cost",
+  "onb.uc.bill_clients": "Bill clients for AI work",
+  "onb.uc.approvals": "Manage approvals before AI ships",
+  "onb.uc.team_visibility": "Team visibility",
+  "onb.uc.leverage": "Measure AI leverage vs hours",
+
+  // Step 4 — attribution
+  "onb.s4.q": "How did you hear about us?",
+  "onb.attr.search": "Search engine",
+  "onb.attr.youtube": "YouTube",
+  "onb.attr.twitter": "X (ex Twitter)",
+  "onb.attr.linkedin": "LinkedIn",
+  "onb.attr.reddit": "Reddit",
+  "onb.attr.tiktok": "TikTok",
+  "onb.attr.friend": "Friend / colleague",
+  "onb.attr.claude_code": "Claude Code MCP listing",
+  "onb.attr.other": "Other",
+};
+
+const ro: Dict = {
+  // Sidebar / nav
+  "nav.home": "Acasă",
+  "nav.runs": "Sesiuni",
+  "nav.leverage": "Pârghie",
+  "nav.approvals": "Aprobări",
+  "nav.catalog": "Catalog",
+  "nav.skills": "Competențe",
+  "nav.clients": "Clienți",
+  "nav.projects": "Proiecte",
+  "nav.invoices": "Facturi",
+  "sidebar.connect": "Conectează Claude Code",
+  "sidebar.connectMcp": "Conectează MCP",
+  "sidebar.connected": "Conectat",
+  "sidebar.reconnect": "Reconectează MCP",
+  "mcpModal.title": "Conectează Claude Code",
+  "mcpModal.subtitle":
+    "Rulează această comandă în terminal pentru a înregistra serverul MCP în Claude Code.",
+  "mcpModal.commandLabel": "Comandă",
+  "mcpModal.serverLabel": "URL server",
+  "mcpModal.copy": "Copiază",
+  "mcpModal.copied": "Copiat",
+  "mcpModal.openEndpoint": "Deschide endpoint-ul",
+  "mcpModal.statusOk": "Serverul este accesibil",
+  "mcpModal.statusFail": "Serverul nu răspunde",
+  "mcpModal.statusChecking": "Se verifică…",
+  "mcpModal.help":
+    "După adăugare, orice sesiune Claude Code din terminalul tău poate apela run_start / run_event / run_end și va fi urmărită automat aici.",
+  "mcpModal.step1": "Copiază comanda de mai sus.",
+  "mcpModal.step2":
+    "Rulează-o în terminal — înregistrează serverul MCP în Claude Code, global.",
+  "mcpModal.step3":
+    "Pornește o sesiune Claude Code din orice proiect. Sesiunile vor fi urmărite automat aici.",
+  "mcpModal.close": "Închide",
+  "mcpModal.keyLoading": "Căutăm cheia ta MCP…",
+  "mcpModal.keyNone":
+    "Nu ai încă o cheie MCP. Generează una ca să autorizezi Claude Code.",
+  "mcpModal.keyStored": "O cheie MCP există deja pe contul tău.",
+  "mcpModal.keyFresh": "Cheie nouă generată — salveaz-o acum.",
+  "mcpModal.keyOnceWarning":
+    "Cheia nu e stocată în clar. Dacă o pierzi, generezi alta (cea veche rămâne validă până la revocare).",
+  "mcpModal.keyGenerate": "Generează cheie",
+  "mcpModal.keyGenerating": "Se generează…",
+  "mcpModal.keyNew": "Cheie nouă",
+  "mcpModal.keyError": "N-am putut încărca cheile: {reason}",
+
+  // Topbar
+  "topbar.workspace": "Agenția Dictando",
+  "topbar.menu.account": "Setări cont",
+  "topbar.menu.billing": "Facturare",
+  "topbar.menu.api": "Chei API",
+  "topbar.menu.signout": "Deconectare",
+  "topbar.notifications": "Notificări",
+  "topbar.openMenu": "Deschide meniul de navigare",
+
+  // Footer
+  "footer.tagline": "Fulcra © {year} · Facturează pârghia.",
+  "footer.terms": "Termeni și condiții",
+  "footer.privacy": "Politica de confidențialitate",
+  "footer.aup": "Politica de utilizare",
+
+  // Pages: Home
+  "home.title": "Acasă",
+  "home.invoices": "Facturi",
+  "home.outstanding": "{amount} de încasat",
+  "home.mcpStatus": "Status MCP",
+  "home.runs.eyebrow": "{active} active · {total} în total",
+  "home.runs.b1": "Sesiuni live cu cronologie completă",
+  "home.runs.b2": "Tokeni, durată și sumă facturabilă per sesiune",
+  "home.runs.b3": "Filtrare după client, proiect, status",
+  "home.runs.cta": "Deschide Sesiuni",
+  "home.leverage.eyebrow": "{x}× pe 30 de zile",
+  "home.leverage.b1": "{h}h efective",
+  "home.leverage.b2": "{amount} facturabili",
+  "home.leverage.b3": "Marjă {pct}%",
+  "home.leverage.cta": "Deschide Pârghie",
+  "home.approvals.pending": "{n} în așteptare",
+  "home.approvals.clear": "Toate clarificate",
+  "home.approvals.b1": "Acțiunile distructive trec prin revizuire",
+  "home.approvals.b2": "Aprobă sau respinge inline",
+  "home.approvals.b3": "Jurnal de evenimente pregătit pentru audit",
+  "home.approvals.cta": "Verifică Aprobări",
+  "home.clients.eyebrow": "{n} clienți",
+  "home.clients.b1": "Tarif per client și istoric sesiuni",
+  "home.clients.b2": "Ore efective și sumă facturabilă · 30 zile",
+  "home.clients.b3": "Detalii pe proiecte și sesiuni",
+  "home.clients.cta": "Deschide Clienți",
+  "home.projects.eyebrow": "{n} fluxuri",
+  "home.projects.b1": "Fluxuri de lucru grupate pe client",
+  "home.projects.b2": "Sesiunile sunt înregistrate sub proiecte",
+  "home.projects.b3": "Total facturabil per proiect",
+  "home.projects.cta": "Deschide Proiecte",
+  "home.skills.eyebrow": "{n} competențe",
+  "home.skills.b1": "Ore standard per livrare",
+  "home.skills.b2": "Modificator de tarif per competență",
+  "home.skills.b3": "Etichetate pentru potrivire rapidă",
+  "home.skills.cta": "Deschide Competențe",
+  "home.connect.title": "Conectează Claude Code",
+  "home.connect.eyebrow": "Un singur endpoint MCP",
+  "home.connect.body":
+    "Conectează agentul la /api/mcp și fiecare sesiune este urmărită, prețuită și facturabilă automat.",
+
+  // Pages: Runs
+  "runs.title": "Sesiuni",
+  "runs.subtitle":
+    "Sesiunile live ale agenților și munca facturabilă pe care o produc.",
+  "runs.kpi.active": "Sesiuni active",
+  "runs.kpi.activeHint": "agenți care lucrează acum",
+  "runs.kpi.awaiting": "În așteptarea aprobării",
+  "runs.kpi.awaiting.needs": "necesită revizuire",
+  "runs.kpi.awaiting.clear": "fără probleme",
+  "runs.kpi.eff": "Ore efective · 24h",
+  "runs.kpi.effHint": "{n} sesiuni livrate",
+  "runs.kpi.margin": "Marjă · 24h",
+  "runs.kpi.marginDelta": "{x}× pârghie · 7z",
+
+  // Pages: Leverage
+  "leverage.title": "Pârghie",
+  "leverage.subtitle":
+    "Cât de multă muncă echivalent-uman au livrat agenții — și marja pe care o păstrezi.",
+  "leverage.hero.eff": "Ore efective",
+  "leverage.hero.effSub": "echivalent uman livrat",
+  "leverage.hero.lev": "Pârghie",
+  "leverage.hero.levSub": "față de {h}h durată",
+  "leverage.hero.margin": "Marjă",
+  "leverage.hero.marginSub": "{pct}% din facturabil",
+  "leverage.hero.runs": "Sesiuni",
+  "leverage.hero.runsSub": "livrate în {d}z",
+  "leverage.topSkills": "Top competențe după ore efective",
+  "leverage.window": "fereastră · {d}z",
+
+  // Pages: Approvals
+  "approvals.title": "Aprobări",
+  "approvals.subtitle":
+    "Puncte de control cu intervenție umană semnalate de sesiuni.",
+
+  // Pages: Clients
+  "clients.title": "Clienți",
+  "clients.subtitle": "Companiile pentru care livrează agenția.",
+  "clients.new": "Client nou",
+  "clients.activeRuns": "Sesiuni active",
+  "clients.eff30": "Ore efective · 30z",
+  "clients.bill30": "Facturabil · 30z",
+  "clients.viewRuns": "Vezi sesiuni",
+  "clients.projectsCount": "{n} proiect",
+  "clients.projectsCountPl": "{n} proiecte",
+
+  // Pages: Projects
+  "projects.title": "Proiecte",
+  "projects.subtitle":
+    "Fluxuri de lucru per client. Sesiunile sunt înregistrate sub proiecte.",
+  "projects.new": "Proiect nou",
+  "projects.runs": "Sesiuni",
+  "projects.eff": "Ore efective",
+  "projects.bill": "Facturabil",
+  "projects.viewRuns": "Vezi sesiuni",
+
+  // Pages: Skills
+  "skills.title": "Competențe",
+  "skills.subtitle":
+    "Competențele sunt unitatea de facturare — fiecare are estimare în ore și modificator de tarif.",
+  "skills.new": "Adaugă competență",
+  "skills.totalSkills": "Total competențe",
+  "skills.avgBaseline": "Ore standard medii",
+  "skills.avgRate": "Modificator mediu de tarif",
+  "skills.baseline": "standard",
+  "skills.rate": "tarif {x}×",
+
+  // Pages: Invoices (list)
+  "invoices.title": "Facturi",
+  "invoices.subtitle": "Facturare periodică pe baza sesiunilor livrate.",
+  "invoices.new": "Factură nouă",
+  "invoices.outstanding": "De încasat",
+  "invoices.paid30": "Plătite · 30z",
+  "invoices.overdue": "Restante",
+  "invoices.all": "Toate facturile",
+  "invoices.col.number": "Număr",
+  "invoices.col.client": "Client",
+  "invoices.col.period": "Perioadă",
+  "invoices.col.issued": "Emisă",
+  "invoices.col.due": "Scadență",
+  "invoices.col.status": "Status",
+  "invoices.col.total": "Total",
+
+  // Invoice statuses
+  "invoiceStatus.draft": "Ciornă",
+  "invoiceStatus.sent": "Emisă",
+  "invoiceStatus.paid": "Plătită",
+  "invoiceStatus.overdue": "Restantă",
+
+  // Invoice detail
+  "invoice.title": "Factură fiscală",
+  "invoice.back": "Toate facturile",
+  "invoice.print": "Tipărește",
+  "invoice.issue": "Emite factura",
+  "invoice.markPaid": "Marchează ca plătită",
+  "invoice.markPaidShort": "Marchează plătită",
+  "invoice.number": "Nr. factură",
+  "invoice.issuedAt": "Emisă la",
+  "invoice.dueAt": "Scadență",
+  "invoice.paidAt": "Plătită la",
+  "invoice.period": "Perioadă",
+  "invoice.from": "Furnizor",
+  "invoice.to": "Beneficiar",
+  "invoice.lineItems": "Articole facturate",
+  "invoice.col.no": "Nr.",
+  "invoice.col.skill": "Serviciu",
+  "invoice.col.description": "Descriere",
+  "invoice.col.hours": "Ore",
+  "invoice.col.rate": "Tarif",
+  "invoice.col.amount": "Valoare",
+  "invoice.subtotal": "Subtotal (fără TVA)",
+  "invoice.tax": "TVA",
+  "invoice.total": "Total de plată",
+  "invoice.paymentTerms": "Termeni de plată",
+  "invoice.paymentBody":
+    "Plata se efectuează în 14 zile de la emitere, prin transfer bancar în contul IBAN de mai jos. Vă rugăm specificați numărul facturii.",
+  "invoice.cui": "CUI",
+  "invoice.bank": "Bancă",
+  "invoice.iban": "IBAN",
+  "invoice.address": "Adresă",
+  "invoice.email": "Email",
+
+  // Modal — common
+  "modal.cancel": "Anulează",
+  "modal.creating": "Se creează…",
+
+  // New client modal
+  "newClient.title": "Client nou",
+  "newClient.subtitle": "Adaugă o companie pentru care lucrezi.",
+  "newClient.name": "Nume companie",
+  "newClient.namePh": "Acme Robotics",
+  "newClient.initials": "Inițiale (opțional)",
+  "newClient.rate": "Tarif orar (USD)",
+  "newClient.color": "Culoare accent",
+  "newClient.submit": "Creează client",
+
+  // New project modal
+  "newProject.title": "Proiect nou",
+  "newProject.subtitle":
+    "Un flux de lucru sub un client. Sesiunile sunt înregistrate aici.",
+  "newProject.client": "Client",
+  "newProject.clientPh": "Alege un client",
+  "newProject.name": "Nume proiect",
+  "newProject.namePh": "Site lansare Q3",
+  "newProject.desc": "Descriere (opțional)",
+  "newProject.descPh": "Despre ce este acest proiect?",
+  "newProject.color": "Culoare",
+  "newProject.submit": "Creează proiect",
+
+  // New skill modal
+  "newSkill.title": "Adaugă competență",
+  "newSkill.subtitle":
+    "Competențele sunt unitatea de facturare — ore × tarif × modificator.",
+  "newSkill.name": "Nume competență",
+  "newSkill.namePh": "Reproiectare landing page",
+  "newSkill.desc": "Descriere",
+  "newSkill.descPh": "Ce livrezi când această competență este folosită?",
+  "newSkill.category": "Categorie",
+  "newSkill.baseline": "Ore standard",
+  "newSkill.modifier": "Modificator tarif",
+  "newSkill.tags": "Etichete (separate prin virgulă)",
+  "newSkill.submit": "Creează competență",
+
+  // New invoice modal
+  "newInvoice.title": "Factură nouă",
+  "newInvoice.subtitle":
+    "Grupează sesiunile livrate, nefacturate, din fereastră într-o factură ciornă.",
+  "newInvoice.client": "Client",
+  "newInvoice.clientPh": "Alege un client",
+  "newInvoice.window": "Fereastră (zile)",
+  "newInvoice.tax": "TVA (%)",
+  "newInvoice.eligible": "Sesiuni eligibile",
+  "newInvoice.subtotal": "Subtotal",
+  "newInvoice.taxRow": "TVA",
+  "newInvoice.total": "Total",
+  "newInvoice.submit": "Creează ciornă",
+
+  // Auth — shared
+  "auth.copyright": "Fulcra © {year}",
+  "auth.tagline": "Facturează pârghia.",
+  "auth.taglineBody":
+    "Rulează, aprobă, facturează — fiecare sesiune Claude, fiecare oră facturabilă, fiecare livrare. Dashboard-ul de agenție pentru munca AI.",
+  "auth.feature.track.title": "Urmărește",
+  "auth.feature.track.body":
+    "Fiecare rulare, fiecare token, fiecare cost — captate automat prin MCP.",
+  "auth.feature.approve.title": "Aprobă",
+  "auth.feature.approve.body":
+    "Oprește AI-ul înainte să livreze. Aprobă sau respinge dintr-un click, cu context complet.",
+  "auth.feature.invoice.title": "Facturează",
+  "auth.feature.invoice.body":
+    "Transformă rulările livrate în facturi fiscale — conforme RO, dintr-un click.",
+  "auth.orWith": "sau cu email",
+  "auth.email": "Email",
+  "auth.password": "Parolă",
+  "auth.firstName": "Prenume",
+  "auth.lastName": "Nume",
+  "auth.company": "Companie (opțional)",
+  "auth.required": "Obligatoriu",
+  "auth.passwordHint": "Minim 8 caractere",
+  "auth.passwordShow": "Arată parola",
+  "auth.passwordHide": "Ascunde parola",
+  "auth.langEn": "English",
+  "auth.langRo": "Română",
+
+  // Sign-in
+  "signin.title": "Login",
+  "signin.noAccount": "Nu ai cont?",
+  "signin.signUpLink": "Creează unul",
+  "signin.continueGoogle": "Login cu Google",
+  "signin.submit": "Login",
+  "signin.forgot": "Ai uitat parola?",
+  "signin.signingIn": "Te conectăm…",
+  "signin.invalid": "Email sau parolă greșită.",
+  "signin.unknownError": "Nu te-am putut conecta. Încearcă din nou.",
+  "signin.terms":
+    "Continuând, ești de acord cu termenii noștri și confirmi politica de confidențialitate.",
+
+  // Sign-up
+  "signup.title": "Înregistrare",
+  "signup.haveAccount": "Ai deja cont?",
+  "signup.logInLink": "Login",
+  "signup.continueGoogle": "Înregistrare cu Google",
+  "signup.submit": "Înregistrează-te",
+  "signup.creating": "Îți creăm contul…",
+  "signup.taken": "Există deja un cont cu acest email.",
+  "signup.weakPassword": "Alege o parolă mai puternică (minim 8 caractere).",
+  "signup.unknownError": "Nu am putut crea contul. Încearcă din nou.",
+  "signup.consent":
+    "Apăsând Înregistrează-te, ești de acord cu {terms} și {privacy} Fulcra.",
+  "signup.terms": "Termeni",
+  "signup.privacy": "Politica de confidențialitate",
+
+  // Onboarding shell
+  "onb.step": "Pasul {n}",
+  "onb.of": "din {n}",
+  "onb.back": "Înapoi",
+  "onb.next": "Continuă",
+  "onb.finish": "Termină",
+  "onb.welcome": "Bun venit, {name}",
+  "onb.preparing": "Pregătim spațiul tău de lucru…",
+
+  // Step 1 — dimensiune agenție
+  "onb.s1.q1": "Cât de mare e agenția ta?",
+  "onb.s1.q2": "Cu câți clienți lucrezi simultan?",
+  "onb.size.solo": "Doar eu",
+  "onb.size.s_2_5": "2 – 5",
+  "onb.size.s_6_20": "6 – 20",
+  "onb.size.s_21_50": "21 – 50",
+  "onb.size.s_51_plus": "51+",
+  "onb.cc.c_1": "1",
+  "onb.cc.c_2_5": "2 – 5",
+  "onb.cc.c_6_15": "6 – 15",
+  "onb.cc.c_16_50": "16 – 50",
+  "onb.cc.c_50_plus": "50+",
+
+  // Step 2 — serviciu principal
+  "onb.s2.q": "Care e principalul serviciu pe care îl livrezi?",
+  "onb.svc.web_dev": "Dezvoltare web",
+  "onb.svc.design": "Design / branding",
+  "onb.svc.content": "Conținut & SEO",
+  "onb.svc.marketing": "Marketing & ads",
+  "onb.svc.data": "Date & automatizare",
+  "onb.svc.consulting": "Consultanță",
+  "onb.svc.ops": "Operațiuni & DevOps",
+  "onb.svc.other": "Altceva",
+  "onb.svc.otherPlaceholder": "Spune-ne în 2–3 cuvinte",
+
+  // Step 3 — use cases
+  "onb.s3.q": "Pentru ce folosești Fulcra?",
+  "onb.s3.hint": "Alege tot ce ți se aplică",
+  "onb.uc.track_runs": "Vreau să văd costul rulărilor AI",
+  "onb.uc.bill_clients": "Facturez clienții pentru munca AI",
+  "onb.uc.approvals": "Vreau aprobări înainte ca AI-ul să livreze",
+  "onb.uc.team_visibility": "Vreau vizibilitate pentru echipa mea",
+  "onb.uc.leverage": "Vreau să măsor pârghia AI vs ore reale",
+
+  // Step 4 — attribution
+  "onb.s4.q": "Cum ai auzit de noi?",
+  "onb.attr.search": "Google / Bing",
+  "onb.attr.youtube": "YouTube",
+  "onb.attr.twitter": "X (ex Twitter)",
+  "onb.attr.linkedin": "LinkedIn",
+  "onb.attr.reddit": "Reddit",
+  "onb.attr.tiktok": "TikTok",
+  "onb.attr.friend": "De la un prieten / coleg",
+  "onb.attr.claude_code": "Lista MCP din Claude Code",
+  "onb.attr.other": "Altceva",
+};
+
+const dicts: Record<Locale, Dict> = { en, ro };
+
+export function format(template: string, vars?: Record<string, string | number>) {
+  if (!vars) return template;
+  return template.replace(/\{(\w+)\}/g, (_, k) =>
+    vars[k] !== undefined ? String(vars[k]) : `{${k}}`,
+  );
+}
+
+export function translate(
+  locale: Locale,
+  key: string,
+  vars?: Record<string, string | number>,
+): string {
+  const tpl = dicts[locale]?.[key] ?? dicts.en[key] ?? key;
+  return format(tpl, vars);
+}

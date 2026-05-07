@@ -1,12 +1,15 @@
-import { RiSparkling2Line, RiAddLine } from "@remixicon/react";
+import { RiSparkling2Line } from "@remixicon/react";
 import { AppShell } from "@/components/layout/app-shell";
-import { Button } from "@/components/ui/button";
 import { CategoryPill } from "@/components/agency/category-pill";
-import { api } from "@/lib/agency/store";
+import { NewSkillButton } from "@/components/agency/new-skill-modal";
+import { getApi } from "@/lib/agency/server-api";
+import { getT } from "@/lib/i18n/server";
 import { cn } from "@/lib/cn";
 
-export default function SkillsPage() {
-  const skills = api.listSkills();
+export default async function SkillsPage() {
+  const { t } = await getT();
+  const api = await getApi();
+  const skills = await api.listSkills();
   const totalSkills = skills.length;
   const avgBaseline =
     skills.reduce((s, sk) => s + sk.baselineHours, 0) / Math.max(totalSkills, 1);
@@ -20,29 +23,26 @@ export default function SkillsPage() {
           <span className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-100)] text-[var(--color-brand-400)]">
             <RiSparkling2Line size={20} />
           </span>
-          <div>
-            <h1 className="text-[26px] font-medium leading-[34px] tracking-tight sm:text-[28px] md:text-[32px] md:leading-[42px]">
-              Skills
+          <div className="flex flex-col">
+            <h1 className="text-[26px] font-semibold leading-[32px] tracking-tight sm:text-[28px] sm:leading-[34px]">
+              {t("skills.title")}
             </h1>
-            <p className="mt-[4px] text-[13px] text-[var(--color-text-soft)]">
-              Skills are the billing primitive — each one carries a baseline-hours
-              estimate and rate modifier.
+            <p className="mt-[2px] text-[13px] leading-[18px] text-[var(--color-text-soft)]">
+              {t("skills.subtitle")}
             </p>
           </div>
         </div>
-        <Button variant="outline" leadingIcon={<RiAddLine size={16} />}>
-          Create skill
-        </Button>
+        <NewSkillButton />
       </div>
 
       <div className="mt-[24px] grid grid-cols-1 gap-[12px] sm:grid-cols-3">
-        <Stat label="Total skills" value={`${totalSkills}`} />
+        <Stat label={t("skills.totalSkills")} value={`${totalSkills}`} />
         <Stat
-          label="Avg baseline hours"
+          label={t("skills.avgBaseline")}
           value={`${avgBaseline.toFixed(1)}h`}
         />
         <Stat
-          label="Avg rate modifier"
+          label={t("skills.avgRate")}
           value={`${avgRate.toFixed(2)}×`}
         />
       </div>
@@ -52,7 +52,7 @@ export default function SkillsPage() {
           <article
             key={sk.id}
             className={cn(
-              "flex flex-col gap-[12px] rounded-[12px] bg-[var(--color-bg-surface)] p-[20px]",
+              "flex flex-col gap-[12px] rounded-[8px] bg-[var(--color-bg-surface)] p-[20px]",
               "ring-1 ring-[var(--color-stroke-soft)] transition-colors",
               "hover:ring-[var(--color-stroke-sub)]",
             )}
@@ -84,7 +84,7 @@ export default function SkillsPage() {
                   {sk.baselineHours}h
                 </div>
                 <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--color-text-soft)]">
-                  baseline
+                  {t("skills.baseline")}
                 </div>
               </div>
               <span
@@ -94,7 +94,7 @@ export default function SkillsPage() {
                   "tabular-nums",
                 )}
               >
-                {sk.rateModifier.toFixed(2)}× rate
+                {t("skills.rate", { x: sk.rateModifier.toFixed(2) })}
               </span>
             </div>
           </article>
@@ -106,7 +106,7 @@ export default function SkillsPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[12px] bg-[var(--color-bg-surface)] p-[16px] ring-1 ring-[var(--color-stroke-soft)]">
+    <div className="rounded-[8px] bg-[var(--color-bg-surface)] p-[16px] ring-1 ring-[var(--color-stroke-soft)]">
       <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--color-text-soft)]">
         {label}
       </div>

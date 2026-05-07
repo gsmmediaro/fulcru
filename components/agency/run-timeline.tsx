@@ -85,7 +85,7 @@ const KIND_META: Record<
 export function RunTimeline({ events }: { events: RunEvent[] }) {
   if (events.length === 0) {
     return (
-      <div className="rounded-[12px] bg-[var(--color-bg-surface)] p-[24px] text-center text-[13px] text-[var(--color-text-soft)] ring-1 ring-[var(--color-stroke-soft)]">
+      <div className="rounded-[8px] bg-[var(--color-bg-surface)] p-[24px] text-center text-[13px] text-[var(--color-text-soft)] ring-1 ring-[var(--color-stroke-soft)]">
         No events yet — they'll appear here as the agent works.
       </div>
     );
@@ -93,7 +93,7 @@ export function RunTimeline({ events }: { events: RunEvent[] }) {
   return (
     <div
       className={cn(
-        "rounded-[12px] bg-[var(--color-bg-surface)] p-[20px]",
+        "rounded-[8px] bg-[var(--color-bg-surface)] p-[20px]",
         "ring-1 ring-[var(--color-stroke-soft)]",
       )}
     >

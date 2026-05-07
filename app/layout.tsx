@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import { ConsoleGreeting } from "@/components/brand/console-greeting";
+import { getLocale } from "@/lib/i18n/server";
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["latin"],
@@ -19,14 +20,15 @@ export const metadata: Metadata = {
     "Time-tracking, leverage measurement and billing for AI-coding agencies. Bill the leverage.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
   return (
     <html
-      lang="en"
+      lang={locale}
       className={`dark ${beVietnamPro.variable}`}
       suppressHydrationWarning
     >

@@ -11,12 +11,13 @@ import {
 } from "@remixicon/react";
 import { cn } from "@/lib/cn";
 import { Logo } from "@/components/brand/logo";
-import { Button } from "@/components/ui/button";
+import { ConnectMcpButton } from "@/components/agency/connect-mcp-modal";
+import { useLocale } from "@/lib/i18n/provider";
 import { sidebarNav, type NavGroup } from "./sidebar-nav-data";
 
 function isActive(pathname: string, href?: string) {
   if (!href) return false;
-  if (href === "/") return pathname === "/";
+  if (href === "/" || href === "/agency") return pathname === href;
   return pathname === href || pathname.startsWith(href + "/");
 }
 
@@ -114,6 +115,7 @@ function NavRow({
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { t } = useLocale();
 
   const initialExpanded = React.useMemo(() => {
     const out: Record<string, boolean> = { catalog: true };
@@ -140,7 +142,7 @@ export function Sidebar() {
     >
       <Link
         href="/"
-        className="group/logo flex h-[48px] items-center rounded-[10px] px-[10px] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-400)]"
+        className="group/logo flex h-[48px] items-center rounded-[6px] px-[10px] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-400)]"
       >
         <Logo />
       </Link>
@@ -164,7 +166,7 @@ export function Sidebar() {
                       active={active || groupHasActiveChild}
                     />
                   }
-                  label={g.label}
+                  label={t(g.labelKey)}
                   href={hasChildren ? undefined : g.href}
                   external={g.external}
                   active={active}
@@ -197,7 +199,7 @@ export function Sidebar() {
                       {g.children!.map((c) => (
                         <li key={c.href}>
                           <NavRow
-                            label={c.label}
+                            label={t(c.labelKey)}
                             href={c.href}
                             indent
                             active={isActive(pathname, c.href)}
@@ -219,6 +221,7 @@ export function Sidebar() {
 }
 
 function McpStatusCard() {
+  const { t } = useLocale();
   const [connected, setConnected] = React.useState<boolean | null>(null);
 
   React.useEffect(() => {
@@ -242,7 +245,7 @@ function McpStatusCard() {
   return (
     <div
       className={cn(
-        "mt-[12px] rounded-[12px] p-[16px]",
+        "mt-[12px] rounded-[8px] p-[16px]",
         "bg-[color-mix(in_oklab,var(--color-brand-100)_85%,transparent)]",
         "ring-1 ring-[color-mix(in_oklab,var(--color-brand-400)_18%,transparent)]",
       )}
@@ -258,10 +261,10 @@ function McpStatusCard() {
           <RiPlugLine size={14} />
         </div>
         <p className="text-[13px] font-semibold leading-[18px]">
-          Connect Claude Code
+          {t("sidebar.connect")}
         </p>
       </div>
-      <Button
+      <ConnectMcpButton
         variant="outline"
         size="sm"
         className={cn(
@@ -269,16 +272,13 @@ function McpStatusCard() {
           connected === true &&
             "border-[var(--color-accent-green)]/30 text-[var(--color-accent-green)] hover:bg-[color-mix(in_oklab,var(--color-accent-green)_8%,transparent)]",
         )}
-        asChild
       >
-        <a href="/api/mcp" target="_blank" rel="noreferrer">
-          {connected === true
-            ? "Connected"
-            : connected === false
-              ? "Reconnect MCP"
-              : "Connect MCP"}
-        </a>
-      </Button>
+        {connected === true
+          ? t("sidebar.connected")
+          : connected === false
+            ? t("sidebar.reconnect")
+            : t("sidebar.connectMcp")}
+      </ConnectMcpButton>
     </div>
   );
 }
