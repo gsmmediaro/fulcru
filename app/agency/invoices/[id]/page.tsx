@@ -9,16 +9,6 @@ import { getT } from "@/lib/i18n/server";
 import { type Locale } from "@/lib/i18n/dict";
 import { cn } from "@/lib/cn";
 
-const ISSUER = {
-  name: "Dictando Agency S.R.L.",
-  cui: "RO48217364",
-  rc: "J40/12345/2026",
-  address: "Str. Aviator Popisteanu 14A, Sector 1, București, România",
-  email: "contact@dictando.ro",
-  bank: "Banca Transilvania",
-  iban: "RO12 BTRL RONC RT00 1234 5678",
-};
-
 function moneyFor(locale: Locale) {
   return new Intl.NumberFormat(locale === "ro" ? "ro-RO" : "en-US", {
     style: "currency",
@@ -110,35 +100,15 @@ export default async function InvoiceDetailPage({
 
         <div className="mt-[24px] grid grid-cols-1 gap-[20px] sm:grid-cols-2">
           <Party title={t("invoice.from")}>
-            <div className="font-semibold text-[var(--color-text-strong)]">
-              {ISSUER.name}
-            </div>
-            <PartyLine label={t("invoice.cui")} value={ISSUER.cui} />
-            <PartyLine label="Reg. Com." value={ISSUER.rc} />
-            <PartyLine label={t("invoice.address")} value={ISSUER.address} />
-            <PartyLine label={t("invoice.email")} value={ISSUER.email} />
-            <PartyLine label={t("invoice.bank")} value={ISSUER.bank} />
-            <PartyLine label={t("invoice.iban")} value={ISSUER.iban} mono />
+            <span className="text-[var(--color-text-soft)]">
+              {t("invoice.fromEmpty")}
+            </span>
           </Party>
           <Party title={t("invoice.to")}>
             {client ? (
-              <>
-                <div className="font-semibold text-[var(--color-text-strong)]">
-                  {client.name}
-                </div>
-                <PartyLine
-                  label={t("invoice.cui")}
-                  value={`RO${client.id.slice(-8).toUpperCase()}`}
-                />
-                <PartyLine
-                  label={t("invoice.address")}
-                  value="—"
-                />
-                <PartyLine
-                  label="Tarif"
-                  value={`${money.format(client.hourlyRate)}/h`}
-                />
-              </>
+              <div className="font-semibold text-[var(--color-text-strong)]">
+                {client.name}
+              </div>
             ) : (
               <span className="text-[var(--color-text-soft)]">—</span>
             )}
@@ -257,32 +227,6 @@ function Party({
         {children}
       </div>
     </section>
-  );
-}
-
-function PartyLine({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <div className="flex items-baseline gap-[6px] text-[var(--color-text-sub)]">
-      <span className="shrink-0 text-[11px] uppercase tracking-[0.04em] text-[var(--color-text-soft)]">
-        {label}
-      </span>
-      <span
-        className={cn(
-          "text-[var(--color-text-strong)] tabular-nums",
-          mono && "font-mono",
-        )}
-      >
-        {value}
-      </span>
-    </div>
   );
 }
 

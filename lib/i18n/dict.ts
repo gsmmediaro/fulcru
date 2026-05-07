@@ -63,7 +63,7 @@ const en: Dict = {
   "mcpModal.keyError": "Couldn't load your keys: {reason}",
 
   // Topbar
-  "topbar.workspace": "Dictando Agency",
+  "topbar.workspace": "Workspace",
   "topbar.menu.account": "Account settings",
   "topbar.menu.billing": "Billing",
   "topbar.menu.api": "API keys",
@@ -215,7 +215,8 @@ const en: Dict = {
   "invoice.dueAt": "Due date",
   "invoice.paidAt": "Paid",
   "invoice.period": "Period",
-  "invoice.from": "Supplier",
+  "invoice.from": "Bill from",
+  "invoice.fromEmpty": "Add your billing details from settings.",
   "invoice.to": "Bill to",
   "invoice.lineItems": "Line items",
   "invoice.col.no": "#",
@@ -463,7 +464,7 @@ const ro: Dict = {
   "mcpModal.keyError": "N-am putut încărca cheile: {reason}",
 
   // Topbar
-  "topbar.workspace": "Agenția Dictando",
+  "topbar.workspace": "Spațiu de lucru",
   "topbar.menu.account": "Setări cont",
   "topbar.menu.billing": "Facturare",
   "topbar.menu.api": "Chei API",
@@ -619,6 +620,7 @@ const ro: Dict = {
   "invoice.paidAt": "Plătită la",
   "invoice.period": "Perioadă",
   "invoice.from": "Furnizor",
+  "invoice.fromEmpty": "Adaugă datele de facturare din setări.",
   "invoice.to": "Beneficiar",
   "invoice.lineItems": "Articole facturate",
   "invoice.col.no": "Nr.",
