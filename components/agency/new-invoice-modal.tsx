@@ -37,11 +37,11 @@ export function NewInvoiceButton({ clients }: { clients: Client[] }) {
   return (
     <>
       <Button
-        variant="outline"
+        variant="primary-orange"
         leadingIcon={<RiAddLine size={16} />}
         onClick={() => setOpen(true)}
       >
-        {t("invoices.new")}
+        {t("invoiceList.createInvoice")}
       </Button>
       <NewInvoiceModal
         open={open}
