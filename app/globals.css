@@ -516,3 +516,52 @@ button {
   .invoice-doc * { color-scheme: light; }
 }
 
+
+/* Legal pages: privacy, terms */
+.legal-prose {
+  color: var(--color-text-sub);
+  font-size: 14px;
+  line-height: 24px;
+}
+.legal-prose h2 {
+  color: var(--color-text-strong);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 26px;
+  margin-top: 36px;
+  margin-bottom: 12px;
+}
+.legal-prose h2:first-of-type { margin-top: 0; }
+.legal-prose h3 {
+  color: var(--color-text-strong);
+  font-size: 14.5px;
+  font-weight: 600;
+  margin-top: 20px;
+  margin-bottom: 6px;
+}
+.legal-prose p { margin-bottom: 14px; }
+.legal-prose ul {
+  list-style: disc;
+  padding-left: 22px;
+  margin-bottom: 14px;
+}
+.legal-prose ul > li { margin-bottom: 6px; }
+.legal-prose a {
+  color: var(--color-brand-400);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklab, var(--color-brand-400) 50%, transparent);
+}
+.legal-prose a:hover {
+  text-decoration-color: var(--color-brand-400);
+}
+.legal-prose strong { color: var(--color-text-strong); font-weight: 600; }
+.legal-prose code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+  background: color-mix(in oklab, white 4%, transparent);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--color-stroke-soft);
+}

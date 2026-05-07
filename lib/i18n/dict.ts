@@ -294,6 +294,8 @@ const en: Dict = {
 
   // Auth — shared
   "auth.copyright": "Fulcru © {year}",
+  "legal.backToApp": "Back",
+  "legal.lastUpdated": "Last updated {date}",
   "auth.tagline": "Bill the leverage.",
   "auth.taglineBody":
     "Run, approve, invoice — every Claude session, every billable hour, every shipped outcome. The agency dashboard for AI work.",
@@ -694,6 +696,8 @@ const ro: Dict = {
 
   // Auth — shared
   "auth.copyright": "Fulcru © {year}",
+  "legal.backToApp": "Înapoi",
+  "legal.lastUpdated": "Actualizat {date}",
   "auth.tagline": "Facturează pârghia.",
   "auth.taglineBody":
     "Rulează, aprobă, facturează — fiecare sesiune Claude, fiecare oră facturabilă, fiecare livrare. Dashboard-ul de agenție pentru munca AI.",
