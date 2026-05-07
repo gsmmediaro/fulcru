@@ -16,11 +16,12 @@ import { cn } from "@/lib/cn";
 
 const SERVER_NAME = "fulcru";
 
-type ClientId = "claude" | "codex" | "others";
+type ClientId = "claude" | "codex" | "opencode" | "others";
 
 const CLIENT_TABS: Array<{ id: ClientId; labelKey: string }> = [
   { id: "claude", labelKey: "mcpModal.tab.claude" },
   { id: "codex", labelKey: "mcpModal.tab.codex" },
+  { id: "opencode", labelKey: "mcpModal.tab.opencode" },
   { id: "others", labelKey: "mcpModal.tab.others" },
 ];
 
@@ -30,7 +31,28 @@ function buildSnippet(client: ClientId, url: string, key: string | null) {
     return `claude mcp add --transport http ${SERVER_NAME} ${url} --header "Authorization: Bearer ${bearer}"`;
   }
   if (client === "codex") {
-    return `codex mcp add ${SERVER_NAME} --transport http ${url} --header "Authorization: Bearer ${bearer}"`;
+    // Codex stores creds via env var, not inline. Two-step: export, then add.
+    return [
+      `export FULCRU_TOKEN="${bearer}"`,
+      `codex mcp add ${SERVER_NAME} --url ${url} --bearer-token-env-var FULCRU_TOKEN`,
+    ].join("\n");
+  }
+  if (client === "opencode") {
+    // opencode uses `mcp` (not `mcpServers`) and requires `type: "remote"`.
+    return JSON.stringify(
+      {
+        $schema: "https://opencode.ai/config.json",
+        mcp: {
+          [SERVER_NAME]: {
+            type: "remote",
+            url,
+            headers: { Authorization: `Bearer ${bearer}` },
+          },
+        },
+      },
+      null,
+      2,
+    );
   }
   return JSON.stringify(
     {
@@ -313,11 +335,22 @@ function ConnectMcpModal({
             })}
           </div>
 
-          {client === "others" ? (
-            <p className="-mt-[8px] text-[11.5px] leading-[16px] text-[var(--color-text-soft)]">
-              {t("mcpModal.others.hint")}
-            </p>
-          ) : null}
+          {(() => {
+            const hintKey =
+              client === "codex"
+                ? "mcpModal.codex.hint"
+                : client === "opencode"
+                  ? "mcpModal.opencode.hint"
+                  : client === "others"
+                    ? "mcpModal.others.hint"
+                    : null;
+            if (!hintKey) return null;
+            return (
+              <p className="-mt-[8px] text-[11.5px] leading-[16px] text-[var(--color-text-soft)]">
+                {t(hintKey)}
+              </p>
+            );
+          })()}
 
           {/* Command card */}
           <div

@@ -28,9 +28,14 @@ const en: Dict = {
     "Pick your client and run the command — every session it spawns is tracked here.",
   "mcpModal.tab.claude": "Claude Code",
   "mcpModal.tab.codex": "Codex",
+  "mcpModal.tab.opencode": "opencode",
   "mcpModal.tab.others": "Others",
+  "mcpModal.codex.hint":
+    "Codex stores credentials via an env var. Run both lines in your shell — codex writes to ~/.codex/config.toml.",
+  "mcpModal.opencode.hint":
+    "Paste into your opencode.json (or opencode.jsonc). opencode uses `mcp` and requires `type: \"remote\"`.",
   "mcpModal.others.hint":
-    "Paste this into your client's MCP config (Cline, Cursor, Continue, opencode, …).",
+    "Paste into your client's MCP config — works for Cursor, Cline, Continue, Windsurf and similar.",
   "mcpModal.commandLabel": "Command",
   "mcpModal.serverLabel": "Server URL",
   "mcpModal.copy": "Copy",
@@ -417,9 +422,14 @@ const ro: Dict = {
   "mcpModal.title": "Conectează MCP",
   "mcpModal.tab.claude": "Claude Code",
   "mcpModal.tab.codex": "Codex",
+  "mcpModal.tab.opencode": "opencode",
   "mcpModal.tab.others": "Altele",
+  "mcpModal.codex.hint":
+    "Codex ține credențialele într-o variabilă de mediu. Rulează ambele linii în shell — codex scrie în ~/.codex/config.toml.",
+  "mcpModal.opencode.hint":
+    "Lipește în opencode.json (sau opencode.jsonc). opencode folosește `mcp` și cere `type: \"remote\"`.",
   "mcpModal.others.hint":
-    "Lipește în configul MCP al clientului (Cline, Cursor, Continue, opencode, …).",
+    "Lipește în configul MCP al clientului — funcționează pentru Cursor, Cline, Continue, Windsurf și similare.",
   "mcpModal.subtitle":
     "Alege clientul și rulează comanda — orice sesiune pornită din el va fi urmărită aici.",
   "mcpModal.commandLabel": "Comandă",
