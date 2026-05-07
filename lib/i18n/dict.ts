@@ -253,6 +253,19 @@ const en: Dict = {
   "newClient.color": "Accent color",
   "newClient.submit": "Create client",
 
+  // Edit client modal
+  "editClient.title": "Edit client",
+  "editClient.submit": "Save changes",
+  "editClient.saving": "Saving…",
+  "editClient.email": "Email (optional)",
+  "editClient.emailPh": "billing@acme.com",
+  "editClient.ccRecipients": "CC recipients (optional)",
+  "editClient.ccHelper": "Up to 3 — comma or Enter to add",
+  "editClient.address": "Address (optional)",
+  "editClient.addressPh": "123 Main St, New York, NY 10001",
+  "editClient.note": "Note (optional)",
+  "editClient.notePh": "Internal notes about this client…",
+
   // New project modal
   "newProject.title": "New project",
   "newProject.subtitle":
@@ -656,6 +669,19 @@ const ro: Dict = {
   "newClient.rate": "Tarif orar (USD)",
   "newClient.color": "Culoare accent",
   "newClient.submit": "Creează client",
+
+  // Edit client modal
+  "editClient.title": "Editează client",
+  "editClient.submit": "Salvează modificările",
+  "editClient.saving": "Se salvează…",
+  "editClient.email": "Email (opțional)",
+  "editClient.emailPh": "facturare@acme.com",
+  "editClient.ccRecipients": "Destinatari CC (opțional)",
+  "editClient.ccHelper": "Maxim 3 — virgulă sau Enter pentru a adăuga",
+  "editClient.address": "Adresă (opțional)",
+  "editClient.addressPh": "Str. Principală 1, București, 010001",
+  "editClient.note": "Notă (opțional)",
+  "editClient.notePh": "Note interne despre acest client…",
 
   // New project modal
   "newProject.title": "Proiect nou",

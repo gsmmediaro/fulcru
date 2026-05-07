@@ -112,8 +112,22 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   return route("POST", path ?? [], url, body, session.user.id);
 }
 
+export async function PATCH(req: NextRequest, ctx: Ctx) {
+  const session = await getSession();
+  if (!session?.user?.id) return unauthorized();
+  const { path } = await ctx.params;
+  const url = new URL(req.url);
+  let body: Record<string, unknown>;
+  try {
+    body = await readBody(req);
+  } catch (e) {
+    return bad((e as Error).message);
+  }
+  return route("PATCH", path ?? [], url, body, session.user.id);
+}
+
 async function route(
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PATCH",
   path: string[],
   url: URL,
   body: Record<string, unknown> | null,
@@ -131,6 +145,32 @@ async function route(
           const c = await api.getClient(id);
           return c ? json(c) : notFound("Client not found");
         }
+        if (method === "PATCH") {
+          if (!id) return bad("Client id is required for PATCH");
+          if (!body) return bad("Missing body");
+          const ccRaw = body.ccRecipients;
+          const ccRecipients =
+            ccRaw === null
+              ? null
+              : Array.isArray(ccRaw)
+                ? (ccRaw.filter((x) => typeof x === "string") as string[])
+                : undefined;
+          try {
+            const updated = await api.updateClient(id, {
+              name: asString(body.name),
+              initials: asString(body.initials),
+              accentColor: asString(body.accentColor),
+              hourlyRate: asNumber(body.hourlyRate),
+              email: body.email === null ? null : asString(body.email),
+              address: body.address === null ? null : asString(body.address),
+              ccRecipients,
+              note: body.note === null ? null : asString(body.note),
+            });
+            return json(updated);
+          } catch (e) {
+            return bad((e as Error).message, 404);
+          }
+        }
         if (id) return bad("Method not allowed", 405);
         if (!body) return bad("Missing body");
         const name = asString(body.name);
@@ -143,6 +183,14 @@ async function route(
           initials: asString(body.initials),
           accentColor: asString(body.accentColor),
           hourlyRate,
+          email: asString(body.email),
+          address: asString(body.address),
+          ccRecipients: Array.isArray(body.ccRecipients)
+            ? (body.ccRecipients.filter(
+                (x) => typeof x === "string",
+              ) as string[])
+            : undefined,
+          note: asString(body.note),
         });
         return json(created, { status: 201 });
       }
