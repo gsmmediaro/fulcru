@@ -298,6 +298,7 @@ async function route(
                 projectId: qp.get("projectId") ?? undefined,
                 status: status as RunStatus | undefined,
                 limit,
+                sinceDate: qp.get("sinceDate") ?? undefined,
               }),
             );
           }
@@ -305,8 +306,92 @@ async function route(
           if (!run) return notFound("Run not found");
           return json({ run, events: await api.listRunEvents(id) });
         }
+
+        // DELETE /api/agency/runs/:id
+        if (method === "DELETE") {
+          if (!id) return bad("Run id is required");
+          try {
+            await api.deleteRun(id);
+            return json({ ok: true });
+          } catch (e) {
+            return bad((e as Error).message, 400);
+          }
+        }
+
+        // PATCH /api/agency/runs/:id
+        if (method === "PATCH") {
+          if (!id) return bad("Run id is required");
+          if (!body) return bad("Missing body");
+          try {
+            const updated = await api.updateRun(id, {
+              description: asString(body.description),
+              startedAt: asString(body.startedAt),
+              endedAt: asString(body.endedAt),
+              clientId: asString(body.clientId),
+              projectId: asString(body.projectId),
+              billable: body.billable !== undefined ? Boolean(body.billable) : undefined,
+            });
+            return json(updated);
+          } catch (e) {
+            return bad((e as Error).message, 400);
+          }
+        }
+
         // POST
         if (!body) return bad("Missing body");
+
+        // POST /api/agency/runs/start-manual
+        if (id === "start-manual") {
+          try {
+            const run = await api.startManualRun({
+              clientId: asString(body.clientId),
+              projectId: asString(body.projectId),
+              skillId: asString(body.skillId),
+              description: asString(body.description),
+              billable: body.billable !== undefined ? Boolean(body.billable) : undefined,
+            });
+            return json(run, { status: 201 });
+          } catch (e) {
+            return bad((e as Error).message);
+          }
+        }
+
+        // POST /api/agency/runs/start-break
+        if (id === "start-break") {
+          try {
+            const run = await api.startBreakRun({
+              projectId: asString(body.projectId),
+            });
+            return json(run, { status: 201 });
+          } catch (e) {
+            return bad((e as Error).message);
+          }
+        }
+
+        // POST /api/agency/runs/append
+        if (id === "append") {
+          const date = asString(body.date);
+          const startTime = asString(body.startTime);
+          const endTime = asString(body.endTime);
+          if (!date || !startTime || !endTime) {
+            return bad("date, startTime, endTime are required");
+          }
+          try {
+            const run = await api.appendManualEntry({
+              date,
+              startTime,
+              endTime,
+              description: asString(body.description),
+              clientId: asString(body.clientId),
+              projectId: asString(body.projectId),
+              billable: body.billable !== undefined ? Boolean(body.billable) : undefined,
+            });
+            return json(run, { status: 201 });
+          } catch (e) {
+            return bad((e as Error).message);
+          }
+        }
+
         if (!id) {
           const clientId = asString(body.clientId);
           const projectId = asString(body.projectId);
@@ -329,6 +414,14 @@ async function route(
             return json(run, { status: 201 });
           } catch (e) {
             return bad((e as Error).message);
+          }
+        }
+        if (action === "stop") {
+          try {
+            const run = await api.stopRun(id);
+            return json(run);
+          } catch (e) {
+            return bad((e as Error).message, 404);
           }
         }
         if (action === "events") {
