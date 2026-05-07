@@ -13,11 +13,22 @@ export default async function InvoiceDetailPage({
   const invoice = await api.getInvoice(id);
   if (!invoice) notFound();
 
-  const client = await api.getClient(invoice.clientId);
+  const [client, billableExpenses] = await Promise.all([
+    api.getClient(invoice.clientId),
+    api.listExpenses({
+      clientId: invoice.clientId,
+      billable: true,
+      invoiceId: null,
+    }),
+  ]);
 
   return (
     <AppShell>
-      <InvoiceEditor invoice={invoice} client={client} />
+      <InvoiceEditor
+        invoice={invoice}
+        client={client}
+        billableExpenses={billableExpenses}
+      />
     </AppShell>
   );
 }

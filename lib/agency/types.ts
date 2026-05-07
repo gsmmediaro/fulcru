@@ -152,6 +152,34 @@ export type Invoice = {
   recurringNextIssue?: string;
 };
 
+export type ExpenseCategory =
+  | "ai_tools"
+  | "software"
+  | "hosting"
+  | "domain"
+  | "hardware"
+  | "travel"
+  | "food"
+  | "marketing"
+  | "education"
+  | "other";
+
+export type Expense = {
+  id: string;
+  date: string; // YYYY-MM-DD
+  projectId?: string;
+  clientId?: string;
+  category: ExpenseCategory;
+  amount: number;
+  currency: string;
+  note?: string;
+  billable: boolean;
+  receiptUrl?: string;
+  receiptPathname?: string;
+  invoiceId?: string;
+  createdAt: string;
+};
+
 export type AgencySettings = {
   defaultHourlyRate?: number;
   businessName?: string;

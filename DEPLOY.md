@@ -77,6 +77,7 @@
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                                                 |
 | `NEXT_PUBLIC_APP_URL`  | Public app URL - exposed to the client SDK                                 |
 | `NODE_ENV`             | `production`                                                               |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token for receipt file uploads (provision from vercel.com/storage/blob). Without it, expense creation still works but receipt upload returns a 503 error shown inline to the user. |
 
 ## Subsequent deploys
 

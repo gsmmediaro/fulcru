@@ -35,6 +35,8 @@ import { useLocale } from "@/lib/i18n/provider";
 import { cn } from "@/lib/cn";
 import type {
   Client,
+  Expense,
+  ExpenseCategory,
   Invoice,
   InvoiceLineItem,
   InvoiceRecurrence,
@@ -282,33 +284,196 @@ function RecurringModal({
   );
 }
 
-// ─── Import time modal (placeholder) ──────────────────────────────────────────
+// ─── Import Expenses Modal ─────────────────────────────────────────────────────
+
+const EXPENSE_CATEGORY_KEYS: Record<ExpenseCategory, string> = {
+  ai_tools: "expense.cat.ai_tools",
+  software: "expense.cat.software",
+  hosting: "expense.cat.hosting",
+  domain: "expense.cat.domain",
+  hardware: "expense.cat.hardware",
+  travel: "expense.cat.travel",
+  food: "expense.cat.food",
+  marketing: "expense.cat.marketing",
+  education: "expense.cat.education",
+  other: "expense.cat.other",
+};
+
+function fmtAmount(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    return `${currency} ${amount.toFixed(2)}`;
+  }
+}
 
 function ImportTimeModal({
   open,
   onOpenChange,
+  invoiceId,
+  billableExpenses,
+  onImported,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  invoiceId: string;
+  billableExpenses: Expense[];
+  onImported: (newLineItems: InvoiceLineItem[]) => void;
 }) {
   const { t } = useLocale();
+  const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  const [importing, setImporting] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!open) {
+      setSelected(new Set());
+      setError(null);
+    }
+  }, [open]);
+
+  function toggleAll() {
+    if (selected.size === billableExpenses.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(billableExpenses.map((e) => e.id)));
+    }
+  }
+
+  function toggle(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleImport() {
+    if (selected.size === 0) {
+      setError(t("invoice.editor.importExpenses.none"));
+      return;
+    }
+    setImporting(true);
+    setError(null);
+    try {
+      const expenseIds = Array.from(selected);
+      // Mark expenses as invoiced — POST to the expenses route with action=attach
+      // We use a sentinel id "bulk" and action "attach" pattern
+      await fetch(`/api/agency/expenses/bulk/attach`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ expenseIds, invoiceId }),
+      });
+
+      // Build line items from selected expenses
+      const newItems: InvoiceLineItem[] = billableExpenses
+        .filter((e) => selected.has(e.id))
+        .map((e) => ({
+          type: "service" as const,
+          description: e.note || t(EXPENSE_CATEGORY_KEYS[e.category]),
+          quantity: 1,
+          unitPrice: e.amount,
+          amount: e.amount,
+        }));
+
+      onImported(newItems);
+      onOpenChange(false);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      ariaLabel={t("invoice.editor.importTimeTitle")}
-      width={480}
+      ariaLabel={t("invoice.editor.importExpenses.title")}
+      width={560}
     >
       <ModalCloseButton onClick={() => onOpenChange(false)} />
       <div className="flex flex-col">
         <header className="flex flex-col gap-[4px] px-[24px] pb-[16px] pt-[24px]">
           <h2 className="text-[20px] font-semibold leading-[26px] tracking-tight text-[var(--color-text-strong)]">
-            {t("invoice.editor.importTimeTitle")}
+            {t("invoice.editor.importExpenses.title")}
           </h2>
           <p className="text-[13px] text-[var(--color-text-soft)]">
-            {t("invoice.editor.importTimeSubtitle")}
+            {t("invoice.editor.importExpenses.subtitle")}
           </p>
         </header>
+
+        <div className="max-h-[360px] overflow-y-auto px-[24px]">
+          {billableExpenses.length === 0 ? (
+            <p className="py-[24px] text-center text-[13px] text-[var(--color-text-soft)]">
+              {t("invoice.editor.importExpenses.empty")}
+            </p>
+          ) : (
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="border-b border-[var(--color-stroke-soft)]">
+                  <th className="w-[36px] pb-[8px] text-left">
+                    <input
+                      type="checkbox"
+                      checked={selected.size === billableExpenses.length && billableExpenses.length > 0}
+                      onChange={toggleAll}
+                      className="accent-[var(--color-brand-400)]"
+                      aria-label="Select all"
+                    />
+                  </th>
+                  <th className="pb-[8px] text-left text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-soft)]">
+                    Date
+                  </th>
+                  <th className="pb-[8px] text-left text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-soft)]">
+                    Description
+                  </th>
+                  <th className="pb-[8px] text-right text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-soft)]">
+                    Amount
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {billableExpenses.map((expense) => (
+                  <tr
+                    key={expense.id}
+                    onClick={() => toggle(expense.id)}
+                    className="cursor-pointer border-b border-[var(--color-stroke-soft)] last:border-0 hover:bg-[color-mix(in_oklab,white_2%,transparent)]"
+                  >
+                    <td className="py-[10px]">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(expense.id)}
+                        onChange={() => toggle(expense.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="accent-[var(--color-brand-400)]"
+                        aria-label={`Select expense ${expense.id}`}
+                      />
+                    </td>
+                    <td className="py-[10px] font-mono text-[11px] tabular-nums text-[var(--color-text-sub)]">
+                      {expense.date}
+                    </td>
+                    <td className="py-[10px] pr-[8px] text-[var(--color-text-strong)]">
+                      {expense.note || t(EXPENSE_CATEGORY_KEYS[expense.category])}
+                    </td>
+                    <td className="py-[10px] text-right font-semibold tabular-nums text-[var(--color-text-strong)]">
+                      {fmtAmount(expense.amount, expense.currency)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {error ? (
+          <p className="px-[24px] pt-[10px] text-[12px] text-rose-300">{error}</p>
+        ) : null}
+
         <footer className="mt-[12px] flex items-center justify-end gap-[8px] border-t border-[var(--color-stroke-soft)] px-[24px] py-[16px]">
           <Button
             type="button"
@@ -317,6 +482,18 @@ function ImportTimeModal({
           >
             {t("invoice.editor.close")}
           </Button>
+          {billableExpenses.length > 0 && (
+            <Button
+              type="button"
+              variant="primary-orange"
+              disabled={importing || selected.size === 0}
+              onClick={handleImport}
+            >
+              {importing
+                ? t("invoice.editor.importExpenses.importing")
+                : t("invoice.editor.importExpenses.import")}
+            </Button>
+          )}
         </footer>
       </div>
     </Modal>
@@ -627,9 +804,11 @@ function SaveStatus({ status }: { status: "idle" | "saving" | "saved" }) {
 export function InvoiceEditor({
   invoice: initialInvoice,
   client,
+  billableExpenses = [],
 }: {
   invoice: Invoice;
   client: Client | undefined;
+  billableExpenses?: Expense[];
 }) {
   const { t } = useLocale();
   const router = useRouter();
@@ -1271,6 +1450,13 @@ export function InvoiceEditor({
       <ImportTimeModal
         open={importTimeOpen}
         onOpenChange={setImportTimeOpen}
+        invoiceId={initialInvoice.id}
+        billableExpenses={billableExpenses}
+        onImported={(newLineItems) => {
+          const next = [...lineItems, ...newLineItems];
+          setLineItems(next);
+          save({ lineItems: next });
+        }}
       />
       <DeleteModal
         open={deleteOpen}

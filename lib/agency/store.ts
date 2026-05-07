@@ -4,6 +4,8 @@ import type {
   Approval,
   ApprovalStatus,
   Client,
+  Expense,
+  ExpenseCategory,
   Invoice,
   InvoiceLineItem,
   InvoiceStatus,
@@ -339,6 +341,41 @@ function mapSettings(r: AppUserRow): AgencySettings {
     businessAddress: r.business_address ?? undefined,
     businessEmail: r.business_email ?? undefined,
     businessCurrency: r.business_currency,
+  };
+}
+
+export type ExpenseRow = {
+  id: string;
+  user_id: string;
+  date: string;
+  project_id: string | null;
+  client_id: string | null;
+  category: ExpenseCategory;
+  amount: string | number;
+  currency: string;
+  note: string | null;
+  billable: boolean;
+  receipt_url: string | null;
+  receipt_pathname: string | null;
+  invoice_id: string | null;
+  created_at: string;
+};
+
+function mapExpense(r: ExpenseRow): Expense {
+  return {
+    id: r.id,
+    date: typeof r.date === "string" ? r.date.slice(0, 10) : iso(r.date),
+    projectId: r.project_id ?? undefined,
+    clientId: r.client_id ?? undefined,
+    category: r.category,
+    amount: num(r.amount),
+    currency: r.currency,
+    note: r.note ?? undefined,
+    billable: !!r.billable,
+    receiptUrl: r.receipt_url ?? undefined,
+    receiptPathname: r.receipt_pathname ?? undefined,
+    invoiceId: r.invoice_id ?? undefined,
+    createdAt: iso(r.created_at),
   };
 }
 
@@ -1188,6 +1225,180 @@ export const store = {
       RETURNING default_hourly_rate, business_name, business_address, business_email, business_currency
     `) as AppUserRow[];
     return mapSettings(rows[0]);
+  },
+
+  // ─── Expenses ──────────────────────────────────────────────
+  async listExpenses(
+    userId: string,
+    filter?: {
+      projectId?: string;
+      clientId?: string;
+      fromDate?: string;
+      toDate?: string;
+      billable?: boolean;
+      invoiceId?: string | null;
+    },
+  ): Promise<Expense[]> {
+    const projectId = filter?.projectId ?? null;
+    const clientId = filter?.clientId ?? null;
+    const fromDate = filter?.fromDate ?? null;
+    const toDate = filter?.toDate ?? null;
+    const billable = filter?.billable ?? null;
+    const filterInvoiceId = "invoiceId" in (filter ?? {});
+    const invoiceIdIsNull = filter?.invoiceId === null;
+    const invoiceIdValue = invoiceIdIsNull ? null : (filter?.invoiceId ?? null);
+
+    let rows: ExpenseRow[];
+    if (!filterInvoiceId) {
+      rows = (await sql`
+        SELECT id, user_id, date, project_id, client_id, category, amount, currency,
+               note, billable, receipt_url, receipt_pathname, invoice_id, created_at
+        FROM expense
+        WHERE user_id = ${userId}
+          AND (${projectId}::text IS NULL OR project_id = ${projectId})
+          AND (${clientId}::text IS NULL OR client_id = ${clientId})
+          AND (${fromDate}::date IS NULL OR date >= ${fromDate}::date)
+          AND (${toDate}::date IS NULL OR date <= ${toDate}::date)
+          AND (${billable}::boolean IS NULL OR billable = ${billable})
+        ORDER BY date DESC, created_at DESC
+      `) as ExpenseRow[];
+    } else if (invoiceIdIsNull) {
+      rows = (await sql`
+        SELECT id, user_id, date, project_id, client_id, category, amount, currency,
+               note, billable, receipt_url, receipt_pathname, invoice_id, created_at
+        FROM expense
+        WHERE user_id = ${userId}
+          AND (${projectId}::text IS NULL OR project_id = ${projectId})
+          AND (${clientId}::text IS NULL OR client_id = ${clientId})
+          AND (${fromDate}::date IS NULL OR date >= ${fromDate}::date)
+          AND (${toDate}::date IS NULL OR date <= ${toDate}::date)
+          AND (${billable}::boolean IS NULL OR billable = ${billable})
+          AND invoice_id IS NULL
+        ORDER BY date DESC, created_at DESC
+      `) as ExpenseRow[];
+    } else {
+      rows = (await sql`
+        SELECT id, user_id, date, project_id, client_id, category, amount, currency,
+               note, billable, receipt_url, receipt_pathname, invoice_id, created_at
+        FROM expense
+        WHERE user_id = ${userId}
+          AND (${projectId}::text IS NULL OR project_id = ${projectId})
+          AND (${clientId}::text IS NULL OR client_id = ${clientId})
+          AND (${fromDate}::date IS NULL OR date >= ${fromDate}::date)
+          AND (${toDate}::date IS NULL OR date <= ${toDate}::date)
+          AND (${billable}::boolean IS NULL OR billable = ${billable})
+          AND invoice_id = ${invoiceIdValue}
+        ORDER BY date DESC, created_at DESC
+      `) as ExpenseRow[];
+    }
+    return rows.map(mapExpense);
+  },
+
+  async getExpense(userId: string, id: string): Promise<Expense | undefined> {
+    const rows = (await sql`
+      SELECT id, user_id, date, project_id, client_id, category, amount, currency,
+             note, billable, receipt_url, receipt_pathname, invoice_id, created_at
+      FROM expense
+      WHERE user_id = ${userId} AND id = ${id}
+      LIMIT 1
+    `) as ExpenseRow[];
+    return rows[0] ? mapExpense(rows[0]) : undefined;
+  },
+
+  async createExpense(
+    userId: string,
+    input: {
+      date: string;
+      projectId?: string;
+      clientId?: string;
+      category: ExpenseCategory;
+      amount: number;
+      currency?: string;
+      note?: string;
+      billable?: boolean;
+      receiptUrl?: string;
+      receiptPathname?: string;
+    },
+  ): Promise<Expense> {
+    await ensureAppUser(userId);
+    const id = genId("exp");
+    // Derive clientId from project if not supplied
+    let clientId = input.clientId ?? null;
+    if (!clientId && input.projectId) {
+      const proj = await store.getProject(userId, input.projectId);
+      if (proj) clientId = proj.clientId;
+    }
+    const rows = (await sql`
+      INSERT INTO expense (
+        id, user_id, date, project_id, client_id, category, amount, currency,
+        note, billable, receipt_url, receipt_pathname
+      )
+      VALUES (
+        ${id}, ${userId}, ${input.date}::date,
+        ${input.projectId ?? null}, ${clientId},
+        ${input.category}, ${input.amount}, ${input.currency ?? "USD"},
+        ${input.note ?? null}, ${input.billable ?? true},
+        ${input.receiptUrl ?? null}, ${input.receiptPathname ?? null}
+      )
+      RETURNING id, user_id, date, project_id, client_id, category, amount, currency,
+                note, billable, receipt_url, receipt_pathname, invoice_id, created_at
+    `) as ExpenseRow[];
+    return mapExpense(rows[0]);
+  },
+
+  async updateExpense(
+    userId: string,
+    id: string,
+    patch: {
+      date?: string;
+      projectId?: string | null;
+      clientId?: string | null;
+      category?: ExpenseCategory;
+      amount?: number;
+      currency?: string;
+      note?: string | null;
+      billable?: boolean;
+      receiptUrl?: string | null;
+      receiptPathname?: string | null;
+      invoiceId?: string | null;
+    },
+  ): Promise<Expense> {
+    const rows = (await sql`
+      UPDATE expense SET
+        date             = COALESCE(${patch.date ?? null}::date, date),
+        project_id       = CASE WHEN ${patch.projectId !== undefined} THEN ${patch.projectId ?? null}::text ELSE project_id END,
+        client_id        = CASE WHEN ${patch.clientId !== undefined} THEN ${patch.clientId ?? null}::text ELSE client_id END,
+        category         = COALESCE(${patch.category ?? null}, category),
+        amount           = COALESCE(${patch.amount ?? null}::numeric, amount),
+        currency         = COALESCE(${patch.currency ?? null}, currency),
+        note             = CASE WHEN ${patch.note !== undefined} THEN ${patch.note ?? null}::text ELSE note END,
+        billable         = COALESCE(${patch.billable ?? null}::boolean, billable),
+        receipt_url      = CASE WHEN ${patch.receiptUrl !== undefined} THEN ${patch.receiptUrl ?? null}::text ELSE receipt_url END,
+        receipt_pathname = CASE WHEN ${patch.receiptPathname !== undefined} THEN ${patch.receiptPathname ?? null}::text ELSE receipt_pathname END,
+        invoice_id       = CASE WHEN ${patch.invoiceId !== undefined} THEN ${patch.invoiceId ?? null}::text ELSE invoice_id END
+      WHERE user_id = ${userId} AND id = ${id}
+      RETURNING id, user_id, date, project_id, client_id, category, amount, currency,
+                note, billable, receipt_url, receipt_pathname, invoice_id, created_at
+    `) as ExpenseRow[];
+    if (!rows[0]) throw new Error("Unknown expense");
+    return mapExpense(rows[0]);
+  },
+
+  async deleteExpense(userId: string, id: string): Promise<void> {
+    await sql`DELETE FROM expense WHERE user_id = ${userId} AND id = ${id}`;
+  },
+
+  async attachExpensesToInvoice(
+    userId: string,
+    expenseIds: string[],
+    invoiceId: string,
+  ): Promise<void> {
+    if (expenseIds.length === 0) return;
+    await sql`
+      UPDATE expense
+      SET invoice_id = ${invoiceId}
+      WHERE user_id = ${userId} AND id = ANY(${expenseIds}::text[])
+    `;
   },
 
   // ─── Leverage ──────────────────────────────────────────────

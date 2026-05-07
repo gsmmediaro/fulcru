@@ -4,6 +4,7 @@ import { bindApi } from "@/lib/agency/server-api";
 import { enrichRunFromSession } from "@/lib/agency/session-importer";
 import type {
   ApprovalStatus,
+  ExpenseCategory,
   InvoiceLineItem,
   InvoiceRecurrence,
   RunEventKind,
@@ -39,6 +40,19 @@ const EVENT_KINDS: RunEventKind[] = [
 ];
 
 const APPROVAL_STATUSES: ApprovalStatus[] = ["pending", "approved", "rejected"];
+
+const EXPENSE_CATEGORIES: ExpenseCategory[] = [
+  "ai_tools",
+  "software",
+  "hosting",
+  "domain",
+  "hardware",
+  "travel",
+  "food",
+  "marketing",
+  "education",
+  "other",
+];
 
 const RESOLVE_STATUSES: Array<"approved" | "rejected"> = [
   "approved",
@@ -575,6 +589,129 @@ async function route(
           }
         }
         return notFound("Unknown invoice action");
+      }
+
+      case "expenses": {
+        if (method === "GET") {
+          if (!id) {
+            const billableRaw = qp.get("billable");
+            const billable =
+              billableRaw === "true"
+                ? true
+                : billableRaw === "false"
+                  ? false
+                  : undefined;
+            const invoiceIdRaw = qp.get("invoiceId");
+            const invoiceId =
+              invoiceIdRaw === "null"
+                ? null
+                : invoiceIdRaw ?? undefined;
+            return json(
+              await api.listExpenses({
+                projectId: qp.get("projectId") ?? undefined,
+                clientId: qp.get("clientId") ?? undefined,
+                fromDate: qp.get("fromDate") ?? undefined,
+                toDate: qp.get("toDate") ?? undefined,
+                billable,
+                invoiceId,
+              }),
+            );
+          }
+          const exp = await api.getExpense(id);
+          return exp ? json(exp) : notFound("Expense not found");
+        }
+
+        if (method === "DELETE") {
+          if (!id) return bad("Expense id is required");
+          await api.deleteExpense(id);
+          return json({ ok: true });
+        }
+
+        if (method === "PATCH") {
+          if (!id) return bad("Expense id is required");
+          if (!body) return bad("Missing body");
+          const category = asString(body.category);
+          if (
+            category !== undefined &&
+            !EXPENSE_CATEGORIES.includes(category as ExpenseCategory)
+          ) {
+            return bad(`Invalid category: ${category}`);
+          }
+          try {
+            const updated = await api.updateExpense(id, {
+              date: asString(body.date),
+              projectId:
+                body.projectId === null ? null : asString(body.projectId),
+              clientId:
+                body.clientId === null ? null : asString(body.clientId),
+              category: category as ExpenseCategory | undefined,
+              amount: asNumber(body.amount),
+              currency: asString(body.currency),
+              note: body.note === null ? null : asString(body.note),
+              billable:
+                body.billable !== undefined
+                  ? Boolean(body.billable)
+                  : undefined,
+              receiptUrl:
+                body.receiptUrl === null ? null : asString(body.receiptUrl),
+              receiptPathname:
+                body.receiptPathname === null
+                  ? null
+                  : asString(body.receiptPathname),
+              invoiceId:
+                body.invoiceId === null ? null : asString(body.invoiceId),
+            });
+            return json(updated);
+          } catch (e) {
+            return bad((e as Error).message, 404);
+          }
+        }
+
+        // POST — create or attach action
+        if (!body) return bad("Missing body");
+        if (!id) {
+          const date = asString(body.date);
+          const category = asString(body.category) as ExpenseCategory | undefined;
+          const amount = asNumber(body.amount);
+          if (
+            !date ||
+            !category ||
+            !EXPENSE_CATEGORIES.includes(category) ||
+            amount === undefined
+          ) {
+            return bad("date, category, amount are required");
+          }
+          try {
+            const created = await api.createExpense({
+              date,
+              projectId: asString(body.projectId),
+              clientId: asString(body.clientId),
+              category,
+              amount,
+              currency: asString(body.currency),
+              note: asString(body.note),
+              billable:
+                body.billable !== undefined ? Boolean(body.billable) : true,
+              receiptUrl: asString(body.receiptUrl),
+              receiptPathname: asString(body.receiptPathname),
+            });
+            return json(created, { status: 201 });
+          } catch (e) {
+            return bad((e as Error).message);
+          }
+        }
+        if (action === "attach") {
+          const invoiceId = asString(body.invoiceId);
+          const expenseIds = Array.isArray(body.expenseIds)
+            ? (body.expenseIds.filter((x) => typeof x === "string") as string[])
+            : [];
+          if (!invoiceId || expenseIds.length === 0) {
+            return bad("invoiceId and expenseIds are required");
+          }
+          await api.attachExpensesToInvoice(expenseIds, invoiceId);
+          return json({ ok: true });
+        }
+        return notFound("Unknown expense action");
       }
 
       case "leverage": {

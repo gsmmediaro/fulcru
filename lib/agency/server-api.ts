@@ -5,6 +5,8 @@ import type {
   Approval,
   ApprovalStatus,
   Client,
+  Expense,
+  ExpenseCategory,
   Invoice,
   LeverageSnapshot,
   Project,
@@ -77,6 +79,20 @@ export function bindApi(userId: string) {
       patch: Parameters<typeof store.updateInvoice>[2],
     ) => store.updateInvoice(userId, id, patch),
 
+    listExpenses: (
+      filter?: Parameters<typeof store.listExpenses>[1],
+    ): Promise<Expense[]> => store.listExpenses(userId, filter),
+    getExpense: (id: string) => store.getExpense(userId, id),
+    createExpense: (input: Parameters<typeof store.createExpense>[1]) =>
+      store.createExpense(userId, input),
+    updateExpense: (
+      id: string,
+      patch: Parameters<typeof store.updateExpense>[2],
+    ) => store.updateExpense(userId, id, patch),
+    deleteExpense: (id: string) => store.deleteExpense(userId, id),
+    attachExpensesToInvoice: (expenseIds: string[], invoiceId: string) =>
+      store.attachExpensesToInvoice(userId, expenseIds, invoiceId),
+
     leverage: (windowDays?: number): Promise<LeverageSnapshot> =>
       store.leverage(userId, windowDays),
 
@@ -87,4 +103,4 @@ export function bindApi(userId: string) {
 }
 
 export type BoundApi = ReturnType<typeof bindApi>;
-export type { RunStatus, RunEventKind, ApprovalStatus, SkillCategory };
+export type { RunStatus, RunEventKind, ApprovalStatus, SkillCategory, ExpenseCategory };
