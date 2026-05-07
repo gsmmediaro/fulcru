@@ -202,6 +202,7 @@ const en: Dict = {
   "invoiceStatus.sent": "Sent",
   "invoiceStatus.paid": "Paid",
   "invoiceStatus.overdue": "Overdue",
+  "invoiceStatus.void": "Void",
 
   // Invoice detail (real invoice document)
   "invoice.title": "Tax invoice",
@@ -606,6 +607,7 @@ const ro: Dict = {
   "invoiceStatus.sent": "Emisă",
   "invoiceStatus.paid": "Plătită",
   "invoiceStatus.overdue": "Restantă",
+  "invoiceStatus.void": "Anulată",
 
   // Invoice detail
   "invoice.title": "Factură fiscală",

@@ -151,26 +151,26 @@ export default async function InvoiceDetailPage({
               <tbody>
                 {invoice.lineItems.map((li, i) => (
                   <tr
-                    key={li.runId}
+                    key={li.runId ?? `row-${i}`}
                     className="border-t border-[var(--color-stroke-soft)]"
                   >
                     <td className="px-[12px] py-[14px] tabular-nums text-[var(--color-text-soft)]">
                       {i + 1}
                     </td>
                     <td className="px-[12px] py-[14px] font-semibold text-[var(--color-text-strong)]">
-                      {li.skillName}
+                      {li.skillName ?? li.type}
                     </td>
                     <td className="px-[12px] py-[14px] text-[var(--color-text-soft)]">
                       {li.description}
                     </td>
                     <td className="px-[12px] py-[14px] text-right tabular-nums text-[var(--color-text-sub)]">
-                      {li.hours.toFixed(1)}h
+                      {li.quantity.toFixed(2)}
                     </td>
                     <td className="px-[12px] py-[14px] text-right tabular-nums text-[var(--color-text-sub)]">
-                      {money.format(li.rateUsd)}
+                      {money.format(li.unitPrice)}
                     </td>
                     <td className="px-[12px] py-[14px] text-right font-semibold tabular-nums text-[var(--color-text-strong)]">
-                      {money.format(li.amountUsd)}
+                      {money.format(li.amount)}
                     </td>
                   </tr>
                 ))}

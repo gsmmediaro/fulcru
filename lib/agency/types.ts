@@ -4,6 +4,10 @@ export type Client = {
   initials: string;
   accentColor: string;
   hourlyRate: number;
+  email?: string;
+  address?: string;
+  ccRecipients?: string[];
+  note?: string;
   createdAt: string;
 };
 
@@ -98,16 +102,25 @@ export type Approval = {
   resolvedBy?: string;
 };
 
+export type InvoiceItemType = "service" | "product";
+
 export type InvoiceLineItem = {
-  runId: string;
-  skillName: string;
+  type: InvoiceItemType;
   description: string;
-  hours: number;
-  rateUsd: number;
-  amountUsd: number;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+  runId?: string;
+  skillName?: string;
 };
 
-export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue";
+export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "void";
+
+export type InvoiceRecurrence =
+  | "weekly"
+  | "monthly"
+  | "quarterly"
+  | "yearly";
 
 export type Invoice = {
   id: string;
@@ -123,6 +136,20 @@ export type Invoice = {
   subtotalUsd: number;
   taxUsd: number;
   totalUsd: number;
+  subject?: string;
+  notes?: string;
+  billFromName?: string;
+  billFromAddress?: string;
+  billFromEmail?: string;
+  billToName?: string;
+  billToAddress?: string;
+  billToEmail?: string;
+  billToCcEmails?: string[];
+  discountAmount: number;
+  taxPct: number;
+  recurringEnabled: boolean;
+  recurringRecurrence?: InvoiceRecurrence;
+  recurringNextIssue?: string;
 };
 
 export type LeverageSnapshot = {

@@ -54,6 +54,10 @@ type ClientRow = {
   initials: string;
   accent_color: string;
   hourly_rate: string | number;
+  email: string | null;
+  address: string | null;
+  cc_recipients: string[] | null;
+  note: string | null;
   created_at: string;
 };
 function mapClient(r: ClientRow): Client {
@@ -63,6 +67,10 @@ function mapClient(r: ClientRow): Client {
     initials: r.initials,
     accentColor: r.accent_color,
     hourlyRate: num(r.hourly_rate),
+    email: r.email ?? undefined,
+    address: r.address ?? undefined,
+    ccRecipients: r.cc_recipients ?? undefined,
+    note: r.note ?? undefined,
     createdAt: iso(r.created_at),
   };
 }
@@ -212,12 +220,65 @@ type InvoiceRow = {
   issued_at: string | null;
   due_at: string | null;
   paid_at: string | null;
-  line_items: InvoiceLineItem[];
+  line_items: unknown;
   subtotal_usd: string | number;
   tax_usd: string | number;
   total_usd: string | number;
+  subject: string | null;
+  notes: string | null;
+  bill_from_name: string | null;
+  bill_from_address: string | null;
+  bill_from_email: string | null;
+  bill_to_name: string | null;
+  bill_to_address: string | null;
+  bill_to_email: string | null;
+  bill_to_cc_emails: string[] | null;
+  discount_amount: string | number;
+  tax_pct: string | number;
+  recurring_enabled: boolean;
+  recurring_recurrence: string | null;
+  recurring_next_issue: string | null;
 };
+
+function normalizeLineItem(raw: unknown): InvoiceLineItem | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  // Legacy shape: {runId, skillName, description, hours, rateUsd, amountUsd}
+  if ("hours" in r || "rateUsd" in r || "amountUsd" in r) {
+    const quantity = num(r.hours);
+    const unitPrice = num(r.rateUsd);
+    return {
+      type: "service",
+      description: typeof r.description === "string" ? r.description : "",
+      quantity,
+      unitPrice,
+      amount: num(r.amountUsd) || quantity * unitPrice,
+      runId: typeof r.runId === "string" ? r.runId : undefined,
+      skillName: typeof r.skillName === "string" ? r.skillName : undefined,
+    };
+  }
+  // New shape
+  const type = r.type === "product" ? "product" : "service";
+  const quantity = num(r.quantity);
+  const unitPrice = num(r.unitPrice);
+  return {
+    type,
+    description: typeof r.description === "string" ? r.description : "",
+    quantity,
+    unitPrice,
+    amount: num(r.amount) || quantity * unitPrice,
+    runId: typeof r.runId === "string" ? r.runId : undefined,
+    skillName: typeof r.skillName === "string" ? r.skillName : undefined,
+  };
+}
+
 function mapInvoice(r: InvoiceRow): Invoice {
+  const items = Array.isArray(r.line_items)
+    ? (r.line_items
+        .map(normalizeLineItem)
+        .filter(Boolean) as InvoiceLineItem[])
+    : [];
+  const recurrence = r.recurring_recurrence;
   return {
     id: r.id,
     clientId: r.client_id,
@@ -228,10 +289,30 @@ function mapInvoice(r: InvoiceRow): Invoice {
     issuedAt: isoOrUndef(r.issued_at),
     dueAt: isoOrUndef(r.due_at),
     paidAt: isoOrUndef(r.paid_at),
-    lineItems: Array.isArray(r.line_items) ? r.line_items : [],
+    lineItems: items,
     subtotalUsd: num(r.subtotal_usd),
     taxUsd: num(r.tax_usd),
     totalUsd: num(r.total_usd),
+    subject: r.subject ?? undefined,
+    notes: r.notes ?? undefined,
+    billFromName: r.bill_from_name ?? undefined,
+    billFromAddress: r.bill_from_address ?? undefined,
+    billFromEmail: r.bill_from_email ?? undefined,
+    billToName: r.bill_to_name ?? undefined,
+    billToAddress: r.bill_to_address ?? undefined,
+    billToEmail: r.bill_to_email ?? undefined,
+    billToCcEmails: r.bill_to_cc_emails ?? undefined,
+    discountAmount: num(r.discount_amount),
+    taxPct: num(r.tax_pct),
+    recurringEnabled: !!r.recurring_enabled,
+    recurringRecurrence:
+      recurrence === "weekly" ||
+      recurrence === "monthly" ||
+      recurrence === "quarterly" ||
+      recurrence === "yearly"
+        ? recurrence
+        : undefined,
+    recurringNextIssue: r.recurring_next_issue ?? undefined,
   };
 }
 
@@ -246,7 +327,7 @@ export const store = {
   // ─── Clients ───────────────────────────────────────────────
   async listClients(userId: string): Promise<Client[]> {
     const rows = (await sql`
-      SELECT id, name, initials, accent_color, hourly_rate, created_at
+      SELECT id, name, initials, accent_color, hourly_rate, email, address, cc_recipients, note, created_at
       FROM client
       WHERE user_id = ${userId}
       ORDER BY created_at DESC
@@ -256,7 +337,7 @@ export const store = {
 
   async getClient(userId: string, id: string): Promise<Client | undefined> {
     const rows = (await sql`
-      SELECT id, name, initials, accent_color, hourly_rate, created_at
+      SELECT id, name, initials, accent_color, hourly_rate, email, address, cc_recipients, note, created_at
       FROM client
       WHERE user_id = ${userId} AND id = ${id}
       LIMIT 1
@@ -271,6 +352,10 @@ export const store = {
       initials?: string;
       accentColor?: string;
       hourlyRate: number;
+      email?: string;
+      address?: string;
+      ccRecipients?: string[];
+      note?: string;
     },
   ): Promise<Client> {
     const name = input.name.trim();
@@ -284,11 +369,58 @@ export const store = {
       .slice(0, 3)
       .toUpperCase();
     const accent = input.accentColor?.trim() || "#FF7A1A";
+    const cc = (input.ccRecipients ?? []).slice(0, 3).filter(Boolean);
     const rows = (await sql`
-      INSERT INTO client (id, user_id, name, initials, accent_color, hourly_rate)
-      VALUES (${id}, ${userId}, ${name}, ${initials}, ${accent}, ${input.hourlyRate})
-      RETURNING id, name, initials, accent_color, hourly_rate, created_at
+      INSERT INTO client (
+        id, user_id, name, initials, accent_color, hourly_rate,
+        email, address, cc_recipients, note
+      )
+      VALUES (
+        ${id}, ${userId}, ${name}, ${initials}, ${accent}, ${input.hourlyRate},
+        ${input.email ?? null},
+        ${input.address ?? null},
+        ${cc.length > 0 ? cc : null},
+        ${input.note ?? null}
+      )
+      RETURNING id, name, initials, accent_color, hourly_rate, email, address, cc_recipients, note, created_at
     `) as ClientRow[];
+    return mapClient(rows[0]);
+  },
+
+  async updateClient(
+    userId: string,
+    id: string,
+    patch: {
+      name?: string;
+      initials?: string;
+      accentColor?: string;
+      hourlyRate?: number;
+      email?: string | null;
+      address?: string | null;
+      ccRecipients?: string[] | null;
+      note?: string | null;
+    },
+  ): Promise<Client> {
+    const cc =
+      patch.ccRecipients === null
+        ? null
+        : patch.ccRecipients
+          ? patch.ccRecipients.slice(0, 3).filter(Boolean)
+          : undefined;
+    const rows = (await sql`
+      UPDATE client SET
+        name          = COALESCE(${patch.name ?? null}, name),
+        initials      = COALESCE(${patch.initials ?? null}, initials),
+        accent_color  = COALESCE(${patch.accentColor ?? null}, accent_color),
+        hourly_rate   = COALESCE(${patch.hourlyRate ?? null}, hourly_rate),
+        email         = CASE WHEN ${patch.email !== undefined} THEN ${patch.email ?? null}::text ELSE email END,
+        address       = CASE WHEN ${patch.address !== undefined} THEN ${patch.address ?? null}::text ELSE address END,
+        cc_recipients = CASE WHEN ${cc !== undefined} THEN ${cc ?? null}::text[] ELSE cc_recipients END,
+        note          = CASE WHEN ${patch.note !== undefined} THEN ${patch.note ?? null}::text ELSE note END
+      WHERE user_id = ${userId} AND id = ${id}
+      RETURNING id, name, initials, accent_color, hourly_rate, email, address, cc_recipients, note, created_at
+    `) as ClientRow[];
+    if (!rows[0]) throw new Error("Unknown client");
     return mapClient(rows[0]);
   },
 
@@ -674,7 +806,12 @@ export const store = {
       ? await sql`
           SELECT id, client_id, number, status, period_start, period_end,
                  issued_at, due_at, paid_at, line_items,
-                 subtotal_usd, tax_usd, total_usd
+                 subtotal_usd, tax_usd, total_usd,
+             subject, notes,
+             bill_from_name, bill_from_address, bill_from_email,
+             bill_to_name, bill_to_address, bill_to_email, bill_to_cc_emails,
+             discount_amount, tax_pct,
+             recurring_enabled, recurring_recurrence, recurring_next_issue
           FROM invoice
           WHERE user_id = ${userId} AND client_id = ${clientId}
           ORDER BY period_end DESC
@@ -682,7 +819,12 @@ export const store = {
       : await sql`
           SELECT id, client_id, number, status, period_start, period_end,
                  issued_at, due_at, paid_at, line_items,
-                 subtotal_usd, tax_usd, total_usd
+                 subtotal_usd, tax_usd, total_usd,
+             subject, notes,
+             bill_from_name, bill_from_address, bill_from_email,
+             bill_to_name, bill_to_address, bill_to_email, bill_to_cc_emails,
+             discount_amount, tax_pct,
+             recurring_enabled, recurring_recurrence, recurring_next_issue
           FROM invoice
           WHERE user_id = ${userId}
           ORDER BY period_end DESC
@@ -697,7 +839,12 @@ export const store = {
     const rows = (await sql`
       SELECT id, client_id, number, status, period_start, period_end,
              issued_at, due_at, paid_at, line_items,
-             subtotal_usd, tax_usd, total_usd
+             subtotal_usd, tax_usd, total_usd,
+             subject, notes,
+             bill_from_name, bill_from_address, bill_from_email,
+             bill_to_name, bill_to_address, bill_to_email, bill_to_cc_emails,
+             discount_amount, tax_pct,
+             recurring_enabled, recurring_recurrence, recurring_next_issue
       FROM invoice
       WHERE user_id = ${userId} AND id = ${id}
       LIMIT 1
@@ -739,15 +886,20 @@ export const store = {
     if (eligible.length === 0) {
       throw new Error("No uninvoiced shipped runs for this client in the window");
     }
-    const lineItems: InvoiceLineItem[] = eligible.map((r) => ({
-      runId: r.id,
-      skillName: r.skill_name,
-      description: `${r.skill_name} — run ${r.id}`,
-      hours: num(r.baseline_hours),
-      rateUsd: num(r.rate_usd),
-      amountUsd: num(r.billable_usd),
-    }));
-    const subtotal = lineItems.reduce((s, li) => s + li.amountUsd, 0);
+    const lineItems: InvoiceLineItem[] = eligible.map((r) => {
+      const quantity = num(r.baseline_hours);
+      const unitPrice = num(r.rate_usd);
+      return {
+        type: "service",
+        description: `${r.skill_name} — run ${r.id}`,
+        quantity,
+        unitPrice,
+        amount: num(r.billable_usd) || quantity * unitPrice,
+        runId: r.id,
+        skillName: r.skill_name,
+      };
+    });
+    const subtotal = lineItems.reduce((s, li) => s + li.amount, 0);
     const taxPct = Math.max(0, input.taxPct ?? 0);
     const tax = Number(((subtotal * taxPct) / 100).toFixed(2));
     const total = Number((subtotal + tax).toFixed(2));
@@ -765,17 +917,24 @@ export const store = {
       INSERT INTO invoice (
         id, user_id, client_id, number, status,
         period_start, period_end, due_at,
-        line_items, subtotal_usd, tax_usd, total_usd
+        line_items, subtotal_usd, tax_usd, total_usd,
+        tax_pct
       )
       VALUES (
         ${id}, ${userId}, ${input.clientId}, ${invoiceNumber}, 'draft',
         ${periodStart}, ${periodEnd}, ${dueAt},
         ${JSON.stringify(lineItems)}::jsonb,
-        ${subtotal.toFixed(2)}, ${tax.toFixed(2)}, ${total.toFixed(2)}
+        ${subtotal.toFixed(2)}, ${tax.toFixed(2)}, ${total.toFixed(2)},
+        ${taxPct.toFixed(2)}
       )
       RETURNING id, client_id, number, status, period_start, period_end,
                 issued_at, due_at, paid_at, line_items,
-                subtotal_usd, tax_usd, total_usd
+                subtotal_usd, tax_usd, total_usd,
+             subject, notes,
+             bill_from_name, bill_from_address, bill_from_email,
+             bill_to_name, bill_to_address, bill_to_email, bill_to_cc_emails,
+             discount_amount, tax_pct,
+             recurring_enabled, recurring_recurrence, recurring_next_issue
     `) as InvoiceRow[];
     return mapInvoice(rows[0]);
   },
@@ -793,7 +952,12 @@ export const store = {
       WHERE user_id = ${userId} AND id = ${id}
       RETURNING id, client_id, number, status, period_start, period_end,
                 issued_at, due_at, paid_at, line_items,
-                subtotal_usd, tax_usd, total_usd
+                subtotal_usd, tax_usd, total_usd,
+             subject, notes,
+             bill_from_name, bill_from_address, bill_from_email,
+             bill_to_name, bill_to_address, bill_to_email, bill_to_cc_emails,
+             discount_amount, tax_pct,
+             recurring_enabled, recurring_recurrence, recurring_next_issue
     `) as InvoiceRow[];
     return mapInvoice(rows[0]);
   },
@@ -807,7 +971,163 @@ export const store = {
       WHERE user_id = ${userId} AND id = ${id}
       RETURNING id, client_id, number, status, period_start, period_end,
                 issued_at, due_at, paid_at, line_items,
-                subtotal_usd, tax_usd, total_usd
+                subtotal_usd, tax_usd, total_usd,
+             subject, notes,
+             bill_from_name, bill_from_address, bill_from_email,
+             bill_to_name, bill_to_address, bill_to_email, bill_to_cc_emails,
+             discount_amount, tax_pct,
+             recurring_enabled, recurring_recurrence, recurring_next_issue
+    `) as InvoiceRow[];
+    if (!rows[0]) throw new Error("Unknown invoice");
+    return mapInvoice(rows[0]);
+  },
+
+  async voidInvoice(userId: string, id: string): Promise<Invoice> {
+    const rows = (await sql`
+      UPDATE invoice
+      SET status = 'void'
+      WHERE user_id = ${userId} AND id = ${id}
+      RETURNING id, client_id, number, status, period_start, period_end,
+                issued_at, due_at, paid_at, line_items,
+                subtotal_usd, tax_usd, total_usd,
+             subject, notes,
+             bill_from_name, bill_from_address, bill_from_email,
+             bill_to_name, bill_to_address, bill_to_email, bill_to_cc_emails,
+             discount_amount, tax_pct,
+             recurring_enabled, recurring_recurrence, recurring_next_issue
+    `) as InvoiceRow[];
+    if (!rows[0]) throw new Error("Unknown invoice");
+    return mapInvoice(rows[0]);
+  },
+
+  async deleteInvoice(userId: string, id: string): Promise<void> {
+    await sql`DELETE FROM invoice WHERE user_id = ${userId} AND id = ${id}`;
+  },
+
+  async duplicateInvoice(userId: string, sourceId: string): Promise<Invoice> {
+    const src = await store.getInvoice(userId, sourceId);
+    if (!src) throw new Error("Unknown invoice");
+    const newId = genId("inv");
+    const numCount = (await sql`
+      SELECT COUNT(*)::int AS n FROM invoice WHERE user_id = ${userId}
+    `) as Array<{ n: number }>;
+    const numSeq = (numCount[0]?.n ?? 0) + 1;
+    const now = new Date();
+    const newNumber = `INV-${now.getUTCFullYear()}-${String(100 + numSeq).padStart(4, "0")}`;
+    const rows = (await sql`
+      INSERT INTO invoice (
+        id, user_id, client_id, number, status,
+        period_start, period_end, due_at,
+        line_items, subtotal_usd, tax_usd, total_usd,
+        subject, notes,
+        bill_from_name, bill_from_address, bill_from_email,
+        bill_to_name, bill_to_address, bill_to_email, bill_to_cc_emails,
+        discount_amount, tax_pct
+      )
+      SELECT
+        ${newId}, ${userId}, client_id, ${newNumber}, 'draft',
+        period_start, period_end, due_at,
+        line_items, subtotal_usd, tax_usd, total_usd,
+        subject, notes,
+        bill_from_name, bill_from_address, bill_from_email,
+        bill_to_name, bill_to_address, bill_to_email, bill_to_cc_emails,
+        discount_amount, tax_pct
+      FROM invoice
+      WHERE user_id = ${userId} AND id = ${sourceId}
+      RETURNING id, client_id, number, status, period_start, period_end,
+                issued_at, due_at, paid_at, line_items,
+                subtotal_usd, tax_usd, total_usd,
+             subject, notes,
+             bill_from_name, bill_from_address, bill_from_email,
+             bill_to_name, bill_to_address, bill_to_email, bill_to_cc_emails,
+             discount_amount, tax_pct,
+             recurring_enabled, recurring_recurrence, recurring_next_issue
+    `) as InvoiceRow[];
+    return mapInvoice(rows[0]);
+  },
+
+  async updateInvoice(
+    userId: string,
+    id: string,
+    patch: {
+      subject?: string | null;
+      notes?: string | null;
+      issuedAt?: string | null;
+      dueAt?: string | null;
+      billFromName?: string | null;
+      billFromAddress?: string | null;
+      billFromEmail?: string | null;
+      billToName?: string | null;
+      billToAddress?: string | null;
+      billToEmail?: string | null;
+      billToCcEmails?: string[] | null;
+      discountAmount?: number;
+      taxPct?: number;
+      recurringEnabled?: boolean;
+      recurringRecurrence?: string | null;
+      recurringNextIssue?: string | null;
+      lineItems?: InvoiceLineItem[];
+    },
+  ): Promise<Invoice> {
+    let subtotalCents = 0;
+    let taxCents = 0;
+    let totalCents = 0;
+    let recompute = false;
+    if (patch.lineItems || patch.discountAmount != null || patch.taxPct != null) {
+      const inv = await store.getInvoice(userId, id);
+      if (!inv) throw new Error("Unknown invoice");
+      const items = patch.lineItems ?? inv.lineItems;
+      const subtotal = items.reduce(
+        (s, li) => s + (li.amount || li.quantity * li.unitPrice),
+        0,
+      );
+      const discount = patch.discountAmount ?? inv.discountAmount;
+      const taxPct = patch.taxPct ?? inv.taxPct;
+      const taxed = Math.max(0, subtotal - discount);
+      const tax = (taxed * taxPct) / 100;
+      const total = taxed + tax;
+      subtotalCents = Math.round(subtotal * 100);
+      taxCents = Math.round(tax * 100);
+      totalCents = Math.round(total * 100);
+      recompute = true;
+    }
+    const cc =
+      patch.billToCcEmails === null
+        ? null
+        : patch.billToCcEmails
+          ? patch.billToCcEmails.slice(0, 3).filter(Boolean)
+          : undefined;
+    const rows = (await sql`
+      UPDATE invoice SET
+        subject              = CASE WHEN ${patch.subject !== undefined} THEN ${patch.subject ?? null}::text ELSE subject END,
+        notes                = CASE WHEN ${patch.notes !== undefined} THEN ${patch.notes ?? null}::text ELSE notes END,
+        issued_at            = CASE WHEN ${patch.issuedAt !== undefined} THEN ${patch.issuedAt ?? null}::timestamptz ELSE issued_at END,
+        due_at               = CASE WHEN ${patch.dueAt !== undefined} THEN ${patch.dueAt ?? null}::timestamptz ELSE due_at END,
+        bill_from_name       = CASE WHEN ${patch.billFromName !== undefined} THEN ${patch.billFromName ?? null}::text ELSE bill_from_name END,
+        bill_from_address    = CASE WHEN ${patch.billFromAddress !== undefined} THEN ${patch.billFromAddress ?? null}::text ELSE bill_from_address END,
+        bill_from_email      = CASE WHEN ${patch.billFromEmail !== undefined} THEN ${patch.billFromEmail ?? null}::text ELSE bill_from_email END,
+        bill_to_name         = CASE WHEN ${patch.billToName !== undefined} THEN ${patch.billToName ?? null}::text ELSE bill_to_name END,
+        bill_to_address      = CASE WHEN ${patch.billToAddress !== undefined} THEN ${patch.billToAddress ?? null}::text ELSE bill_to_address END,
+        bill_to_email        = CASE WHEN ${patch.billToEmail !== undefined} THEN ${patch.billToEmail ?? null}::text ELSE bill_to_email END,
+        bill_to_cc_emails    = CASE WHEN ${cc !== undefined} THEN ${cc ?? null}::text[] ELSE bill_to_cc_emails END,
+        discount_amount      = CASE WHEN ${patch.discountAmount !== undefined} THEN ${patch.discountAmount ?? 0}::numeric ELSE discount_amount END,
+        tax_pct              = CASE WHEN ${patch.taxPct !== undefined} THEN ${patch.taxPct ?? 0}::numeric ELSE tax_pct END,
+        recurring_enabled    = CASE WHEN ${patch.recurringEnabled !== undefined} THEN ${patch.recurringEnabled ?? false}::boolean ELSE recurring_enabled END,
+        recurring_recurrence = CASE WHEN ${patch.recurringRecurrence !== undefined} THEN ${patch.recurringRecurrence ?? null}::text ELSE recurring_recurrence END,
+        recurring_next_issue = CASE WHEN ${patch.recurringNextIssue !== undefined} THEN ${patch.recurringNextIssue ?? null}::date ELSE recurring_next_issue END,
+        line_items           = CASE WHEN ${patch.lineItems !== undefined} THEN ${JSON.stringify(patch.lineItems ?? [])}::jsonb ELSE line_items END,
+        subtotal_usd         = CASE WHEN ${recompute} THEN ${(subtotalCents / 100).toFixed(2)}::numeric ELSE subtotal_usd END,
+        tax_usd              = CASE WHEN ${recompute} THEN ${(taxCents / 100).toFixed(2)}::numeric ELSE tax_usd END,
+        total_usd            = CASE WHEN ${recompute} THEN ${(totalCents / 100).toFixed(2)}::numeric ELSE total_usd END
+      WHERE user_id = ${userId} AND id = ${id}
+      RETURNING id, client_id, number, status, period_start, period_end,
+                issued_at, due_at, paid_at, line_items,
+                subtotal_usd, tax_usd, total_usd,
+             subject, notes,
+             bill_from_name, bill_from_address, bill_from_email,
+             bill_to_name, bill_to_address, bill_to_email, bill_to_cc_emails,
+             discount_amount, tax_pct,
+             recurring_enabled, recurring_recurrence, recurring_next_issue
     `) as InvoiceRow[];
     if (!rows[0]) throw new Error("Unknown invoice");
     return mapInvoice(rows[0]);

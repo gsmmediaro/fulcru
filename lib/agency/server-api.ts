@@ -26,6 +26,10 @@ export function bindApi(userId: string) {
     getClient: (id: string) => store.getClient(userId, id),
     createClient: (input: Parameters<typeof store.createClient>[1]) =>
       store.createClient(userId, input),
+    updateClient: (
+      id: string,
+      patch: Parameters<typeof store.updateClient>[2],
+    ) => store.updateClient(userId, id, patch),
 
     listProjects: (clientId?: string): Promise<Project[]> =>
       store.listProjects(userId, clientId),
@@ -64,6 +68,13 @@ export function bindApi(userId: string) {
       store.createInvoice(userId, input),
     issueInvoice: (id: string) => store.issueInvoice(userId, id),
     payInvoice: (id: string) => store.payInvoice(userId, id),
+    voidInvoice: (id: string) => store.voidInvoice(userId, id),
+    deleteInvoice: (id: string) => store.deleteInvoice(userId, id),
+    duplicateInvoice: (id: string) => store.duplicateInvoice(userId, id),
+    updateInvoice: (
+      id: string,
+      patch: Parameters<typeof store.updateInvoice>[2],
+    ) => store.updateInvoice(userId, id, patch),
 
     leverage: (windowDays?: number): Promise<LeverageSnapshot> =>
       store.leverage(userId, windowDays),

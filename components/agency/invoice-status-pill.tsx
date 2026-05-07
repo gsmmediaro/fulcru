@@ -9,6 +9,7 @@ const KEYS: Record<InvoiceStatus, string> = {
   sent: "invoiceStatus.sent",
   paid: "invoiceStatus.paid",
   overdue: "invoiceStatus.overdue",
+  void: "invoiceStatus.void",
 };
 
 const CLASSES: Record<InvoiceStatus, string> = {
@@ -18,6 +19,7 @@ const CLASSES: Record<InvoiceStatus, string> = {
   paid: "bg-[color-mix(in_oklab,var(--color-accent-green)_18%,transparent)] text-emerald-300 ring-[color-mix(in_oklab,var(--color-accent-green)_28%,transparent)]",
   overdue:
     "bg-[color-mix(in_oklab,#f43f5e_18%,transparent)] text-rose-300 ring-[color-mix(in_oklab,#f43f5e_28%,transparent)]",
+  void: "bg-[color-mix(in_oklab,white_4%,transparent)] text-[var(--color-text-soft)] ring-[var(--color-stroke-soft)] line-through",
 };
 
 export function InvoiceStatusPill({
