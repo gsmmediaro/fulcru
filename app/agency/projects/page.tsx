@@ -2,6 +2,7 @@ import Link from "next/link";
 import { RiFolder3Line, RiArrowRightLine } from "@remixicon/react";
 import { AppShell } from "@/components/layout/app-shell";
 import { NewProjectButton } from "@/components/agency/new-project-modal";
+import { EmptyState } from "@/components/agency/empty-state";
 import { getApi } from "@/lib/agency/server-api";
 import { getT } from "@/lib/i18n/server";
 import { cn } from "@/lib/cn";
@@ -43,7 +44,17 @@ export default async function ProjectsPage() {
         <NewProjectButton clients={clients} />
       </div>
 
-      <div className="enter-stagger mt-[24px] grid grid-cols-1 gap-[16px] sm:grid-cols-2 lg:grid-cols-3">
+      {projects.length === 0 ? (
+        <div className="enter-stagger mt-[24px]">
+          <EmptyState
+            icon={<RiFolder3Line size={22} />}
+            title={t("projects.empty.title")}
+            description={t("projects.empty.body")}
+            action={<NewProjectButton clients={clients} />}
+          />
+        </div>
+      ) : (
+        <div className="enter-stagger mt-[24px] grid grid-cols-1 gap-[16px] sm:grid-cols-2 lg:grid-cols-3">
         {projects.map((p, i) => {
           const client = clientById.get(p.clientId);
           const runs = runsByProject[i];
@@ -106,7 +117,8 @@ export default async function ProjectsPage() {
             </article>
           );
         })}
-      </div>
+        </div>
+      )}
     </AppShell>
   );
 }

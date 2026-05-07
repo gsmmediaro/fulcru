@@ -2,6 +2,7 @@ import { RiSparkling2Line } from "@remixicon/react";
 import { AppShell } from "@/components/layout/app-shell";
 import { CategoryPill } from "@/components/agency/category-pill";
 import { NewSkillButton } from "@/components/agency/new-skill-modal";
+import { EmptyState } from "@/components/agency/empty-state";
 import { getApi } from "@/lib/agency/server-api";
 import { getT } from "@/lib/i18n/server";
 import { cn } from "@/lib/cn";
@@ -35,6 +36,17 @@ export default async function SkillsPage() {
         <NewSkillButton />
       </div>
 
+      {totalSkills === 0 ? (
+        <div className="enter-stagger mt-[24px]">
+          <EmptyState
+            icon={<RiSparkling2Line size={22} />}
+            title={t("skills.empty.title")}
+            description={t("skills.empty.body")}
+            action={<NewSkillButton />}
+          />
+        </div>
+      ) : (
+        <>
       <div className="mt-[24px] grid grid-cols-1 gap-[12px] sm:grid-cols-3">
         <Stat label={t("skills.totalSkills")} value={`${totalSkills}`} />
         <Stat
@@ -100,6 +112,8 @@ export default async function SkillsPage() {
           </article>
         ))}
       </div>
+        </>
+      )}
     </AppShell>
   );
 }

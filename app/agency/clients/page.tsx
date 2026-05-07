@@ -4,6 +4,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { ClientAvatar } from "@/components/agency/client-avatar";
 import { NewClientButton } from "@/components/agency/new-client-modal";
 import { ClientEditButton } from "@/components/agency/client-edit-button";
+import { EmptyState } from "@/components/agency/empty-state";
 import { getApi } from "@/lib/agency/server-api";
 import { getT } from "@/lib/i18n/server";
 import { cn } from "@/lib/cn";
@@ -47,7 +48,17 @@ export default async function ClientsPage() {
         <NewClientButton />
       </div>
 
-      <div className="enter-stagger mt-[24px] grid grid-cols-1 gap-[16px] sm:grid-cols-2 lg:grid-cols-3">
+      {clients.length === 0 ? (
+        <div className="enter-stagger mt-[24px]">
+          <EmptyState
+            icon={<RiBriefcase4Line size={22} />}
+            title={t("clients.empty.title")}
+            description={t("clients.empty.body")}
+            action={<NewClientButton />}
+          />
+        </div>
+      ) : (
+        <div className="enter-stagger mt-[24px] grid grid-cols-1 gap-[16px] sm:grid-cols-2 lg:grid-cols-3">
         {clients.map((c, i) => {
           const { runs, projects } = perClient[i];
           const activeRuns = runs.filter(
@@ -119,7 +130,8 @@ export default async function ClientsPage() {
             </article>
           );
         })}
-      </div>
+        </div>
+      )}
     </AppShell>
   );
 }

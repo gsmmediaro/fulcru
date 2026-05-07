@@ -153,6 +153,9 @@ const en: Dict = {
   // Pages: Clients
   "clients.title": "Clients",
   "clients.subtitle": "The companies the agency ships work for.",
+  "clients.empty.title": "No clients yet",
+  "clients.empty.body":
+    "Add your first client to start logging projects, runs, and invoices for them.",
   "clients.new": "New client",
   "clients.activeRuns": "Active runs",
   "clients.eff30": "Eff. hours · 30d",
@@ -164,6 +167,9 @@ const en: Dict = {
   // Pages: Projects
   "projects.title": "Projects",
   "projects.subtitle": "Per-client work streams. Runs are filed under projects.",
+  "projects.empty.title": "No projects yet",
+  "projects.empty.body":
+    "Create a project under one of your clients to file runs and bill them as a stream.",
   "projects.new": "New project",
   "projects.runs": "Runs",
   "projects.eff": "Eff. hours",
@@ -174,6 +180,9 @@ const en: Dict = {
   "skills.title": "Skills",
   "skills.subtitle":
     "Skills are the billing primitive — each one carries a baseline-hours estimate and rate modifier.",
+  "skills.empty.title": "No skills yet",
+  "skills.empty.body":
+    "Define your first skill — every run picks one to derive baseline hours and the billable rate.",
   "skills.new": "Create skill",
   "skills.totalSkills": "Total skills",
   "skills.avgBaseline": "Avg baseline hours",
@@ -668,6 +677,9 @@ const ro: Dict = {
   // Pages: Clients
   "clients.title": "Clienți",
   "clients.subtitle": "Companiile pentru care livrează agenția.",
+  "clients.empty.title": "Niciun client încă",
+  "clients.empty.body":
+    "Adaugă primul client ca să poți deschide proiecte, sesiuni și facturi pentru el.",
   "clients.new": "Client nou",
   "clients.activeRuns": "Sesiuni active",
   "clients.eff30": "Ore efective · 30z",
@@ -680,6 +692,9 @@ const ro: Dict = {
   "projects.title": "Proiecte",
   "projects.subtitle":
     "Fluxuri de lucru per client. Sesiunile sunt înregistrate sub proiecte.",
+  "projects.empty.title": "Niciun proiect încă",
+  "projects.empty.body":
+    "Creează un proiect pentru un client ca să grupezi sesiunile și să le facturezi împreună.",
   "projects.new": "Proiect nou",
   "projects.runs": "Sesiuni",
   "projects.eff": "Ore efective",
@@ -690,6 +705,9 @@ const ro: Dict = {
   "skills.title": "Competențe",
   "skills.subtitle":
     "Competențele sunt unitatea de facturare — fiecare are estimare în ore și modificator de tarif.",
+  "skills.empty.title": "Nicio competență încă",
+  "skills.empty.body":
+    "Definește prima competență — fiecare sesiune o folosește pentru ore standard și tarif facturabil.",
   "skills.new": "Adaugă competență",
   "skills.totalSkills": "Total competențe",
   "skills.avgBaseline": "Ore standard medii",
