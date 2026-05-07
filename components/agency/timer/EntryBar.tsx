@@ -285,14 +285,16 @@ export function EntryBar({
           {/* Project picker */}
           <div className="w-[160px] shrink-0">
             <Select
-              value={isTimerRunning ? (activeRun?.projectId ?? "") : projectId}
+              value={
+                (isTimerRunning ? activeRun?.projectId : projectId) || "__none"
+              }
               onValueChange={(v) => {
-                if (!isTimerRunning) {
-                  setProjectId(v);
-                  // auto-set client from project
-                  const proj = projects.find((p) => p.id === v);
-                  if (proj) setClientId(proj.clientId);
-                }
+                if (isTimerRunning) return;
+                const next = v === "__none" ? "" : v;
+                setProjectId(next);
+                // auto-set client from project
+                const proj = projects.find((p) => p.id === next);
+                if (proj) setClientId(proj.clientId);
               }}
               disabled={isTimerRunning}
             >
@@ -300,7 +302,7 @@ export function EntryBar({
                 <SelectValue placeholder="Project" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No project</SelectItem>
+                <SelectItem value="__none">No project</SelectItem>
                 {filteredProjects.map((p) => {
                   const client = clients.find((c) => c.id === p.clientId);
                   return (
@@ -428,10 +430,11 @@ export function EntryBar({
             {/* Project picker */}
             <div className="w-[160px] shrink-0">
               <Select
-                value={manualProjectId}
+                value={manualProjectId || "__none"}
                 onValueChange={(v) => {
-                  setManualProjectId(v);
-                  const proj = projects.find((p) => p.id === v);
+                  const next = v === "__none" ? "" : v;
+                  setManualProjectId(next);
+                  const proj = projects.find((p) => p.id === next);
                   if (proj) setManualClientId(proj.clientId);
                 }}
               >
@@ -439,7 +442,7 @@ export function EntryBar({
                   <SelectValue placeholder="Project" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No project</SelectItem>
+                  <SelectItem value="__none">No project</SelectItem>
                   {manualFilteredProjects.map((p) => {
                     const client = clients.find((c) => c.id === p.clientId);
                     return (
@@ -549,12 +552,17 @@ export function EntryBar({
 
           {!isBreakRunning && (
             <div className="w-[160px] shrink-0">
-              <Select value={breakProjectId} onValueChange={setBreakProjectId}>
+              <Select
+                value={breakProjectId || "__none"}
+                onValueChange={(v) =>
+                  setBreakProjectId(v === "__none" ? "" : v)
+                }
+              >
                 <SelectTrigger className="h-[36px] text-[13px]">
                   <SelectValue placeholder="Project (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No project</SelectItem>
+                  <SelectItem value="__none">No project</SelectItem>
                   {projects.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}

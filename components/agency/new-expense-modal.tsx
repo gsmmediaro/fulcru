@@ -211,8 +211,8 @@ function NewExpenseModal({
           {/* 2. Project */}
           <Field label={t("newExpense.project")}>
             <Select
-              value={projectId}
-              onValueChange={setProjectId}
+              value={projectId || "__none"}
+              onValueChange={(v) => setProjectId(v === "__none" ? "" : v)}
             >
               <SelectTrigger
                 aria-label={t("newExpense.project")}
@@ -221,7 +221,7 @@ function NewExpenseModal({
                 <SelectValue placeholder={t("newExpense.projectPh")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t("newExpense.projectPh")}</SelectItem>
+                <SelectItem value="__none">{t("newExpense.projectPh")}</SelectItem>
                 {projects.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name}
