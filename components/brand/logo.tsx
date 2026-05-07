@@ -1,60 +1,68 @@
 import * as React from "react";
+import Image from "next/image";
 import { cn } from "@/lib/cn";
+
+type LogoVariant = "horizontal" | "icon" | "icon-transparent";
 
 export function Logo({
   className,
-  wordmarkClassName,
   showWordmark = true,
+  variant,
+  size,
   ...props
-}: React.HTMLAttributes<HTMLDivElement> & {
-  wordmarkClassName?: string;
+}: Omit<React.HTMLAttributes<HTMLDivElement>, "children"> & {
   showWordmark?: boolean;
+  variant?: LogoVariant;
+  size?: number;
+  /** @deprecated kept for prop-compat with old call-sites; ignored. */
+  wordmarkClassName?: string;
 }) {
+  const resolved: LogoVariant = variant ?? (showWordmark ? "horizontal" : "icon");
+  const isHorizontal = resolved === "horizontal";
+  const px = size ?? (isHorizontal ? 32 : 32);
+
+  if (isHorizontal) {
+    return (
+      <div
+        className={cn("inline-flex items-center", className)}
+        aria-label="Fulcru"
+        {...props}
+      >
+        <Image
+          src="/brand/fulcru-header.png"
+          alt="Fulcru"
+          width={300}
+          height={100}
+          priority
+          style={{ height: px, width: "auto" }}
+          className="select-none"
+        />
+      </div>
+    );
+  }
+
+  const src =
+    resolved === "icon-transparent"
+      ? "/brand/fulcru-icon-transparent.png"
+      : "/brand/fulcru-icon.png";
+
   return (
     <div
-      className={cn("flex items-center gap-[10px]", className)}
-      aria-label="Fulcra"
+      className={cn("inline-flex", className)}
+      aria-label="Fulcru"
       {...props}
     >
-      <span
-        aria-hidden
+      <Image
+        src={src}
+        alt="Fulcru"
+        width={px}
+        height={px}
+        priority
         className={cn(
-          "relative flex size-[32px] shrink-0 items-center justify-center rounded-[9px]",
-          "bg-[color-mix(in_oklab,var(--color-brand-400)_18%,transparent)]",
-          "ring-1 ring-[color-mix(in_oklab,var(--color-brand-400)_28%,transparent)]",
-          "transition-transform duration-[260ms] ease-[var(--ease-soft-spring,cubic-bezier(.22,1.2,.36,1))]",
-          "group-hover/logo:rotate-[-3deg] group-hover/logo:scale-[1.04]",
+          "select-none",
+          resolved === "icon" && "rounded-[8px]",
         )}
-      >
-        <svg
-          viewBox="0 0 32 32"
-          className="size-[20px] text-[var(--color-brand-400)]"
-          fill="none"
-        >
-          <path
-            d="M4 13.5 L28 9.5"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-          />
-          <path
-            d="M11 17.5 L21 17.5 L16 26 Z"
-            fill="currentColor"
-          />
-          <circle cx="16" cy="11.5" r="1.5" fill="currentColor" />
-        </svg>
-      </span>
-      {showWordmark ? (
-        <span
-          className={cn(
-            "text-[18px] font-semibold tracking-[-0.01em] leading-none",
-            "text-[var(--color-text-strong)]",
-            wordmarkClassName,
-          )}
-        >
-          Fulcra
-        </span>
-      ) : null}
+      />
     </div>
   );
 }

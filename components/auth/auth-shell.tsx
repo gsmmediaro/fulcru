@@ -20,28 +20,23 @@ export async function AuthShell({
           "radial-gradient(ellipse 90% 55% at 50% -10%, color-mix(in oklab, var(--color-brand-400) 14%, var(--color-bg-app)) 0%, var(--color-bg-app) 55%), var(--color-bg-app)",
       }}
     >
-      <header className="flex h-[88px] shrink-0 items-center justify-center px-[24px]">
+      <main className="flex flex-1 flex-col items-center justify-center gap-[32px] px-[16px] py-[48px]">
         <Link
           href="/"
-          className="group/logo inline-flex items-center gap-[12px]"
-          aria-label="Fulcra"
+          className="group/logo inline-flex items-center"
+          aria-label="Fulcru"
         >
-          <Logo
-            showWordmark
-            wordmarkClassName="text-[24px] tracking-[-0.02em]"
-          />
+          <Logo size={40} />
         </Link>
-      </header>
 
-      <main className="flex flex-1 items-start justify-center px-[16px] pb-[48px]">
         <div className="grid w-full max-w-[1080px] grid-cols-1 gap-[24px] md:grid-cols-2">
           {children}
         </div>
-      </main>
 
-      <footer className="pb-[28px] text-center text-[12px] leading-[16px] text-[var(--color-text-soft)]">
-        {t("auth.copyright", { year })}
-      </footer>
+        <p className="text-[12px] leading-[16px] text-[var(--color-text-soft)]">
+          {t("auth.copyright", { year })}
+        </p>
+      </main>
     </div>
   );
 }

@@ -62,7 +62,7 @@ const en: Dict = {
   "topbar.openMenu": "Open navigation menu",
 
   // Footer
-  "footer.tagline": "Fulcra © {year} · Bill the leverage.",
+  "footer.tagline": "Fulcru © {year} · Bill the leverage.",
   "footer.terms": "Terms of Service",
   "footer.privacy": "Privacy Policy",
   "footer.aup": "Acceptable Use Policy",
@@ -283,7 +283,7 @@ const en: Dict = {
   "newInvoice.submit": "Create draft",
 
   // Auth — shared
-  "auth.copyright": "Fulcra © {year}",
+  "auth.copyright": "Fulcru © {year}",
   "auth.tagline": "Bill the leverage.",
   "auth.taglineBody":
     "Run, approve, invoice — every Claude session, every billable hour, every shipped outcome. The agency dashboard for AI work.",
@@ -333,7 +333,7 @@ const en: Dict = {
   "signup.weakPassword": "Choose a stronger password (8+ characters).",
   "signup.unknownError": "Couldn't create your account. Try again.",
   "signup.consent":
-    "By clicking Sign up you agree to Fulcra's {terms} and {privacy}.",
+    "By clicking Sign up you agree to Fulcru's {terms} and {privacy}.",
   "signup.terms": "Terms",
   "signup.privacy": "Privacy Policy",
 
@@ -373,7 +373,7 @@ const en: Dict = {
   "onb.svc.otherPlaceholder": "Tell us in 2–3 words",
 
   // Step 3 — use cases
-  "onb.s3.q": "What will you use Fulcra for?",
+  "onb.s3.q": "What will you use Fulcru for?",
   "onb.s3.hint": "Pick all that apply",
   "onb.uc.track_runs": "Track AI run cost",
   "onb.uc.bill_clients": "Bill clients for AI work",
@@ -450,7 +450,7 @@ const ro: Dict = {
   "topbar.openMenu": "Deschide meniul de navigare",
 
   // Footer
-  "footer.tagline": "Fulcra © {year} · Facturează pârghia.",
+  "footer.tagline": "Fulcru © {year} · Facturează pârghia.",
   "footer.terms": "Termeni și condiții",
   "footer.privacy": "Politica de confidențialitate",
   "footer.aup": "Politica de utilizare",
@@ -673,7 +673,7 @@ const ro: Dict = {
   "newInvoice.submit": "Creează ciornă",
 
   // Auth — shared
-  "auth.copyright": "Fulcra © {year}",
+  "auth.copyright": "Fulcru © {year}",
   "auth.tagline": "Facturează pârghia.",
   "auth.taglineBody":
     "Rulează, aprobă, facturează — fiecare sesiune Claude, fiecare oră facturabilă, fiecare livrare. Dashboard-ul de agenție pentru munca AI.",
@@ -723,7 +723,7 @@ const ro: Dict = {
   "signup.weakPassword": "Alege o parolă mai puternică (minim 8 caractere).",
   "signup.unknownError": "Nu am putut crea contul. Încearcă din nou.",
   "signup.consent":
-    "Apăsând Înregistrează-te, ești de acord cu {terms} și {privacy} Fulcra.",
+    "Apăsând Înregistrează-te, ești de acord cu {terms} și {privacy} Fulcru.",
   "signup.terms": "Termeni",
   "signup.privacy": "Politica de confidențialitate",
 
@@ -763,7 +763,7 @@ const ro: Dict = {
   "onb.svc.otherPlaceholder": "Spune-ne în 2–3 cuvinte",
 
   // Step 3 — use cases
-  "onb.s3.q": "Pentru ce folosești Fulcra?",
+  "onb.s3.q": "Pentru ce folosești Fulcru?",
   "onb.s3.hint": "Alege tot ce ți se aplică",
   "onb.uc.track_runs": "Vreau să văd costul rulărilor AI",
   "onb.uc.bill_clients": "Facturez clienții pentru munca AI",

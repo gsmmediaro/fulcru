@@ -13,8 +13,8 @@ const beVietnamPro = Be_Vietnam_Pro({
 
 export const metadata: Metadata = {
   title: {
-    default: "Fulcra",
-    template: "%s · Fulcra",
+    default: "Fulcru",
+    template: "%s · Fulcru",
   },
   description:
     "Time-tracking, leverage measurement and billing for AI-coding agencies. Bill the leverage.",

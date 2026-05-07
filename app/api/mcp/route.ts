@@ -352,7 +352,7 @@ async function handleRpc(
       return rpcError(id, {
         code: -32001,
         message:
-          "Unauthorized: missing or invalid Bearer token. Generate a key in the Fulcra dashboard and add it as `Authorization: Bearer <key>`.",
+          "Unauthorized: missing or invalid Bearer token. Generate a key in the Fulcru dashboard and add it as `Authorization: Bearer <key>`.",
       });
     }
     const name = asString(params.name);
