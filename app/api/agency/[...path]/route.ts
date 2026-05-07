@@ -4,6 +4,8 @@ import { bindApi } from "@/lib/agency/server-api";
 import { enrichRunFromSession } from "@/lib/agency/session-importer";
 import type {
   ApprovalStatus,
+  InvoiceLineItem,
+  InvoiceRecurrence,
   RunEventKind,
   RunStatus,
 } from "@/lib/agency/types";
@@ -112,8 +114,30 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   return route("POST", path ?? [], url, body, session.user.id);
 }
 
+export async function PATCH(req: NextRequest, ctx: Ctx) {
+  const session = await getSession();
+  if (!session?.user?.id) return unauthorized();
+  const { path } = await ctx.params;
+  const url = new URL(req.url);
+  let body: Record<string, unknown>;
+  try {
+    body = await readBody(req);
+  } catch (e) {
+    return bad((e as Error).message);
+  }
+  return route("PATCH", path ?? [], url, body, session.user.id);
+}
+
+export async function DELETE(req: NextRequest, ctx: Ctx) {
+  const session = await getSession();
+  if (!session?.user?.id) return unauthorized();
+  const { path } = await ctx.params;
+  const url = new URL(req.url);
+  return route("DELETE", path ?? [], url, null, session.user.id);
+}
+
 async function route(
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PATCH" | "DELETE",
   path: string[],
   url: URL,
   body: Record<string, unknown> | null,
@@ -378,6 +402,100 @@ async function route(
           const inv = await api.getInvoice(id);
           return inv ? json(inv) : notFound("Invoice not found");
         }
+
+        if (method === "DELETE") {
+          if (!id) return bad("Invoice id is required");
+          try {
+            await api.deleteInvoice(id);
+            return json({ ok: true });
+          } catch (e) {
+            return bad((e as Error).message, 404);
+          }
+        }
+
+        if (method === "PATCH") {
+          if (!id) return bad("Invoice id is required");
+          if (!body) return bad("Missing body");
+          const VALID_RECURRENCES: InvoiceRecurrence[] = [
+            "weekly",
+            "monthly",
+            "quarterly",
+            "yearly",
+          ];
+          const rawRecurrence = asString(body.recurringRecurrence);
+          const recurringRecurrence =
+            rawRecurrence === null
+              ? null
+              : rawRecurrence !== undefined &&
+                  VALID_RECURRENCES.includes(rawRecurrence as InvoiceRecurrence)
+                ? (rawRecurrence as InvoiceRecurrence)
+                : undefined;
+          const rawLineItems = body.lineItems;
+          let lineItems: InvoiceLineItem[] | undefined;
+          if (Array.isArray(rawLineItems)) {
+            lineItems = rawLineItems as InvoiceLineItem[];
+          }
+          try {
+            const updated = await api.updateInvoice(id, {
+              subject:
+                body.subject !== undefined
+                  ? (body.subject as string | null)
+                  : undefined,
+              notes:
+                body.notes !== undefined
+                  ? (body.notes as string | null)
+                  : undefined,
+              issuedAt:
+                body.issuedAt !== undefined
+                  ? (body.issuedAt as string | null)
+                  : undefined,
+              dueAt:
+                body.dueAt !== undefined
+                  ? (body.dueAt as string | null)
+                  : undefined,
+              billFromName:
+                body.billFromName !== undefined
+                  ? (body.billFromName as string | null)
+                  : undefined,
+              billFromAddress:
+                body.billFromAddress !== undefined
+                  ? (body.billFromAddress as string | null)
+                  : undefined,
+              billFromEmail:
+                body.billFromEmail !== undefined
+                  ? (body.billFromEmail as string | null)
+                  : undefined,
+              billToName:
+                body.billToName !== undefined
+                  ? (body.billToName as string | null)
+                  : undefined,
+              billToAddress:
+                body.billToAddress !== undefined
+                  ? (body.billToAddress as string | null)
+                  : undefined,
+              billToEmail:
+                body.billToEmail !== undefined
+                  ? (body.billToEmail as string | null)
+                  : undefined,
+              discountAmount: asNumber(body.discountAmount),
+              taxPct: asNumber(body.taxPct),
+              recurringEnabled:
+                body.recurringEnabled !== undefined
+                  ? Boolean(body.recurringEnabled)
+                  : undefined,
+              recurringRecurrence,
+              recurringNextIssue:
+                body.recurringNextIssue !== undefined
+                  ? (body.recurringNextIssue as string | null)
+                  : undefined,
+              lineItems,
+            });
+            return json(updated);
+          } catch (e) {
+            return bad((e as Error).message, 400);
+          }
+        }
+
         if (!id) {
           if (!body) return bad("Missing body");
           const clientId = asString(body.clientId);
@@ -403,6 +521,21 @@ async function route(
         if (action === "pay") {
           try {
             return json(await api.payInvoice(id));
+          } catch (e) {
+            return bad((e as Error).message, 400);
+          }
+        }
+        if (action === "void") {
+          try {
+            return json(await api.voidInvoice(id));
+          } catch (e) {
+            return bad((e as Error).message, 400);
+          }
+        }
+        if (action === "duplicate") {
+          try {
+            const dup = await api.duplicateInvoice(id);
+            return json(dup, { status: 201 });
           } catch (e) {
             return bad((e as Error).message, 400);
           }
