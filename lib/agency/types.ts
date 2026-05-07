@@ -44,6 +44,8 @@ export type RunStatus =
   | "failed"
   | "cancelled";
 
+export type RunKind = "mcp" | "manual" | "break";
+
 export type Run = {
   id: string;
   clientId: string;
@@ -51,6 +53,7 @@ export type Run = {
   skillId: string;
   agentName: string;
   status: RunStatus;
+  kind: RunKind;
   prompt?: string;
   startedAt: string;
   endedAt?: string;

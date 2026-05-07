@@ -52,6 +52,16 @@ export function bindApi(userId: string) {
       store.listRunEvents(userId, runId),
     startRun: (input: Parameters<typeof store.startRun>[1]) =>
       store.startRun(userId, input),
+    startManualRun: (input: Parameters<typeof store.startManualRun>[1]) =>
+      store.startManualRun(userId, input),
+    startBreakRun: (input: Parameters<typeof store.startBreakRun>[1]) =>
+      store.startBreakRun(userId, input),
+    appendManualEntry: (input: Parameters<typeof store.appendManualEntry>[1]) =>
+      store.appendManualEntry(userId, input),
+    stopRun: (runId: string) => store.stopRun(userId, runId),
+    updateRun: (runId: string, patch: Parameters<typeof store.updateRun>[2]) =>
+      store.updateRun(userId, runId, patch),
+    deleteRun: (runId: string) => store.deleteRun(userId, runId),
     recordEvent: (input: Parameters<typeof store.recordEvent>[1]) =>
       store.recordEvent(userId, input),
     requestApproval: (input: Parameters<typeof store.requestApproval>[1]) =>

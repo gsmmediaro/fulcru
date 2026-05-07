@@ -14,6 +14,7 @@ import type {
   Run,
   RunEvent,
   RunEventKind,
+  RunKind,
   RunStatus,
   Skill,
   SkillCategory,
@@ -125,6 +126,7 @@ type RunRow = {
   skill_id: string;
   agent_name: string;
   status: RunStatus;
+  kind: RunKind;
   prompt: string | null;
   cwd: string | null;
   pricing_mode: "baseline" | "time_plus_tokens";
@@ -150,6 +152,7 @@ function mapRun(r: RunRow): Run {
     skillId: r.skill_id,
     agentName: r.agent_name,
     status: r.status,
+    kind: (r.kind ?? "mcp") as RunKind,
     prompt: r.prompt ?? undefined,
     cwd: r.cwd ?? undefined,
     pricingMode: r.pricing_mode,
@@ -595,11 +598,12 @@ export const store = {
       projectId?: string;
       status?: RunStatus;
       limit?: number;
+      sinceDate?: string;
     },
   ): Promise<Run[]> {
     const limit = filter?.limit ?? 1000;
     const rows = (await sql`
-      SELECT id, client_id, project_id, skill_id, agent_name, status, prompt, cwd,
+      SELECT id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
              pricing_mode, started_at, ended_at, runtime_sec, active_sec,
              tokens_in, tokens_out, cache_hits, cost_usd,
              baseline_hours, rate_usd, billable_usd, deliverable_url, notes
@@ -608,6 +612,7 @@ export const store = {
         AND (${filter?.clientId ?? null}::text IS NULL OR client_id = ${filter?.clientId ?? null})
         AND (${filter?.projectId ?? null}::text IS NULL OR project_id = ${filter?.projectId ?? null})
         AND (${filter?.status ?? null}::text IS NULL OR status = ${filter?.status ?? null})
+        AND (${filter?.sinceDate ?? null}::text IS NULL OR started_at >= ${filter?.sinceDate ?? null}::timestamptz)
       ORDER BY started_at DESC
       LIMIT ${limit}
     `) as RunRow[];
@@ -616,7 +621,7 @@ export const store = {
 
   async getRun(userId: string, id: string): Promise<Run | undefined> {
     const rows = (await sql`
-      SELECT id, client_id, project_id, skill_id, agent_name, status, prompt, cwd,
+      SELECT id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
              pricing_mode, started_at, ended_at, runtime_sec, active_sec,
              tokens_in, tokens_out, cache_hits, cost_usd,
              baseline_hours, rate_usd, billable_usd, deliverable_url, notes
@@ -673,7 +678,7 @@ export const store = {
         ${input.prompt ?? null}, ${input.cwd ?? null}, ${pricingMode},
         ${skill.baselineHours}, ${rateUsd}
       )
-      RETURNING id, client_id, project_id, skill_id, agent_name, status, prompt, cwd,
+      RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
                 pricing_mode, started_at, ended_at, runtime_sec, active_sec,
                 tokens_in, tokens_out, cache_hits, cost_usd,
                 baseline_hours, rate_usd, billable_usd, deliverable_url, notes
@@ -688,6 +693,237 @@ export const store = {
       )
     `;
     return run;
+  },
+
+  // ─── Timer-specific run methods ────────────────────────────
+  /**
+   * Start a manual timer run. Requires clientId so we can derive a rate.
+   * projectId and skillId are optional — if not provided we use sentinel
+   * values '' (empty string sentinel is not valid for FK, so we use the
+   * constant below) and store rate_usd from settings default.
+   */
+  async startManualRun(
+    userId: string,
+    input: {
+      clientId?: string;
+      projectId?: string;
+      skillId?: string;
+      description?: string;
+      billable?: boolean;
+    },
+  ): Promise<Run> {
+    await ensureAppUser(userId);
+    const id = genId("run");
+
+    // Resolve rate from client if provided, else from settings
+    let rateUsd = 0;
+    let resolvedClientId = input.clientId ?? "";
+    let resolvedProjectId = input.projectId ?? "";
+    let resolvedSkillId = input.skillId ?? "";
+
+    if (input.clientId) {
+      const client = await store.getClient(userId, input.clientId);
+      rateUsd = client?.hourlyRate ?? 0;
+    } else {
+      const settings = await store.getSettings(userId);
+      rateUsd = settings.defaultHourlyRate ?? 0;
+    }
+
+    const rows = (await sql`
+      INSERT INTO run (
+        id, user_id, client_id, project_id, skill_id, agent_name, status, kind,
+        prompt, pricing_mode, baseline_hours, rate_usd, billable_usd
+      )
+      VALUES (
+        ${id}, ${userId},
+        ${resolvedClientId}, ${resolvedProjectId}, ${resolvedSkillId},
+        'manual-timer', 'running', 'manual',
+        ${input.description ?? null}, 'time_plus_tokens', 0, ${rateUsd}, 0
+      )
+      RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
+                pricing_mode, started_at, ended_at, runtime_sec, active_sec,
+                tokens_in, tokens_out, cache_hits, cost_usd,
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+    `) as RunRow[];
+    return mapRun(rows[0]);
+  },
+
+  async startBreakRun(
+    userId: string,
+    input: { projectId?: string },
+  ): Promise<Run> {
+    await ensureAppUser(userId);
+    const id = genId("run");
+    const resolvedProjectId = input.projectId ?? "";
+    const rows = (await sql`
+      INSERT INTO run (
+        id, user_id, client_id, project_id, skill_id, agent_name, status, kind,
+        prompt, pricing_mode, baseline_hours, rate_usd, billable_usd
+      )
+      VALUES (
+        ${id}, ${userId},
+        '', ${resolvedProjectId}, '', 'break-timer', 'running', 'break',
+        'Break', 'time_plus_tokens', 0, 0, 0
+      )
+      RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
+                pricing_mode, started_at, ended_at, runtime_sec, active_sec,
+                tokens_in, tokens_out, cache_hits, cost_usd,
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+    `) as RunRow[];
+    return mapRun(rows[0]);
+  },
+
+  async appendManualEntry(
+    userId: string,
+    input: {
+      date: string; // YYYY-MM-DD
+      startTime: string; // HH:MM
+      endTime: string; // HH:MM
+      description?: string;
+      clientId?: string;
+      projectId?: string;
+      billable?: boolean;
+    },
+  ): Promise<Run> {
+    await ensureAppUser(userId);
+    const id = genId("run");
+
+    // Build timestamps from date + time parts
+    const startedAt = new Date(`${input.date}T${input.startTime}:00`);
+    const endedAt = new Date(`${input.date}T${input.endTime}:00`);
+    // Handle overnight (endTime < startTime)
+    if (endedAt <= startedAt) {
+      endedAt.setDate(endedAt.getDate() + 1);
+    }
+    const runtimeSec = Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 1000));
+
+    let rateUsd = 0;
+    let billableUsd = 0;
+    if (input.clientId) {
+      const client = await store.getClient(userId, input.clientId);
+      rateUsd = client?.hourlyRate ?? 0;
+    } else {
+      const settings = await store.getSettings(userId);
+      rateUsd = settings.defaultHourlyRate ?? 0;
+    }
+    if (input.billable && rateUsd > 0) {
+      billableUsd = Number(((runtimeSec / 3600) * rateUsd).toFixed(2));
+    }
+
+    const resolvedClientId = input.clientId ?? "";
+    const resolvedProjectId = input.projectId ?? "";
+
+    const rows = (await sql`
+      INSERT INTO run (
+        id, user_id, client_id, project_id, skill_id, agent_name, status, kind,
+        prompt, pricing_mode, started_at, ended_at, runtime_sec,
+        baseline_hours, rate_usd, billable_usd
+      )
+      VALUES (
+        ${id}, ${userId},
+        ${resolvedClientId}, ${resolvedProjectId}, '', 'manual-entry', 'shipped', 'manual',
+        ${input.description ?? null}, 'time_plus_tokens',
+        ${startedAt.toISOString()}, ${endedAt.toISOString()}, ${runtimeSec},
+        ${runtimeSec / 3600}, ${rateUsd}, ${billableUsd}
+      )
+      RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
+                pricing_mode, started_at, ended_at, runtime_sec, active_sec,
+                tokens_in, tokens_out, cache_hits, cost_usd,
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+    `) as RunRow[];
+    return mapRun(rows[0]);
+  },
+
+  async stopRun(userId: string, runId: string): Promise<Run> {
+    const run = await store.getRun(userId, runId);
+    if (!run) throw new Error("Unknown run");
+    const startedAt = new Date(run.startedAt).getTime();
+    const runtimeSec = Math.round((Date.now() - startedAt) / 1000);
+    let billableUsd = run.billableUsd;
+    // For non-break runs that were billable, recalculate
+    if (run.kind !== "break" && run.billableUsd > 0 && run.rateUsd > 0) {
+      billableUsd = Number(((runtimeSec / 3600) * run.rateUsd).toFixed(2));
+    }
+    const rows = (await sql`
+      UPDATE run
+      SET status = 'shipped',
+          ended_at = NOW(),
+          runtime_sec = ${runtimeSec},
+          billable_usd = ${run.kind === "break" ? 0 : billableUsd}
+      WHERE user_id = ${userId} AND id = ${runId}
+      RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
+                pricing_mode, started_at, ended_at, runtime_sec, active_sec,
+                tokens_in, tokens_out, cache_hits, cost_usd,
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+    `) as RunRow[];
+    if (!rows[0]) throw new Error("Unknown run");
+    return mapRun(rows[0]);
+  },
+
+  async updateRun(
+    userId: string,
+    runId: string,
+    patch: {
+      description?: string;
+      startedAt?: string;
+      endedAt?: string;
+      clientId?: string;
+      projectId?: string;
+      billable?: boolean;
+    },
+  ): Promise<Run> {
+    const run = await store.getRun(userId, runId);
+    if (!run) throw new Error("Unknown run");
+
+    // Recompute runtime and billable if times changed
+    const newStartedAt = patch.startedAt ?? run.startedAt;
+    const newEndedAt = patch.endedAt ?? run.endedAt;
+    let runtimeSec = run.runtimeSec;
+    if (newEndedAt) {
+      runtimeSec = Math.max(
+        0,
+        Math.round(
+          (new Date(newEndedAt).getTime() - new Date(newStartedAt).getTime()) / 1000,
+        ),
+      );
+    }
+
+    // Billable calculation
+    let billableUsd = run.billableUsd;
+    const isBillable = patch.billable !== undefined ? patch.billable : run.billableUsd > 0;
+    if (run.kind !== "break") {
+      billableUsd = isBillable && run.rateUsd > 0
+        ? Number(((runtimeSec / 3600) * run.rateUsd).toFixed(2))
+        : 0;
+    }
+
+    const rows = (await sql`
+      UPDATE run SET
+        prompt       = CASE WHEN ${patch.description !== undefined} THEN ${patch.description ?? null}::text ELSE prompt END,
+        started_at   = CASE WHEN ${patch.startedAt !== undefined} THEN ${patch.startedAt ?? null}::timestamptz ELSE started_at END,
+        ended_at     = CASE WHEN ${patch.endedAt !== undefined} THEN ${patch.endedAt ?? null}::timestamptz ELSE ended_at END,
+        client_id    = CASE WHEN ${patch.clientId !== undefined} THEN ${patch.clientId ?? ""}::text ELSE client_id END,
+        project_id   = CASE WHEN ${patch.projectId !== undefined} THEN ${patch.projectId ?? ""}::text ELSE project_id END,
+        runtime_sec  = ${runtimeSec},
+        baseline_hours = ${runtimeSec / 3600},
+        billable_usd = ${billableUsd}
+      WHERE user_id = ${userId} AND id = ${runId}
+      RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
+                pricing_mode, started_at, ended_at, runtime_sec, active_sec,
+                tokens_in, tokens_out, cache_hits, cost_usd,
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+    `) as RunRow[];
+    if (!rows[0]) throw new Error("Unknown run");
+    return mapRun(rows[0]);
+  },
+
+  async deleteRun(userId: string, runId: string): Promise<void> {
+    const run = await store.getRun(userId, runId);
+    if (!run) throw new Error("Unknown run");
+    if (run.kind === "mcp") {
+      throw new Error("Cannot delete MCP-tracked runs");
+    }
+    await sql`DELETE FROM run WHERE user_id = ${userId} AND id = ${runId}`;
   },
 
   async recordEvent(
@@ -819,7 +1055,7 @@ export const store = {
           notes = ${input.notes ?? null},
           billable_usd = ${billable}
       WHERE user_id = ${userId} AND id = ${input.runId}
-      RETURNING id, client_id, project_id, skill_id, agent_name, status, prompt, cwd,
+      RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
                 pricing_mode, started_at, ended_at, runtime_sec, active_sec,
                 tokens_in, tokens_out, cache_hits, cost_usd,
                 baseline_hours, rate_usd, billable_usd, deliverable_url, notes
