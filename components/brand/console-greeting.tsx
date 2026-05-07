@@ -17,7 +17,7 @@ export function ConsoleGreeting() {
 
     console.log(title, titleStyle, messageStyle);
     console.log(
-      "%cMCP descriptor live at /api/mcp · skill at skills/agency-runs/SKILL.md",
+      "%cMCP descriptor live at /api/mcp · skill at skills/fulcru/SKILL.md",
       "color:#8a8a8a;font-size:12px;",
     );
   }, []);

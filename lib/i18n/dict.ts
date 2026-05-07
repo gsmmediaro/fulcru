@@ -23,9 +23,14 @@ const en: Dict = {
   "sidebar.connectMcp": "Connect MCP",
   "sidebar.connected": "Connected",
   "sidebar.reconnect": "Reconnect MCP",
-  "mcpModal.title": "Connect Claude Code",
+  "mcpModal.title": "Connect MCP",
   "mcpModal.subtitle":
-    "Run this command in your terminal to register the MCP server with Claude Code.",
+    "Pick your client and run the command — every session it spawns is tracked here.",
+  "mcpModal.tab.claude": "Claude Code",
+  "mcpModal.tab.codex": "Codex",
+  "mcpModal.tab.others": "Others",
+  "mcpModal.others.hint":
+    "Paste this into your client's MCP config (Cline, Cursor, Continue, opencode, …).",
   "mcpModal.commandLabel": "Command",
   "mcpModal.serverLabel": "Server URL",
   "mcpModal.copy": "Copy",
@@ -409,9 +414,14 @@ const ro: Dict = {
   "sidebar.connectMcp": "Conectează MCP",
   "sidebar.connected": "Conectat",
   "sidebar.reconnect": "Reconectează MCP",
-  "mcpModal.title": "Conectează Claude Code",
+  "mcpModal.title": "Conectează MCP",
+  "mcpModal.tab.claude": "Claude Code",
+  "mcpModal.tab.codex": "Codex",
+  "mcpModal.tab.others": "Altele",
+  "mcpModal.others.hint":
+    "Lipește în configul MCP al clientului (Cline, Cursor, Continue, opencode, …).",
   "mcpModal.subtitle":
-    "Rulează această comandă în terminal pentru a înregistra serverul MCP în Claude Code.",
+    "Alege clientul și rulează comanda — orice sesiune pornită din el va fi urmărită aici.",
   "mcpModal.commandLabel": "Comandă",
   "mcpModal.serverLabel": "URL server",
   "mcpModal.copy": "Copiază",

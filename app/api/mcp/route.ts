@@ -23,7 +23,7 @@ type JsonRpcError = {
   data?: unknown;
 };
 
-const SERVER_NAME = "agency-runs";
+const SERVER_NAME = "fulcru";
 const SERVER_VERSION = "0.2.0";
 const PROTOCOL_VERSION = "2025-06-18";
 

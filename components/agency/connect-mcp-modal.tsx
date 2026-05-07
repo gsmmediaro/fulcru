@@ -14,12 +14,36 @@ import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n/provider";
 import { cn } from "@/lib/cn";
 
-const SERVER_NAME = "agency-runs";
+const SERVER_NAME = "fulcru";
 
-function buildCommand(url: string, key: string | null) {
-  const base = `claude mcp add --transport http ${SERVER_NAME} ${url}`;
-  if (!key) return `${base} --header "Authorization: Bearer YOUR_KEY"`;
-  return `${base} --header "Authorization: Bearer ${key}"`;
+type ClientId = "claude" | "codex" | "others";
+
+const CLIENT_TABS: Array<{ id: ClientId; labelKey: string }> = [
+  { id: "claude", labelKey: "mcpModal.tab.claude" },
+  { id: "codex", labelKey: "mcpModal.tab.codex" },
+  { id: "others", labelKey: "mcpModal.tab.others" },
+];
+
+function buildSnippet(client: ClientId, url: string, key: string | null) {
+  const bearer = key ?? "YOUR_KEY";
+  if (client === "claude") {
+    return `claude mcp add --transport http ${SERVER_NAME} ${url} --header "Authorization: Bearer ${bearer}"`;
+  }
+  if (client === "codex") {
+    return `codex mcp add ${SERVER_NAME} --transport http ${url} --header "Authorization: Bearer ${bearer}"`;
+  }
+  return JSON.stringify(
+    {
+      mcpServers: {
+        [SERVER_NAME]: {
+          url,
+          headers: { Authorization: `Bearer ${bearer}` },
+        },
+      },
+    },
+    null,
+    2,
+  );
 }
 
 export function ConnectMcpButton({
@@ -70,6 +94,7 @@ function ConnectMcpModal({
   const [serverUrl, setServerUrl] = React.useState<string>("");
   const [reachable, setReachable] = React.useState<boolean | null>(null);
   const [copied, setCopied] = React.useState(false);
+  const [client, setClient] = React.useState<ClientId>("claude");
   const [keyState, setKeyState] = React.useState<
     | { phase: "loading" }
     | { phase: "none" }
@@ -152,7 +177,7 @@ function ConnectMcpModal({
   }
 
   const plainKey = keyState.phase === "fresh" ? keyState.key.key : null;
-  const command = serverUrl ? buildCommand(serverUrl, plainKey) : "";
+  const command = serverUrl ? buildSnippet(client, serverUrl, plainKey) : "";
 
   async function copyCommand() {
     if (!command) return;
@@ -258,6 +283,41 @@ function ConnectMcpModal({
               {t("mcpModal.keyError", { reason: keyState.reason })}
             </div>
           )}
+
+          {/* Client tabs */}
+          <div
+            role="tablist"
+            aria-label={t("mcpModal.title")}
+            className="flex items-center gap-[2px] rounded-[6px] bg-[color-mix(in_oklab,white_3%,transparent)] p-[3px] ring-1 ring-[var(--color-stroke-soft)]"
+          >
+            {CLIENT_TABS.map((tab) => {
+              const active = tab.id === client;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setClient(tab.id)}
+                  className={cn(
+                    "flex-1 rounded-[4px] px-[10px] py-[6px] text-[12.5px] font-medium leading-[18px] transition-colors duration-150",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-400)]",
+                    active
+                      ? "bg-[var(--color-bg-surface)] text-[var(--color-text-strong)] shadow-[0_1px_0_color-mix(in_oklab,white_8%,transparent)] ring-1 ring-[var(--color-stroke-soft)]"
+                      : "text-[var(--color-text-soft)] hover:text-[var(--color-text-strong)]",
+                  )}
+                >
+                  {t(tab.labelKey)}
+                </button>
+              );
+            })}
+          </div>
+
+          {client === "others" ? (
+            <p className="-mt-[8px] text-[11.5px] leading-[16px] text-[var(--color-text-soft)]">
+              {t("mcpModal.others.hint")}
+            </p>
+          ) : null}
 
           {/* Command card */}
           <div

@@ -1,11 +1,11 @@
 ---
-name: agency-runs
+name: fulcru
 description: Use when the user asks the agent to do work for a client. Always start a run before working, log major events, request approval before destructive actions, and end the run on completion.
 ---
 
 # Agency runs
 
-You are working inside an AI-native agency. Every piece of client work must be wrapped in a **run** so it can be tracked, audited, and billed. The MCP server `agency-runs` exposes the tools below; use them in this order.
+You are working inside an AI-native agency. Every piece of client work must be wrapped in a **run** so it can be tracked, audited, and billed. The MCP server `fulcru` exposes the tools below; use them in this order.
 
 ## 1. Discovery
 
