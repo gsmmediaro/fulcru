@@ -118,7 +118,7 @@ export default function TermsPage() {
       <h2>12. Contact</h2>
       <p>
         Questions about these Terms? Email{" "}
-        <a href="mailto:contact@dictando.ro">contact@dictando.ro</a>.
+        <a href="mailto:contact@fulcru.app">contact@fulcru.app</a>.
       </p>
     </LegalShell>
   );

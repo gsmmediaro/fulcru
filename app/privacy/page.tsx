@@ -20,7 +20,7 @@ export default function PrivacyPage() {
       <p>
         Fulcru is operated from Romania. The data controller is the
         individual operator reachable at{" "}
-        <a href="mailto:contact@dictando.ro">contact@dictando.ro</a>. Direct
+        <a href="mailto:contact@fulcru.app">contact@fulcru.app</a>. Direct
         all privacy questions and rights requests there.
       </p>
 
@@ -154,7 +154,7 @@ export default function PrivacyPage() {
       </ul>
       <p>
         To exercise any of these, email{" "}
-        <a href="mailto:contact@dictando.ro">contact@dictando.ro</a>. We
+        <a href="mailto:contact@fulcru.app">contact@fulcru.app</a>. We
         respond within 30 days.
       </p>
 
@@ -194,7 +194,7 @@ export default function PrivacyPage() {
       <h2>12. Contact</h2>
       <p>
         Privacy questions and rights requests:{" "}
-        <a href="mailto:contact@dictando.ro">contact@dictando.ro</a>.
+        <a href="mailto:contact@fulcru.app">contact@fulcru.app</a>.
       </p>
     </LegalShell>
   );

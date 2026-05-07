@@ -166,7 +166,7 @@ function UserMenu() {
           >
             <RiUser3Line size={16} />
           </span>
-          <span className="hidden md:inline">contact@dictando.ro</span>
+          <span className="hidden md:inline">contact@fulcru.app</span>
           <RiArrowDownSLine
             size={16}
             className="hidden text-[var(--color-text-soft)] md:inline"
