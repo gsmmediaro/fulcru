@@ -89,7 +89,7 @@ const TOOLS = [
         cwd: {
           type: "string",
           description:
-            "Absolute working directory of this Claude Code session — required to look up the JSONL for live token-cost enrichment at run_end.",
+            "Absolute working directory of this Claude Code session - required to look up the JSONL for live token-cost enrichment at run_end.",
         },
         pricingMode: {
           type: "string",
@@ -105,7 +105,7 @@ const TOOLS = [
   {
     name: "run_event",
     description:
-      "Log a meaningful checkpoint during a run (file edit, decision, milestone, error). Don't log every tool call — only the ones a client would care to see on their timeline. Pass token deltas if known.",
+      "Log a meaningful checkpoint during a run (file edit, decision, milestone, error). Don't log every tool call - only the ones a client would care to see on their timeline. Pass token deltas if known.",
     inputSchema: {
       type: "object",
       properties: {

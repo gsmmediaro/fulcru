@@ -230,7 +230,7 @@ function NewInvoiceModal({
             <div className="flex items-center justify-between text-[12px] uppercase tracking-[0.04em] text-[var(--color-text-soft)]">
               <span>{t("newInvoice.eligible")}</span>
               <span className="tabular-nums">
-                {eligible === null ? "—" : eligible.length}
+                {eligible === null ? "-" : eligible.length}
               </span>
             </div>
             <div className="mt-[8px] flex items-baseline justify-between">

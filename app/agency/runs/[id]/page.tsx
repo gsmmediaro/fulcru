@@ -164,7 +164,7 @@ export default async function RunDetailPage({
                 </span>{" "}
                 {run.billableUsd > 0
                   ? formatCurrency(run.billableUsd, 0)
-                  : "—"}
+                  : "-"}
               </>
             }
             accent={marginPct > 0 ? "emerald" : undefined}
@@ -178,7 +178,7 @@ export default async function RunDetailPage({
                   · {formatCurrency(margin, 0)}
                 </>
               ) : (
-                "Not yet shipped — no billable amount."
+                "Not yet shipped - no billable amount."
               )
             }
           />
@@ -214,7 +214,7 @@ export default async function RunDetailPage({
             <Pill>{run.baselineHours}h effective</Pill>
             <span className="text-[var(--color-text-soft)]">·</span>
             <Pill tone="emerald">
-              {multiplier > 0 ? `${multiplier.toFixed(1)}× leverage` : "—"}
+              {multiplier > 0 ? `${multiplier.toFixed(1)}× leverage` : "-"}
             </Pill>
             {activeHours > 0 ? (
               <>

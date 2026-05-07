@@ -244,7 +244,7 @@ function ConnectMcpModal({
         </header>
 
         <div className="flex flex-col gap-[16px] px-[24px] pb-[20px]">
-          {/* Key state — never show a stored key plain */}
+          {/* Key state - never show a stored key plain */}
           {keyState.phase === "loading" ? (
             <KeyRow
               tone="muted"

@@ -25,17 +25,17 @@ const en: Dict = {
   "sidebar.reconnect": "Reconnect MCP",
   "mcpModal.title": "Connect MCP",
   "mcpModal.subtitle":
-    "Pick your client and run the command — every session it spawns is tracked here.",
+    "Pick your client and run the command - every session it spawns is tracked here.",
   "mcpModal.tab.claude": "Claude Code",
   "mcpModal.tab.codex": "Codex",
   "mcpModal.tab.opencode": "opencode",
   "mcpModal.tab.others": "Others",
   "mcpModal.codex.hint":
-    "Codex stores credentials via an env var. Run both lines in your shell — codex writes to ~/.codex/config.toml.",
+    "Codex stores credentials via an env var. Run both lines in your shell - codex writes to ~/.codex/config.toml.",
   "mcpModal.opencode.hint":
     "Paste into your opencode.json (or opencode.jsonc). opencode uses `mcp` and requires `type: \"remote\"`.",
   "mcpModal.others.hint":
-    "Paste into your client's MCP config — works for Cursor, Cline, Continue, Windsurf and similar.",
+    "Paste into your client's MCP config - works for Cursor, Cline, Continue, Windsurf and similar.",
   "mcpModal.commandLabel": "Command",
   "mcpModal.serverLabel": "Server URL",
   "mcpModal.copy": "Copy",
@@ -47,14 +47,14 @@ const en: Dict = {
   "mcpModal.help":
     "Once added, every Claude Code session run from your terminal can call run_start / run_event / run_end and will be tracked here automatically.",
   "mcpModal.step1": "Copy the command above.",
-  "mcpModal.step2": "Run it in your terminal — it registers the MCP server with Claude Code globally.",
+  "mcpModal.step2": "Run it in your terminal - it registers the MCP server with Claude Code globally.",
   "mcpModal.step3":
     "Start a Claude Code session from any project. Runs are tracked here automatically.",
   "mcpModal.close": "Close",
   "mcpModal.keyLoading": "Looking up your MCP key…",
   "mcpModal.keyNone": "No MCP key yet. Generate one to authorize Claude Code.",
   "mcpModal.keyStored": "An MCP key already exists for this account.",
-  "mcpModal.keyFresh": "New key generated — save it now.",
+  "mcpModal.keyFresh": "New key generated - save it now.",
   "mcpModal.keyOnceWarning":
     "We never store the plain key. If you lose it, generate a new one (the old still works until revoked).",
   "mcpModal.keyGenerate": "Generate key",
@@ -134,7 +134,7 @@ const en: Dict = {
   // Pages: Leverage
   "leverage.title": "Leverage",
   "leverage.subtitle":
-    "How much human-equivalent work the agents shipped — and the margin you keep.",
+    "How much human-equivalent work the agents shipped - and the margin you keep.",
   "leverage.hero.eff": "Effective hours",
   "leverage.hero.effSub": "human-equivalent shipped",
   "leverage.hero.lev": "Leverage",
@@ -179,10 +179,10 @@ const en: Dict = {
   // Pages: Skills
   "skills.title": "Skills",
   "skills.subtitle":
-    "Skills are the billing primitive — each one carries a baseline-hours estimate and rate modifier.",
+    "Skills are the billing primitive - each one carries a baseline-hours estimate and rate modifier.",
   "skills.empty.title": "No skills yet",
   "skills.empty.body":
-    "Define your first skill — every run picks one to derive baseline hours and the billable rate.",
+    "Define your first skill - every run picks one to derive baseline hours and the billable rate.",
   "skills.new": "Create skill",
   "skills.totalSkills": "Total skills",
   "skills.avgBaseline": "Avg baseline hours",
@@ -206,7 +206,7 @@ const en: Dict = {
   "invoices.col.status": "Status",
   "invoices.col.total": "Total",
 
-  // Invoice list — filter bar
+  // Invoice list - filter bar
   "invoiceList.filter": "FILTER",
   "invoiceList.allTime": "All time",
   "invoiceList.thisMonth": "This month",
@@ -282,7 +282,7 @@ const en: Dict = {
   "invoice.address": "Address",
   "invoice.email": "Email",
 
-  // Modal — common
+  // Modal - common
   "modal.cancel": "Cancel",
   "modal.creating": "Creating…",
   "modal.required": "{field} is required",
@@ -304,7 +304,7 @@ const en: Dict = {
   "editClient.email": "Email (optional)",
   "editClient.emailPh": "billing@acme.com",
   "editClient.ccRecipients": "CC recipients (optional)",
-  "editClient.ccHelper": "Up to 3 — comma or Enter to add",
+  "editClient.ccHelper": "Up to 3 - comma or Enter to add",
   "editClient.address": "Address (optional)",
   "editClient.addressPh": "123 Main St, New York, NY 10001",
   "editClient.note": "Note (optional)",
@@ -326,7 +326,7 @@ const en: Dict = {
   // New skill modal
   "newSkill.title": "Create skill",
   "newSkill.subtitle":
-    "Skills are the billing primitive — baseline hours × rate × modifier.",
+    "Skills are the billing primitive - baseline hours × rate × modifier.",
   "newSkill.name": "Skill name",
   "newSkill.namePh": "Landing page redesign",
   "newSkill.desc": "Description",
@@ -370,7 +370,7 @@ const en: Dict = {
   "invoice.editor.addAddress": "Add address",
   "invoice.editor.addEmail": "Add email",
   "invoice.editor.subject": "Subject (optional)",
-  "invoice.editor.subjectPh": "e.g. Web development services — October 2024",
+  "invoice.editor.subjectPh": "e.g. Web development services - October 2024",
   "invoice.editor.itemType": "Item type",
   "invoice.editor.description": "Description",
   "invoice.editor.quantity": "Qty",
@@ -411,25 +411,25 @@ const en: Dict = {
   "invoice.editor.billToAddress": "Client address",
   "invoice.editor.billToEmail": "Client email",
   "invoice.editor.importTimeTitle": "Import time and expenses",
-  "invoice.editor.importTimeSubtitle": "Coming soon — import billable hours from runs directly.",
+  "invoice.editor.importTimeSubtitle": "Coming soon - import billable hours from runs directly.",
   "invoice.editor.close": "Close",
 
-  // Auth — shared
+  // Auth - shared
   "auth.copyright": "Fulcru © {year}",
   "legal.backToApp": "Back",
   "legal.lastUpdated": "Last updated {date}",
   "auth.tagline": "Bill the leverage.",
   "auth.taglineBody":
-    "Run, approve, invoice — every Claude session, every billable hour, every shipped outcome. The agency dashboard for AI work.",
+    "Run, approve, invoice - every Claude session, every billable hour, every shipped outcome. The agency dashboard for AI work.",
   "auth.feature.track.title": "Track",
   "auth.feature.track.body":
-    "Every run, every token, every cost — captured automatically via the MCP.",
+    "Every run, every token, every cost - captured automatically via the MCP.",
   "auth.feature.approve.title": "Approve",
   "auth.feature.approve.body":
     "Hold AI before it ships. One-click approve or reject, with full context.",
   "auth.feature.invoice.title": "Invoice",
   "auth.feature.invoice.body":
-    "Convert shipped runs into fiscal invoices — Romanian-compliant, one click.",
+    "Convert shipped runs into fiscal invoices - Romanian-compliant, one click.",
   "auth.orWith": "or with email",
   "auth.email": "Email",
   "auth.password": "Password",
@@ -480,7 +480,7 @@ const en: Dict = {
   "onb.welcome": "Welcome, {name}",
   "onb.preparing": "Preparing your workspace…",
 
-  // Step 1 — agency size
+  // Step 1 - agency size
   "onb.s1.q1": "How large is your agency?",
   "onb.s1.q2": "How many clients do you serve at once?",
   "onb.size.solo": "Just me",
@@ -494,7 +494,7 @@ const en: Dict = {
   "onb.cc.c_16_50": "16 – 50",
   "onb.cc.c_50_plus": "50+",
 
-  // Step 2 — service category
+  // Step 2 - service category
   "onb.s2.q": "What's the main service you deliver?",
   "onb.svc.web_dev": "Web development",
   "onb.svc.design": "Design / branding",
@@ -506,7 +506,7 @@ const en: Dict = {
   "onb.svc.other": "Something else",
   "onb.svc.otherPlaceholder": "Tell us in 2–3 words",
 
-  // Step 3 — use cases
+  // Step 3 - use cases
   "onb.s3.q": "What will you use Fulcru for?",
   "onb.s3.hint": "Pick all that apply",
   "onb.uc.track_runs": "Track AI run cost",
@@ -515,7 +515,7 @@ const en: Dict = {
   "onb.uc.team_visibility": "Team visibility",
   "onb.uc.leverage": "Measure AI leverage vs hours",
 
-  // Step 4 — attribution
+  // Step 4 - attribution
   "onb.s4.q": "How did you hear about us?",
   "onb.attr.search": "Search engine",
   "onb.attr.youtube": "YouTube",
@@ -549,13 +549,13 @@ const ro: Dict = {
   "mcpModal.tab.opencode": "opencode",
   "mcpModal.tab.others": "Altele",
   "mcpModal.codex.hint":
-    "Codex ține credențialele într-o variabilă de mediu. Rulează ambele linii în shell — codex scrie în ~/.codex/config.toml.",
+    "Codex ține credențialele într-o variabilă de mediu. Rulează ambele linii în shell - codex scrie în ~/.codex/config.toml.",
   "mcpModal.opencode.hint":
     "Lipește în opencode.json (sau opencode.jsonc). opencode folosește `mcp` și cere `type: \"remote\"`.",
   "mcpModal.others.hint":
-    "Lipește în configul MCP al clientului — funcționează pentru Cursor, Cline, Continue, Windsurf și similare.",
+    "Lipește în configul MCP al clientului - funcționează pentru Cursor, Cline, Continue, Windsurf și similare.",
   "mcpModal.subtitle":
-    "Alege clientul și rulează comanda — orice sesiune pornită din el va fi urmărită aici.",
+    "Alege clientul și rulează comanda - orice sesiune pornită din el va fi urmărită aici.",
   "mcpModal.commandLabel": "Comandă",
   "mcpModal.serverLabel": "URL server",
   "mcpModal.copy": "Copiază",
@@ -568,7 +568,7 @@ const ro: Dict = {
     "După adăugare, orice sesiune Claude Code din terminalul tău poate apela run_start / run_event / run_end și va fi urmărită automat aici.",
   "mcpModal.step1": "Copiază comanda de mai sus.",
   "mcpModal.step2":
-    "Rulează-o în terminal — înregistrează serverul MCP în Claude Code, global.",
+    "Rulează-o în terminal - înregistrează serverul MCP în Claude Code, global.",
   "mcpModal.step3":
     "Pornește o sesiune Claude Code din orice proiect. Sesiunile vor fi urmărite automat aici.",
   "mcpModal.close": "Închide",
@@ -576,7 +576,7 @@ const ro: Dict = {
   "mcpModal.keyNone":
     "Nu ai încă o cheie MCP. Generează una ca să autorizezi Claude Code.",
   "mcpModal.keyStored": "O cheie MCP există deja pe contul tău.",
-  "mcpModal.keyFresh": "Cheie nouă generată — salveaz-o acum.",
+  "mcpModal.keyFresh": "Cheie nouă generată - salveaz-o acum.",
   "mcpModal.keyOnceWarning":
     "Cheia nu e stocată în clar. Dacă o pierzi, generezi alta (cea veche rămâne validă până la revocare).",
   "mcpModal.keyGenerate": "Generează cheie",
@@ -657,7 +657,7 @@ const ro: Dict = {
   // Pages: Leverage
   "leverage.title": "Pârghie",
   "leverage.subtitle":
-    "Cât de multă muncă echivalent-uman au livrat agenții — și marja pe care o păstrezi.",
+    "Cât de multă muncă echivalent-uman au livrat agenții - și marja pe care o păstrezi.",
   "leverage.hero.eff": "Ore efective",
   "leverage.hero.effSub": "echivalent uman livrat",
   "leverage.hero.lev": "Pârghie",
@@ -704,10 +704,10 @@ const ro: Dict = {
   // Pages: Skills
   "skills.title": "Competențe",
   "skills.subtitle":
-    "Competențele sunt unitatea de facturare — fiecare are estimare în ore și modificator de tarif.",
+    "Competențele sunt unitatea de facturare - fiecare are estimare în ore și modificator de tarif.",
   "skills.empty.title": "Nicio competență încă",
   "skills.empty.body":
-    "Definește prima competență — fiecare sesiune o folosește pentru ore standard și tarif facturabil.",
+    "Definește prima competență - fiecare sesiune o folosește pentru ore standard și tarif facturabil.",
   "skills.new": "Adaugă competență",
   "skills.totalSkills": "Total competențe",
   "skills.avgBaseline": "Ore standard medii",
@@ -731,7 +731,7 @@ const ro: Dict = {
   "invoices.col.status": "Status",
   "invoices.col.total": "Total",
 
-  // Invoice list — filter bar
+  // Invoice list - filter bar
   "invoiceList.filter": "FILTRU",
   "invoiceList.allTime": "Tot timpul",
   "invoiceList.thisMonth": "Luna aceasta",
@@ -807,7 +807,7 @@ const ro: Dict = {
   "invoice.address": "Adresă",
   "invoice.email": "Email",
 
-  // Modal — common
+  // Modal - common
   "modal.cancel": "Anulează",
   "modal.creating": "Se creează…",
 
@@ -828,7 +828,7 @@ const ro: Dict = {
   "editClient.email": "Email (opțional)",
   "editClient.emailPh": "facturare@acme.com",
   "editClient.ccRecipients": "Destinatari CC (opțional)",
-  "editClient.ccHelper": "Maxim 3 — virgulă sau Enter pentru a adăuga",
+  "editClient.ccHelper": "Maxim 3 - virgulă sau Enter pentru a adăuga",
   "editClient.address": "Adresă (opțional)",
   "editClient.addressPh": "Str. Principală 1, București, 010001",
   "editClient.note": "Notă (opțional)",
@@ -850,7 +850,7 @@ const ro: Dict = {
   // New skill modal
   "newSkill.title": "Adaugă competență",
   "newSkill.subtitle":
-    "Competențele sunt unitatea de facturare — ore × tarif × modificator.",
+    "Competențele sunt unitatea de facturare - ore × tarif × modificator.",
   "newSkill.name": "Nume competență",
   "newSkill.namePh": "Reproiectare landing page",
   "newSkill.desc": "Descriere",
@@ -894,7 +894,7 @@ const ro: Dict = {
   "invoice.editor.addAddress": "Adaugă adresă",
   "invoice.editor.addEmail": "Adaugă email",
   "invoice.editor.subject": "Subiect (opțional)",
-  "invoice.editor.subjectPh": "ex. Servicii dezvoltare web — Octombrie 2024",
+  "invoice.editor.subjectPh": "ex. Servicii dezvoltare web - Octombrie 2024",
   "invoice.editor.itemType": "Tip articol",
   "invoice.editor.description": "Descriere",
   "invoice.editor.quantity": "Cant.",
@@ -935,25 +935,25 @@ const ro: Dict = {
   "invoice.editor.billToAddress": "Adresa clientului",
   "invoice.editor.billToEmail": "Email-ul clientului",
   "invoice.editor.importTimeTitle": "Importă timp și cheltuieli",
-  "invoice.editor.importTimeSubtitle": "În curând — importă ore facturabile din sesiuni direct.",
+  "invoice.editor.importTimeSubtitle": "În curând - importă ore facturabile din sesiuni direct.",
   "invoice.editor.close": "Închide",
 
-  // Auth — shared
+  // Auth - shared
   "auth.copyright": "Fulcru © {year}",
   "legal.backToApp": "Înapoi",
   "legal.lastUpdated": "Actualizat {date}",
   "auth.tagline": "Facturează pârghia.",
   "auth.taglineBody":
-    "Rulează, aprobă, facturează — fiecare sesiune Claude, fiecare oră facturabilă, fiecare livrare. Dashboard-ul de agenție pentru munca AI.",
+    "Rulează, aprobă, facturează - fiecare sesiune Claude, fiecare oră facturabilă, fiecare livrare. Dashboard-ul de agenție pentru munca AI.",
   "auth.feature.track.title": "Urmărește",
   "auth.feature.track.body":
-    "Fiecare rulare, fiecare token, fiecare cost — captate automat prin MCP.",
+    "Fiecare rulare, fiecare token, fiecare cost - captate automat prin MCP.",
   "auth.feature.approve.title": "Aprobă",
   "auth.feature.approve.body":
     "Oprește AI-ul înainte să livreze. Aprobă sau respinge dintr-un click, cu context complet.",
   "auth.feature.invoice.title": "Facturează",
   "auth.feature.invoice.body":
-    "Transformă rulările livrate în facturi fiscale — conforme RO, dintr-un click.",
+    "Transformă rulările livrate în facturi fiscale - conforme RO, dintr-un click.",
   "auth.orWith": "sau cu email",
   "auth.email": "Email",
   "auth.password": "Parolă",
@@ -1004,7 +1004,7 @@ const ro: Dict = {
   "onb.welcome": "Bun venit, {name}",
   "onb.preparing": "Pregătim spațiul tău de lucru…",
 
-  // Step 1 — dimensiune agenție
+  // Step 1 - dimensiune agenție
   "onb.s1.q1": "Cât de mare e agenția ta?",
   "onb.s1.q2": "Cu câți clienți lucrezi simultan?",
   "onb.size.solo": "Doar eu",
@@ -1018,7 +1018,7 @@ const ro: Dict = {
   "onb.cc.c_16_50": "16 – 50",
   "onb.cc.c_50_plus": "50+",
 
-  // Step 2 — serviciu principal
+  // Step 2 - serviciu principal
   "onb.s2.q": "Care e principalul serviciu pe care îl livrezi?",
   "onb.svc.web_dev": "Dezvoltare web",
   "onb.svc.design": "Design / branding",
@@ -1030,7 +1030,7 @@ const ro: Dict = {
   "onb.svc.other": "Altceva",
   "onb.svc.otherPlaceholder": "Spune-ne în 2–3 cuvinte",
 
-  // Step 3 — use cases
+  // Step 3 - use cases
   "onb.s3.q": "Pentru ce folosești Fulcru?",
   "onb.s3.hint": "Alege tot ce ți se aplică",
   "onb.uc.track_runs": "Vreau să văd costul rulărilor AI",
@@ -1039,7 +1039,7 @@ const ro: Dict = {
   "onb.uc.team_visibility": "Vreau vizibilitate pentru echipa mea",
   "onb.uc.leverage": "Vreau să măsor pârghia AI vs ore reale",
 
-  // Step 4 — attribution
+  // Step 4 - attribution
   "onb.s4.q": "Cum ai auzit de noi?",
   "onb.attr.search": "Google / Bing",
   "onb.attr.youtube": "YouTube",

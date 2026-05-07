@@ -174,7 +174,7 @@ export function RunsTable({ runs, clients, projects, skills }: Props) {
                           {r.id}
                         </span>
                         <span className="line-clamp-1 max-w-[260px] text-[12px] text-[var(--color-text-soft)]">
-                          {r.prompt ?? skill?.description ?? "—"}
+                          {r.prompt ?? skill?.description ?? "-"}
                         </span>
                       </div>
                     </Link>
@@ -189,17 +189,17 @@ export function RunsTable({ runs, clients, projects, skills }: Props) {
                       ) : null}
                       <div className="flex flex-col">
                         <span className="text-[var(--color-text-strong)]">
-                          {client?.name ?? "—"}
+                          {client?.name ?? "-"}
                         </span>
                         <span className="text-[12px] text-[var(--color-text-soft)]">
-                          {project?.name ?? "—"}
+                          {project?.name ?? "-"}
                         </span>
                       </div>
                     </div>
                   </Td>
                   <Td>
                     <span className="text-[var(--color-text-strong)]">
-                      {skill?.name ?? "—"}
+                      {skill?.name ?? "-"}
                     </span>
                   </Td>
                   <Td>
@@ -225,7 +225,7 @@ export function RunsTable({ runs, clients, projects, skills }: Props) {
                       <span className="text-[11px] tabular-nums text-[var(--color-text-soft)]">
                         {runtimeHours > 0
                           ? `${runtimeHours.toFixed(2)}h runtime`
-                          : "—"}{" "}
+                          : "-"}{" "}
                         {multiplier > 0 ? (
                           <span className="text-emerald-300">
                             ({multiplier.toFixed(1)}×)
@@ -251,7 +251,7 @@ export function RunsTable({ runs, clients, projects, skills }: Props) {
                     align="right"
                     className="font-semibold tabular-nums text-[var(--color-text-strong)]"
                   >
-                    {r.billableUsd > 0 ? formatCurrency(r.billableUsd, 0) : "—"}
+                    {r.billableUsd > 0 ? formatCurrency(r.billableUsd, 0) : "-"}
                   </Td>
                   <Td
                     align="right"
@@ -275,7 +275,7 @@ export function RunsTable({ runs, clients, projects, skills }: Props) {
                   </div>
                   <div className="mt-[4px] text-[13px] text-[var(--color-text-soft)]">
                     {runs.length === 0
-                      ? "Start one from your Claude Code session — runs land here as they begin."
+                      ? "Start one from your Claude Code session - runs land here as they begin."
                       : "Try clearing search or widening the status filter."}
                   </div>
                 </td>

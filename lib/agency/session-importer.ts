@@ -257,7 +257,7 @@ export async function enrichRunFromSession(
         modelTotals: {},
         matchedEvents: 0,
         enriched: false,
-        reason: "No cwd available — pass cwd to enrich token cost",
+        reason: "No cwd available - pass cwd to enrich token cost",
       };
     }
     try {

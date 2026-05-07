@@ -24,7 +24,7 @@
    railway link
    ```
 
-4. **Set environment variables** — copy these from your `.env.local`, but set `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` to the Railway public URL once it's assigned (see step 6).
+4. **Set environment variables** - copy these from your `.env.local`, but set `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` to the Railway public URL once it's assigned (see step 6).
 
    ```sh
    railway variables \
@@ -35,7 +35,7 @@
      --set "NODE_ENV=production"
    ```
 
-   Tip: regenerate `BETTER_AUTH_SECRET` for prod — don't reuse the dev one.
+   Tip: regenerate `BETTER_AUTH_SECRET` for prod - don't reuse the dev one.
 
 5. **First deploy**
    ```sh
@@ -71,11 +71,11 @@
 | Variable               | Purpose                                                                    |
 | ---------------------- | -------------------------------------------------------------------------- |
 | `DATABASE_URL`         | Neon Postgres pooled connection string (with `?sslmode=require`)           |
-| `BETTER_AUTH_SECRET`   | 32-byte hex string used to sign session tokens — **regenerate for prod**   |
+| `BETTER_AUTH_SECRET`   | 32-byte hex string used to sign session tokens - **regenerate for prod**   |
 | `BETTER_AUTH_URL`      | The public app URL (Better Auth uses this for OAuth callbacks)             |
 | `GOOGLE_CLIENT_ID`     | Google OAuth client ID                                                     |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                                                 |
-| `NEXT_PUBLIC_APP_URL`  | Public app URL — exposed to the client SDK                                 |
+| `NEXT_PUBLIC_APP_URL`  | Public app URL - exposed to the client SDK                                 |
 | `NODE_ENV`             | `production`                                                               |
 
 ## Subsequent deploys
@@ -87,4 +87,4 @@ railway up     # or hook a GitHub auto-deploy from the Railway dashboard
 
 ## Health check
 
-The Railway healthcheck hits `/api/auth/get-session` — returns `null` (HTTP 200) when no session, which confirms Better Auth + DB are wired up.
+The Railway healthcheck hits `/api/auth/get-session` - returns `null` (HTTP 200) when no session, which confirms Better Auth + DB are wired up.

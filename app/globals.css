@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────
-   Design tokens — AlignUI-style @theme, tuned for Fulcra
+   Design tokens - AlignUI-style @theme, tuned for Fulcra
    ────────────────────────────────────────────────────────── */
 @theme {
   /* Typography */
@@ -102,7 +102,7 @@
   --color-brand-600: oklch(85% 0.1 200);
   --color-brand-700: oklch(90% 0.08 200);
 
-  /* Neutrals — dark app palette */
+  /* Neutrals - dark app palette */
   --color-neutral-0: #232323; /* surface (sidebar/topbar/cards) */
   --color-neutral-50: #2a2a2a;
   --color-neutral-100: #2f2f2f; /* hairline ring */
@@ -179,7 +179,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Heading wrapping — balance for short, pretty for longer */
+/* Heading wrapping - balance for short, pretty for longer */
 h1,
 h2,
 h3 {
@@ -190,7 +190,7 @@ p {
 }
 
 /* ──────────────────────────────────────────────────────────
-   Easings — refined curves (Emil-style)
+   Easings - refined curves (Emil-style)
    ────────────────────────────────────────────────────────── */
 :root {
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -237,7 +237,7 @@ p {
    Delight primitives
    ────────────────────────────────────────────────────────── */
 
-/* Single 360° rotation — for refresh confirmations */
+/* Single 360° rotation - for refresh confirmations */
 @keyframes spin-once {
   from {
     transform: rotate(0deg);
@@ -267,7 +267,7 @@ p {
   animation: count-in 420ms var(--ease-out-expo) both;
 }
 
-/* Icon wiggle — for card icon on parent hover */
+/* Icon wiggle - for card icon on parent hover */
 @keyframes icon-pop {
   0% {
     transform: scale(1) rotate(0deg);
@@ -280,7 +280,7 @@ p {
   }
 }
 
-/* Bell ring — subtle attention tilt on hover */
+/* Bell ring - subtle attention tilt on hover */
 @keyframes bell-ring {
   0%,
   100% {
@@ -329,7 +329,7 @@ p {
   z-index: 1;
 }
 
-/* Chart area draw-in — SVG path reveal */
+/* Chart area draw-in - SVG path reveal */
 @keyframes chart-draw {
   from {
     opacity: 0;
@@ -344,7 +344,7 @@ p {
   animation: chart-draw 720ms var(--ease-out-expo) both;
 }
 
-/* Modal enter — soft rise + fade */
+/* Modal enter - soft rise + fade */
 @keyframes modal-rise {
   from {
     opacity: 0;

@@ -93,7 +93,7 @@ export default async function ProjectsPage() {
                         className="size-[6px] rounded-full"
                         style={{ backgroundColor: p.color }}
                       />
-                      {client?.name ?? "—"}
+                      {client?.name ?? "-"}
                     </span>
                   </div>
                 </div>

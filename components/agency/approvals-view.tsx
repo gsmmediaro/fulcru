@@ -93,7 +93,7 @@ function CardList({
         </div>
         <div className="mt-[4px] text-[13px] text-[var(--color-text-soft)]">
           {mode === "pending"
-            ? "No approvals waiting — every agent is unblocked."
+            ? "No approvals waiting - every agent is unblocked."
             : "Resolved approvals will land here once you act on the first one."}
         </div>
       </div>

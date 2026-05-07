@@ -17,7 +17,7 @@ export type McpKey = {
 };
 
 export type CreatedMcpKey = McpKey & {
-  /** Plain text key — only returned at creation time. */
+  /** Plain text key - only returned at creation time. */
   key: string;
 };
 

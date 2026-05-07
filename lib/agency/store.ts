@@ -891,7 +891,7 @@ export const store = {
       const unitPrice = num(r.rate_usd);
       return {
         type: "service",
-        description: `${r.skill_name} — run ${r.id}`,
+        description: `${r.skill_name} - run ${r.id}`,
         quantity,
         unitPrice,
         amount: num(r.billable_usd) || quantity * unitPrice,

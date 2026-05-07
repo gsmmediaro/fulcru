@@ -4,7 +4,7 @@ import { LegalShell } from "@/components/legal/legal-shell";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
-    "Terms governing your use of Fulcru — the agency dashboard for AI-coding work.",
+    "Terms governing your use of Fulcru - the agency dashboard for AI-coding work.",
 };
 
 export default function TermsPage() {
@@ -22,7 +22,7 @@ export default function TermsPage() {
       <h2>2. The service</h2>
       <p>
         Fulcru is a dashboard for tracking, approving, and invoicing
-        AI-assisted client work — primarily Claude Code sessions captured via
+        AI-assisted client work - primarily Claude Code sessions captured via
         the Model Context Protocol (MCP). The product is provided
         &quot;as-is&quot;, in active development, and may change without
         notice.

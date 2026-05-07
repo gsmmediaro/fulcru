@@ -13,7 +13,7 @@ export default function PrivacyPage() {
       <p>
         This policy explains what information Fulcru collects, why, where it
         lives, and what control you have over it. We follow it because we
-        want to — and because the GDPR requires us to.
+        want to - and because the GDPR requires us to.
       </p>
 
       <h2>1. Who is the controller</h2>
@@ -28,14 +28,14 @@ export default function PrivacyPage() {
 
       <h3>Account information</h3>
       <ul>
-        <li>Name and email — required to create an account.</li>
-        <li>Company name — optional, only if you fill it in at signup.</li>
+        <li>Name and email - required to create an account.</li>
+        <li>Company name - optional, only if you fill it in at signup.</li>
         <li>
-          Password — stored only as a salted, hashed value via Better Auth.
+          Password - stored only as a salted, hashed value via Better Auth.
           We never see your plaintext password.
         </li>
         <li>
-          Google OAuth identifier and email — only if you sign in with
+          Google OAuth identifier and email - only if you sign in with
           Google. We do not request access to your Drive, Gmail, or other
           Google services.
         </li>
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
       <ul>
         <li>
           The clients, projects, skills, runs, run events, approvals, and
-          invoices you create or import — stored as structured rows in our
+          invoices you create or import - stored as structured rows in our
           database.
         </li>
         <li>
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
           and cannot be recovered.
         </li>
         <li>
-          Onboarding answers (agency size, services, use cases) — used to
+          Onboarding answers (agency size, services, use cases) - used to
           tailor the in-product experience.
         </li>
       </ul>
@@ -62,11 +62,11 @@ export default function PrivacyPage() {
       <h3>Technical data</h3>
       <ul>
         <li>
-          Session cookies issued by Better Auth — HTTP-only, used to keep
+          Session cookies issued by Better Auth - HTTP-only, used to keep
           you logged in.
         </li>
         <li>
-          Server logs — IP address, user agent, request path, timestamp, and
+          Server logs - IP address, user agent, request path, timestamp, and
           status. Retained for up to 30 days for debugging and abuse
           prevention.
         </li>
@@ -81,7 +81,7 @@ export default function PrivacyPage() {
         <li>We do not run advertising or marketing pixels.</li>
         <li>
           We do not read or store the content of files in directories you
-          point the MCP server at — only the metadata (token counts, run
+          point the MCP server at - only the metadata (token counts, run
           duration, event labels) reported by your MCP session.
         </li>
       </ul>
@@ -104,24 +104,24 @@ export default function PrivacyPage() {
       </ul>
       <p>
         These providers are our processors. Personal data may transfer
-        outside the EU — we rely on the providers&apos; standard contractual
+        outside the EU - we rely on the providers&apos; standard contractual
         clauses for that transfer.
       </p>
 
       <h2>5. How we use your data</h2>
       <p>We process your data to:</p>
       <ul>
-        <li>Operate the service — render dashboards, store runs, sign you in.</li>
+        <li>Operate the service - render dashboards, store runs, sign you in.</li>
         <li>
-          Authenticate API and MCP requests — verifying that a Bearer token
+          Authenticate API and MCP requests - verifying that a Bearer token
           maps to your account.
         </li>
         <li>
-          Communicate service-relevant updates — security notices, breaking
+          Communicate service-relevant updates - security notices, breaking
           changes, account issues.
         </li>
         <li>
-          Detect and prevent abuse — rate-limit and block obviously
+          Detect and prevent abuse - rate-limit and block obviously
           malicious activity.
         </li>
         <li>Comply with legal obligations.</li>
@@ -174,7 +174,7 @@ export default function PrivacyPage() {
         Connections are TLS-only. Passwords and MCP keys are hashed before
         storage. Sessions are bound to HTTP-only cookies. We restrict
         production database access to operators of the service and apply
-        provider-default network controls. No system is perfect — we
+        provider-default network controls. No system is perfect - we
         respond promptly to any incident that affects user data.
       </p>
 

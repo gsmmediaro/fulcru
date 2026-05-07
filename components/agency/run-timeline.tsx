@@ -86,7 +86,7 @@ export function RunTimeline({ events }: { events: RunEvent[] }) {
   if (events.length === 0) {
     return (
       <div className="rounded-[8px] bg-[var(--color-bg-surface)] p-[24px] text-center text-[13px] text-[var(--color-text-soft)] ring-1 ring-[var(--color-stroke-soft)]">
-        No events yet — they'll appear here as the agent works.
+        No events yet - they'll appear here as the agent works.
       </div>
     );
   }

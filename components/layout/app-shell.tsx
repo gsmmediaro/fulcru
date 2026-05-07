@@ -20,7 +20,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden">
-      {/* Static sidebar — visible only at xl and up */}
+      {/* Static sidebar - visible only at xl and up */}
       <div className="hidden shrink-0 xl:block">
         <Sidebar />
       </div>

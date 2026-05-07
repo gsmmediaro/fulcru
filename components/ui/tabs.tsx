@@ -36,12 +36,12 @@ export const TabsTrigger = React.forwardRef<
       "hover:text-[var(--color-text-strong)]",
       "data-[state=active]:text-[var(--color-brand-400)] data-[state=active]:font-semibold",
       "focus-visible:text-[var(--color-text-strong)]",
-      // Base underline — animates scale + opacity with soft-spring easing
+      // Base underline - animates scale + opacity with soft-spring easing
       "after:pointer-events-none after:absolute after:bottom-0 after:left-[14px] after:right-[14px] after:h-[2px]",
       "after:origin-center after:scale-x-0 after:rounded-full after:bg-[var(--color-brand-400)]",
       "after:transition-[transform,opacity] after:duration-[320ms] after:ease-[var(--ease-soft-spring)]",
       "data-[state=active]:after:scale-x-100",
-      // Hover preview — soft underline that fades in for inactive tabs
+      // Hover preview - soft underline that fades in for inactive tabs
       "data-[state=inactive]:hover:after:scale-x-[0.45] data-[state=inactive]:hover:after:opacity-40",
       className,
     )}

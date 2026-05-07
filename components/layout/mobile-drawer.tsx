@@ -25,7 +25,7 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
     };
   }, [open, onClose]);
 
-  // Focus the panel when it opens — keeps focus out of the page behind
+  // Focus the panel when it opens - keeps focus out of the page behind
   const panelRef = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     if (open) panelRef.current?.focus();

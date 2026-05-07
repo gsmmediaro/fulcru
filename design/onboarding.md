@@ -1,4 +1,4 @@
-# Onboarding — Design Spec
+# Onboarding - Design Spec
 
 > Four-step wizard shown immediately after a user finishes Google OAuth and before they reach `/agency`. Structure copied from Clockify (4 steps, stepper, Back / Next / Done). Visual language is Fulcra (dark, teal brand, Be Vietnam Pro, no AI-slop blue).
 
@@ -8,11 +8,11 @@
 
 Capture five things on first sign-in so the workspace is useful from day zero, and we have segmentation data for outreach:
 
-1. **Agency size** — drives default invoice templates, hint about team seats
-2. **Concurrent clients** — drives whether we surface the multi-client billing roll-up
-3. **Primary service** — drives which seed Skills we offer in the catalog
-4. **Why Fulcra** — drives which surface we land them on after onboarding
-5. **Attribution** — feeds the founder analytics dashboard, not surfaced to user
+1. **Agency size** - drives default invoice templates, hint about team seats
+2. **Concurrent clients** - drives whether we surface the multi-client billing roll-up
+3. **Primary service** - drives which seed Skills we offer in the catalog
+4. **Why Fulcra** - drives which surface we land them on after onboarding
+5. **Attribution** - feeds the founder analytics dashboard, not surfaced to user
 
 Onboarding is single-shot: completion writes `onboarding_state.completed_at` and the wizard never re-appears.
 
@@ -43,7 +43,7 @@ Onboarding is **mandatory before any write** to keep server logic from branching
 
 ---
 
-## 3. Layout — page chrome
+## 3. Layout - page chrome
 
 The wizard does **not** use the AppShell (no sidebar, no topbar). It runs in a dedicated layout:
 
@@ -64,7 +64,7 @@ The wizard does **not** use the AppShell (no sidebar, no topbar). It runs in a d
 ```
 
 - App background `--color-bg-app` (`#1c1c1c`).
-- Card centered viewport-wise, **vertical offset 18vh from top** (not pure-center — feels grounded, not floating).
+- Card centered viewport-wise, **vertical offset 18vh from top** (not pure-center - feels grounded, not floating).
 - Logo links back to `/` (signed-out user).
 - Avatar in top-right shows current Google user; clicking opens "Sign out" popover.
 
@@ -111,7 +111,7 @@ The wizard does **not** use the AppShell (no sidebar, no topbar). It runs in a d
 | Active pill fill   | `color-mix(in oklab, var(--color-brand-400) 14%, transparent)` |
 | Inactive pill bg   | `--color-bg-surface-elevated`               |
 | Inactive pill ring | `1px var(--color-stroke-soft)`              |
-| Pill radius        | `--radius-8` (slightly squarer than Clockify's full pill — Fulcra is more architectural) |
+| Pill radius        | `--radius-8` (slightly squarer than Clockify's full pill - Fulcra is more architectural) |
 | Footer divider     | `1px var(--color-stroke-soft)`              |
 | Animation          | `modal-rise` on card mount, `count-in` on step swap |
 
@@ -122,7 +122,7 @@ The wizard does **not** use the AppShell (no sidebar, no topbar). It runs in a d
 - **No** "STEP 1" / "STEP 2" all-caps with underline ticker. Our stepper is a single-line progress rail with dot heads, sized 4px high with 8px filled dots.
 - **No** background blobs.
 - **No** giant illustrations next to the question.
-- **No** modal — this is a full page. The card sits on the viewport, not over a backdrop.
+- **No** modal - this is a full page. The card sits on the viewport, not over a backdrop.
 
 ---
 
@@ -187,9 +187,9 @@ Replaces the radio dot with a 16px square check (filled brand-400 + white check 
 
 ---
 
-## 7. Steps — content
+## 7. Steps - content
 
-### Step 1 — `agency_size`
+### Step 1 - `agency_size`
 
 > **RO**: "Cât de mare e agenția ta?" / **EN**: "How large is your agency?"
 > Single-select.
@@ -215,7 +215,7 @@ Replaces the radio dot with a 16px square check (filled brand-400 + white check 
 
 **Validation**: both required to enable Continue.
 
-### Step 2 — `service_category`
+### Step 2 - `service_category`
 
 > **RO**: "Care e principalul serviciu pe care îl livrezi?" / **EN**: "What's the main service you deliver?"
 > Single-select.
@@ -233,7 +233,7 @@ Replaces the radio dot with a 16px square check (filled brand-400 + white check 
 
 If `other` selected → **inline reveal** of a single-line input below the chip row (`Spune-ne în 2-3 cuvinte`). Stored in `service_category_other`.
 
-### Step 3 — `use_cases`
+### Step 3 - `use_cases`
 
 > **RO**: "Pentru ce folosești Fulcra?" / **EN**: "What will you use Fulcra for?"
 > **Multi-select** (the only multi-select step). At least one required.
@@ -248,7 +248,7 @@ If `other` selected → **inline reveal** of a single-line input below the chip 
 
 Each chip uses the multi-select check icon (square, not radio dot).
 
-### Step 4 — `attribution`
+### Step 4 - `attribution`
 
 > **RO**: "Cum ai auzit de noi?" / **EN**: "How did you hear about us?"
 > Single-select.
@@ -279,7 +279,7 @@ Each chip uses the multi-select check icon (square, not radio dot).
    (hidden on step 1)            (label = "Termină" on step 4)
 ```
 
-- Continue is **disabled** until validation passes for current step (greyed out, not hidden — we want users to see the gate).
+- Continue is **disabled** until validation passes for current step (greyed out, not hidden - we want users to see the gate).
 - Continue: orange primary button, h `40px`, padding `0 16px`, radius `--radius-8`.
 - Back: ghost button, no border, `--color-text-soft`, hover `--color-text-strong`.
 - Right-arrow icon trailing on Continue, left-arrow leading on Back.
@@ -312,7 +312,7 @@ type OnboardingState = {
 };
 ```
 
-State lives only in the wizard component — we don't persist partial answers. If the user closes the tab mid-flow, they restart from step 1 next session. (This is what Clockify does and it's the right call: 4 steps is < 60s, partial-state recovery isn't worth the complexity.)
+State lives only in the wizard component - we don't persist partial answers. If the user closes the tab mid-flow, they restart from step 1 next session. (This is what Clockify does and it's the right call: 4 steps is < 60s, partial-state recovery isn't worth the complexity.)
 
 ### Server persistence
 
@@ -330,7 +330,7 @@ Then it ALSO seeds:
 
 - 1 default Skill matching `service_category` (e.g. for `web_dev` → "Landing page redesign", baseline 6h, modifier 1.0).
 - 1 default Client placeholder named "Primul client" with the user's locale's currency rate filled in.
-- A welcome Run is **NOT** seeded — empty state on `/agency/runs` is part of the experience.
+- A welcome Run is **NOT** seeded - empty state on `/agency/runs` is part of the experience.
 
 Response: `{ ok: true, redirect: "/agency" }`. Client follows the redirect with `router.push` + `router.refresh()` to flush the auth state.
 
@@ -347,7 +347,7 @@ Response: `{ ok: true, redirect: "/agency" }`. Client follows the redirect with 
 | Continue press       | `transform: scale(0.98)` while held                             |
 | Done                 | `count-in` on the words "Bun venit, {name}" full-screen for 800ms before redirecting |
 
-All wrapped in `prefers-reduced-motion: reduce` media query — disabled by globals.css already.
+All wrapped in `prefers-reduced-motion: reduce` media query - disabled by globals.css already.
 
 ---
 
@@ -377,7 +377,7 @@ All wrapped in `prefers-reduced-motion: reduce` media query — disabled by glob
 | `app/onboarding/layout.tsx`                               | new    | Standalone layout (no AppShell)                        |
 | `app/api/onboarding/route.ts`                             | new    | POST handler that writes state + redirects             |
 
-Existing components reused: `Button`, `Modal` (NOT used — page not modal), `LocaleProvider`, `Logo`.
+Existing components reused: `Button`, `Modal` (NOT used - page not modal), `LocaleProvider`, `Logo`.
 
 ---
 
@@ -408,7 +408,7 @@ The presence of a row in this table is the source of truth for "onboarding done.
 - **Skipping**: Should there be a "skip onboarding" escape hatch? **Decision: No.** It's 4 steps, < 60s. Skipping leaves us with worse data and a worse default workspace.
 - **Editing later**: Where does a user edit these answers? **Decision: Settings page → Profile section. Out of scope for v1; ship the wizard first.**
 - **Multi-language at the wizard layer**: Reuse `useLocale()`. Strings live in `lib/i18n/dict.ts` under `onboarding.*`. RO is the default the user is currently using.
-- **Step animation direction**: Forward vs back direction — should they animate differently? **Decision: Yes (forward = slide left, back = slide right), but ship with simple fade first; layer in directional motion in v1.1.**
+- **Step animation direction**: Forward vs back direction - should they animate differently? **Decision: Yes (forward = slide left, back = slide right), but ship with simple fade first; layer in directional motion in v1.1.**
 
 ---
 

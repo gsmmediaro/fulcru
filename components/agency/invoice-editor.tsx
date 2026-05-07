@@ -533,7 +533,7 @@ function PartyBlock({
       {/* Name */}
       {nameReadOnly ? (
         <div className="text-[14px] font-semibold text-[var(--color-text-strong)]">
-          {name || <span className="text-[var(--color-text-soft)]">—</span>}
+          {name || <span className="text-[var(--color-text-soft)]">-</span>}
         </div>
       ) : (
         <input

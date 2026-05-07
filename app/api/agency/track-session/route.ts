@@ -90,7 +90,7 @@ export async function GET() {
       skillId: "required",
       hourlyRate: "optional override (USD/h)",
       pricingMode: "time_plus_tokens (default) | baseline",
-      dryRun: "boolean — return stats without creating a run",
+      dryRun: "boolean - return stats without creating a run",
     },
   });
 }

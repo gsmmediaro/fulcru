@@ -36,7 +36,7 @@ const usd = new Intl.NumberFormat("en-US", {
 });
 
 function fmtDate(iso?: string): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
     month: "2-digit",
@@ -406,7 +406,7 @@ function RowActions({
       });
       router.refresh();
     } catch {
-      // silently fail — action endpoints may not exist yet in this agent's scope
+      // silently fail - action endpoints may not exist yet in this agent's scope
     } finally {
       setBusy(false);
     }
@@ -860,7 +860,7 @@ export function InvoicesTable({
                             </span>
                           </span>
                         ) : (
-                          <span className="text-[var(--color-text-soft)]">—</span>
+                          <span className="text-[var(--color-text-soft)]">-</span>
                         )}
                       </td>
 
