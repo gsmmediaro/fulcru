@@ -123,11 +123,32 @@ test("REST: leverage returns numeric snapshot", async () => {
   assert.ok(lev.runs >= 0);
 });
 
-test("MCP: tools/list exposes 8 tools with cwd on run_start", async () => {
+test("MCP: tools/list exposes the full toolset with cwd on run_start", async () => {
   const r = await rpc("tools/list");
-  assert.equal(r.tools.length, 8);
+  // 8 lifecycle tools + 26 write/read tools added in v0.3
+  assert.equal(r.tools.length, 34);
   const start = r.tools.find((t) => t.name === "run_start");
   assert.ok(start.inputSchema.properties.cwd, "run_start must accept cwd");
+  // Spot-check a few new write tools are exposed
+  for (const name of [
+    "create_client",
+    "create_project",
+    "create_skill",
+    "add_time_entry",
+    "start_manual_timer",
+    "stop_run",
+    "create_invoice",
+    "issue_invoice",
+    "pay_invoice",
+    "create_expense",
+    "update_settings",
+    "leverage",
+  ]) {
+    assert.ok(
+      r.tools.find((t) => t.name === name),
+      `tool ${name} must be exposed`,
+    );
+  }
 });
 
 test("MCP: full lifecycle (start → event → end) records the run", async () => {

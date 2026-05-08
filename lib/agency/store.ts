@@ -121,8 +121,8 @@ function mapSkill(r: SkillRow): Skill {
 
 type RunRow = {
   id: string;
-  client_id: string;
-  project_id: string;
+  client_id: string | null;
+  project_id: string | null;
   skill_id: string;
   agent_name: string;
   status: RunStatus;
@@ -147,8 +147,8 @@ type RunRow = {
 function mapRun(r: RunRow): Run {
   return {
     id: r.id,
-    clientId: r.client_id,
-    projectId: r.project_id,
+    clientId: r.client_id ?? "",
+    projectId: r.project_id ?? "",
     skillId: r.skill_id,
     agentName: r.agent_name,
     status: r.status,
@@ -329,13 +329,41 @@ async function ensureAppUser(userId: string) {
   `;
 }
 
+async function ensureDefaultSkill(userId: string): Promise<string> {
+  const existing = (await sql`
+    SELECT id FROM skill WHERE user_id = ${userId} ORDER BY created_at ASC LIMIT 1
+  `) as Array<{ id: string }>;
+  if (existing[0]) return existing[0].id;
+  const id = genId("skl");
+  await sql`
+    INSERT INTO skill (id, user_id, name, description, category, baseline_hours, rate_modifier, tags)
+    VALUES (${id}, ${userId}, 'General work', 'Auto-created default for manual time entries', 'engineering', 1, 1, ${[]})
+  `;
+  return id;
+}
+
 type AppUserRow = {
   default_hourly_rate: string | number | null;
   business_name: string | null;
   business_address: string | null;
   business_email: string | null;
   business_currency: string;
+  ai_cost_mode: string;
+  ai_subscription_monthly_usd: string | number;
+  default_bill_mode: string;
+  bill_active_multiplier: string | number;
 };
+
+function asCostMode(v: string): "per_token" | "subscription" {
+  return v === "per_token" ? "per_token" : "subscription";
+}
+function asBillMode(
+  v: string,
+): "time_only" | "time_plus_tokens" | "baseline" {
+  if (v === "time_plus_tokens" || v === "baseline") return v;
+  return "time_only";
+}
+
 function mapSettings(r: AppUserRow): AgencySettings {
   return {
     defaultHourlyRate:
@@ -344,6 +372,10 @@ function mapSettings(r: AppUserRow): AgencySettings {
     businessAddress: r.business_address ?? undefined,
     businessEmail: r.business_email ?? undefined,
     businessCurrency: r.business_currency,
+    aiCostMode: asCostMode(r.ai_cost_mode),
+    aiSubscriptionMonthlyUsd: num(r.ai_subscription_monthly_usd),
+    defaultBillMode: asBillMode(r.default_bill_mode),
+    billActiveMultiplier: num(r.bill_active_multiplier) || 1,
   };
 }
 
@@ -651,20 +683,21 @@ export const store = {
       agentName?: string;
       prompt?: string;
       cwd?: string;
-      pricingMode?: "baseline" | "time_plus_tokens";
+      pricingMode?: "baseline" | "time_plus_tokens" | "time_only";
     },
   ): Promise<Run> {
-    const [client, project, skill] = await Promise.all([
+    const [client, project, skill, settings] = await Promise.all([
       store.getClient(userId, input.clientId),
       store.getProject(userId, input.projectId),
       store.getSkill(userId, input.skillId),
+      store.getSettings(userId),
     ]);
     if (!client || !project || !skill) {
       throw new Error("Unknown client / project / skill");
     }
     const id = genId("run");
     const agentName = input.agentName ?? "claude-opus-4-7";
-    const pricingMode = input.pricingMode ?? "time_plus_tokens";
+    const pricingMode = input.pricingMode ?? settings.defaultBillMode;
     const rateUsd = client.hourlyRate * skill.rateModifier;
     const rows = (await sql`
       INSERT INTO run (
@@ -717,12 +750,12 @@ export const store = {
 
     // Resolve rate from client if provided, else from settings
     let rateUsd = 0;
-    let resolvedClientId = input.clientId ?? "";
-    let resolvedProjectId = input.projectId ?? "";
-    let resolvedSkillId = input.skillId ?? "";
+    const resolvedClientId = input.clientId || null;
+    const resolvedProjectId = input.projectId || null;
+    const resolvedSkillId = input.skillId || (await ensureDefaultSkill(userId));
 
-    if (input.clientId) {
-      const client = await store.getClient(userId, input.clientId);
+    if (resolvedClientId) {
+      const client = await store.getClient(userId, resolvedClientId);
       rateUsd = client?.hourlyRate ?? 0;
     } else {
       const settings = await store.getSettings(userId);
@@ -754,7 +787,8 @@ export const store = {
   ): Promise<Run> {
     await ensureAppUser(userId);
     const id = genId("run");
-    const resolvedProjectId = input.projectId ?? "";
+    const resolvedProjectId = input.projectId || null;
+    const resolvedSkillId = await ensureDefaultSkill(userId);
     const rows = (await sql`
       INSERT INTO run (
         id, user_id, client_id, project_id, skill_id, agent_name, status, kind,
@@ -762,7 +796,7 @@ export const store = {
       )
       VALUES (
         ${id}, ${userId},
-        '', ${resolvedProjectId}, '', 'break-timer', 'running', 'break',
+        ${null}, ${resolvedProjectId}, ${resolvedSkillId}, 'break-timer', 'running', 'break',
         'Break', 'time_plus_tokens', 0, 0, 0
       )
       RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
@@ -782,6 +816,7 @@ export const store = {
       description?: string;
       clientId?: string;
       projectId?: string;
+      skillId?: string;
       billable?: boolean;
     },
   ): Promise<Run> {
@@ -810,8 +845,9 @@ export const store = {
       billableUsd = Number(((runtimeSec / 3600) * rateUsd).toFixed(2));
     }
 
-    const resolvedClientId = input.clientId ?? "";
-    const resolvedProjectId = input.projectId ?? "";
+    const resolvedClientId = input.clientId || null;
+    const resolvedProjectId = input.projectId || null;
+    const resolvedSkillId = input.skillId || (await ensureDefaultSkill(userId));
 
     const rows = (await sql`
       INSERT INTO run (
@@ -821,7 +857,7 @@ export const store = {
       )
       VALUES (
         ${id}, ${userId},
-        ${resolvedClientId}, ${resolvedProjectId}, '', 'manual-entry', 'shipped', 'manual',
+        ${resolvedClientId}, ${resolvedProjectId}, ${resolvedSkillId}, 'manual-entry', 'shipped', 'manual',
         ${input.description ?? null}, 'time_plus_tokens',
         ${startedAt.toISOString()}, ${endedAt.toISOString()}, ${runtimeSec},
         ${runtimeSec / 3600}, ${rateUsd}, ${billableUsd}
@@ -920,9 +956,6 @@ export const store = {
   async deleteRun(userId: string, runId: string): Promise<void> {
     const run = await store.getRun(userId, runId);
     if (!run) throw new Error("Unknown run");
-    if (run.kind === "mcp") {
-      throw new Error("Cannot delete MCP-tracked runs");
-    }
     await sql`DELETE FROM run WHERE user_id = ${userId} AND id = ${runId}`;
   },
 
@@ -1041,10 +1074,18 @@ export const store = {
     let billable = 0;
     if (input.status === "shipped") {
       const runtimeHours = runtimeSec / 3600;
-      billable =
-        run.pricingMode === "baseline"
-          ? Number((run.baselineHours * run.rateUsd).toFixed(2))
-          : Number((runtimeHours * run.rateUsd + run.costUsd).toFixed(2));
+      const activeHours = (run.activeSec || runtimeSec) / 3600;
+      if (run.pricingMode === "baseline") {
+        billable = Number((run.baselineHours * run.rateUsd).toFixed(2));
+      } else if (run.pricingMode === "time_plus_tokens") {
+        billable = Number(
+          (runtimeHours * run.rateUsd + run.costUsd).toFixed(2),
+        );
+      } else {
+        const settings = await store.getSettings(userId);
+        const mult = settings.billActiveMultiplier || 1;
+        billable = Number((activeHours * mult * run.rateUsd).toFixed(2));
+      }
     }
     const rows = (await sql`
       UPDATE run
@@ -1429,14 +1470,23 @@ export const store = {
   async getSettings(userId: string): Promise<AgencySettings> {
     await ensureAppUser(userId);
     const rows = (await sql`
-      SELECT default_hourly_rate, business_name, business_address, business_email, business_currency
+      SELECT default_hourly_rate, business_name, business_address, business_email,
+             business_currency,
+             ai_cost_mode, ai_subscription_monthly_usd, default_bill_mode,
+             bill_active_multiplier
       FROM app_user
       WHERE id = ${userId}
       LIMIT 1
     `) as AppUserRow[];
     return rows[0]
       ? mapSettings(rows[0])
-      : { businessCurrency: "USD" };
+      : {
+          businessCurrency: "USD",
+          aiCostMode: "subscription",
+          aiSubscriptionMonthlyUsd: 200,
+          defaultBillMode: "time_only",
+          billActiveMultiplier: 1.5,
+        };
   },
 
   async updateSettings(
@@ -1447,6 +1497,10 @@ export const store = {
       businessAddress?: string | null;
       businessEmail?: string | null;
       businessCurrency?: string;
+      aiCostMode?: "per_token" | "subscription";
+      aiSubscriptionMonthlyUsd?: number;
+      defaultBillMode?: "time_only" | "time_plus_tokens" | "baseline";
+      billActiveMultiplier?: number;
     },
   ): Promise<AgencySettings> {
     await ensureAppUser(userId);
@@ -1456,11 +1510,92 @@ export const store = {
         business_name       = CASE WHEN ${patch.businessName !== undefined} THEN ${patch.businessName ?? null}::text ELSE business_name END,
         business_address    = CASE WHEN ${patch.businessAddress !== undefined} THEN ${patch.businessAddress ?? null}::text ELSE business_address END,
         business_email      = CASE WHEN ${patch.businessEmail !== undefined} THEN ${patch.businessEmail ?? null}::text ELSE business_email END,
-        business_currency   = COALESCE(${patch.businessCurrency ?? null}, business_currency)
+        business_currency   = COALESCE(${patch.businessCurrency ?? null}, business_currency),
+        ai_cost_mode        = COALESCE(${patch.aiCostMode ?? null}::text, ai_cost_mode),
+        ai_subscription_monthly_usd = CASE WHEN ${patch.aiSubscriptionMonthlyUsd !== undefined} THEN ${patch.aiSubscriptionMonthlyUsd ?? 0}::numeric ELSE ai_subscription_monthly_usd END,
+        default_bill_mode   = COALESCE(${patch.defaultBillMode ?? null}::text, default_bill_mode),
+        bill_active_multiplier = CASE WHEN ${patch.billActiveMultiplier !== undefined} THEN ${patch.billActiveMultiplier ?? 1}::numeric ELSE bill_active_multiplier END
       WHERE id = ${userId}
-      RETURNING default_hourly_rate, business_name, business_address, business_email, business_currency
+      RETURNING default_hourly_rate, business_name, business_address, business_email,
+                business_currency,
+                ai_cost_mode, ai_subscription_monthly_usd, default_bill_mode,
+                bill_active_multiplier
     `) as AppUserRow[];
     return mapSettings(rows[0]);
+  },
+
+  async recomputeBillable(userId: string): Promise<{ updated: number }> {
+    const settings = await store.getSettings(userId);
+    const mode = settings.defaultBillMode;
+    const rows = (await sql`
+      SELECT id, runtime_sec, active_sec, baseline_hours, rate_usd, cost_usd, pricing_mode, kind
+      FROM run
+      WHERE user_id = ${userId} AND status = 'shipped' AND kind <> 'break'
+    `) as Array<{
+      id: string;
+      runtime_sec: number;
+      active_sec: number;
+      baseline_hours: string | number;
+      rate_usd: string | number;
+      cost_usd: string | number;
+      pricing_mode: string;
+      kind: string;
+    }>;
+    let updated = 0;
+    for (const r of rows) {
+      const rate = num(r.rate_usd);
+      const baseline = num(r.baseline_hours);
+      const cost = num(r.cost_usd);
+      const activeHours = (r.active_sec || r.runtime_sec) / 3600;
+      const runtimeHours = r.runtime_sec / 3600;
+      let billable = 0;
+      if (mode === "baseline") {
+        billable = baseline * rate;
+      } else if (mode === "time_plus_tokens") {
+        billable = runtimeHours * rate + cost;
+      } else {
+        const mult = settings.billActiveMultiplier || 1;
+        billable = activeHours * mult * rate;
+      }
+      billable = Number(billable.toFixed(2));
+      await sql`
+        UPDATE run
+        SET billable_usd = ${billable},
+            pricing_mode = ${mode}
+        WHERE user_id = ${userId} AND id = ${r.id}
+      `;
+      updated++;
+    }
+    return { updated };
+  },
+
+  async amortizedSubscriptionCost(
+    userId: string,
+    runStartedAt: string,
+    runActiveSec: number,
+  ): Promise<number> {
+    const settings = await store.getSettings(userId);
+    if (settings.aiCostMode !== "subscription") return 0;
+    const sub = settings.aiSubscriptionMonthlyUsd;
+    if (sub <= 0 || runActiveSec <= 0) return 0;
+    const start = new Date(runStartedAt);
+    const monthStart = new Date(
+      Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1),
+    ).toISOString();
+    const monthEnd = new Date(
+      Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1),
+    ).toISOString();
+    const rows = (await sql`
+      SELECT COALESCE(SUM(active_sec), 0)::int AS total_active
+      FROM run
+      WHERE user_id = ${userId}
+        AND started_at >= ${monthStart}::timestamptz
+        AND started_at < ${monthEnd}::timestamptz
+        AND active_sec > 0
+    `) as Array<{ total_active: number }>;
+    const totalActive = rows[0]?.total_active ?? 0;
+    if (totalActive <= 0) return 0;
+    return Number(((sub * runActiveSec) / totalActive).toFixed(4));
   },
 
   // ─── Expenses ──────────────────────────────────────────────
@@ -1685,6 +1820,301 @@ export const store = {
           ? Number(((margin / billableUsd) * 100).toFixed(2))
           : 0,
     };
+  },
+
+  async leverageDailyBuckets(
+    userId: string,
+    windowDays: number,
+  ): Promise<Array<{ date: string; effective: number; runtime: number }>> {
+    const cutoff = new Date(Date.now() - windowDays * DAY).toISOString();
+    const rows = (await sql`
+      SELECT
+        to_char(started_at, 'MM-DD') AS date,
+        COALESCE(SUM(baseline_hours), 0) AS effective,
+        COALESCE(SUM(runtime_sec)::numeric / 3600, 0) AS runtime
+      FROM run
+      WHERE user_id = ${userId}
+        AND status = 'shipped'
+        AND started_at >= ${cutoff}::timestamptz
+      GROUP BY date
+    `) as Array<{ date: string; effective: string; runtime: string }>;
+
+    const byDate = new Map<string, { effective: number; runtime: number }>();
+    rows.forEach((r) => {
+      byDate.set(r.date, { effective: num(r.effective), runtime: num(r.runtime) });
+    });
+    const out: Array<{ date: string; effective: number; runtime: number }> = [];
+    for (let i = windowDays - 1; i >= 0; i--) {
+      const d = new Date(Date.now() - i * DAY);
+      const key = d.toISOString().slice(5, 10);
+      const v = byDate.get(key) ?? { effective: 0, runtime: 0 };
+      out.push({
+        date: key,
+        effective: Number(v.effective.toFixed(2)),
+        runtime: Number(v.runtime.toFixed(2)),
+      });
+    }
+    return out;
+  },
+
+  async clientBillingSummary(
+    userId: string,
+    clientId: string,
+  ): Promise<{
+    uninvoicedRuns: {
+      count: number;
+      hours: number;
+      activeHours: number;
+      billableUsd: number;
+      aiCostUsd: number;
+      amortizedSubCostUsd: number;
+    };
+    uninvoicedExpenses: { count: number; amountUsd: number };
+    invoices: {
+      draft: { count: number; total: number };
+      sent: { count: number; total: number };
+      paid: { count: number; total: number };
+      overdue: { count: number; total: number };
+      void: { count: number; total: number };
+    };
+    outstandingUsd: number;
+    lifetimeBilledUsd: number;
+    lifetimePaidUsd: number;
+    costMode: "per_token" | "subscription";
+  }> {
+    const settings = await store.getSettings(userId);
+    const [runRows, expenseRows, invoiceStatusRows] = await Promise.all([
+      sql`
+        SELECT
+          COUNT(*)::int AS run_count,
+          COALESCE(SUM(billable_usd), 0) AS billable_usd,
+          COALESCE(SUM(cost_usd), 0) AS cost_usd,
+          COALESCE(SUM(baseline_hours), 0) AS hours,
+          COALESCE(SUM(active_sec)::numeric / 3600, 0) AS active_hours,
+          COALESCE(SUM(active_sec), 0)::int AS active_sec_total
+        FROM run r
+        WHERE r.user_id = ${userId}
+          AND r.client_id = ${clientId}
+          AND r.status = 'shipped'
+          AND NOT EXISTS (
+            SELECT 1 FROM invoice i, jsonb_array_elements(i.line_items) li
+            WHERE i.user_id = ${userId} AND (li ->> 'runId') = r.id
+          )
+      `,
+      sql`
+        SELECT
+          COUNT(*)::int AS expense_count,
+          COALESCE(SUM(amount), 0) AS amount
+        FROM expense
+        WHERE user_id = ${userId}
+          AND client_id = ${clientId}
+          AND billable = true
+          AND invoice_id IS NULL
+      `,
+      sql`
+        SELECT status, COUNT(*)::int AS count, COALESCE(SUM(total_usd), 0) AS total
+        FROM invoice
+        WHERE user_id = ${userId} AND client_id = ${clientId}
+        GROUP BY status
+      `,
+    ]);
+
+    const runs = runRows as Array<{
+      run_count: number;
+      billable_usd: string;
+      cost_usd: string;
+      hours: string;
+      active_hours: string;
+      active_sec_total: number;
+    }>;
+    const expenses = expenseRows as Array<{
+      expense_count: number;
+      amount: string;
+    }>;
+    const invoiceRows = invoiceStatusRows as Array<{
+      status: InvoiceStatus;
+      count: number;
+      total: string;
+    }>;
+
+    const r = runs[0];
+    const e = expenses[0];
+
+    const invoices: Record<
+      InvoiceStatus,
+      { count: number; total: number }
+    > = {
+      draft: { count: 0, total: 0 },
+      sent: { count: 0, total: 0 },
+      paid: { count: 0, total: 0 },
+      overdue: { count: 0, total: 0 },
+      void: { count: 0, total: 0 },
+    };
+    invoiceRows.forEach((row) => {
+      invoices[row.status] = { count: row.count, total: num(row.total) };
+    });
+
+    let amortizedSubCostUsd = 0;
+    if (
+      settings.aiCostMode === "subscription" &&
+      settings.aiSubscriptionMonthlyUsd > 0
+    ) {
+      const monthRows = (await sql`
+        SELECT
+          to_char(date_trunc('month', started_at), 'YYYY-MM') AS month,
+          COALESCE(SUM(active_sec), 0)::int AS active_sec_run,
+          (
+            SELECT COALESCE(SUM(active_sec), 0)::int
+            FROM run r2
+            WHERE r2.user_id = ${userId}
+              AND date_trunc('month', r2.started_at) = date_trunc('month', r.started_at)
+              AND r2.active_sec > 0
+          ) AS month_total_active_sec
+        FROM run r
+        WHERE r.user_id = ${userId}
+          AND r.client_id = ${clientId}
+          AND r.status = 'shipped'
+          AND r.active_sec > 0
+          AND NOT EXISTS (
+            SELECT 1 FROM invoice i, jsonb_array_elements(i.line_items) li
+            WHERE i.user_id = ${userId} AND (li ->> 'runId') = r.id
+          )
+        GROUP BY date_trunc('month', started_at), r.started_at
+      `) as Array<{
+        month: string;
+        active_sec_run: number;
+        month_total_active_sec: number;
+      }>;
+      const sub = settings.aiSubscriptionMonthlyUsd;
+      let totalAmortized = 0;
+      monthRows.forEach((row) => {
+        if (row.month_total_active_sec > 0) {
+          totalAmortized +=
+            (sub * row.active_sec_run) / row.month_total_active_sec;
+        }
+      });
+      amortizedSubCostUsd = Number(totalAmortized.toFixed(2));
+    }
+
+    return {
+      uninvoicedRuns: {
+        count: r?.run_count ?? 0,
+        hours: Number(num(r?.hours).toFixed(2)),
+        activeHours: Number(num(r?.active_hours).toFixed(2)),
+        billableUsd: Number(num(r?.billable_usd).toFixed(2)),
+        aiCostUsd: Number(num(r?.cost_usd).toFixed(4)),
+        amortizedSubCostUsd,
+      },
+      uninvoicedExpenses: {
+        count: e?.expense_count ?? 0,
+        amountUsd: Number(num(e?.amount).toFixed(2)),
+      },
+      invoices,
+      outstandingUsd: Number(
+        (invoices.sent.total + invoices.overdue.total).toFixed(2),
+      ),
+      lifetimeBilledUsd: Number(
+        (
+          invoices.sent.total +
+          invoices.overdue.total +
+          invoices.paid.total
+        ).toFixed(2),
+      ),
+      lifetimePaidUsd: Number(invoices.paid.total.toFixed(2)),
+      costMode: settings.aiCostMode,
+    };
+  },
+
+  async listUninvoicedRunsForClient(
+    userId: string,
+    clientId: string,
+    limit = 20,
+  ): Promise<Run[]> {
+    const rows = (await sql`
+      SELECT id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
+             pricing_mode, started_at, ended_at, runtime_sec, active_sec,
+             tokens_in, tokens_out, cache_hits, cost_usd,
+             baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+      FROM run r
+      WHERE r.user_id = ${userId}
+        AND r.client_id = ${clientId}
+        AND r.status = 'shipped'
+        AND NOT EXISTS (
+          SELECT 1 FROM invoice i, jsonb_array_elements(i.line_items) li
+          WHERE i.user_id = ${userId} AND (li ->> 'runId') = r.id
+        )
+      ORDER BY started_at DESC
+      LIMIT ${limit}
+    `) as RunRow[];
+    return rows.map(mapRun);
+  },
+
+  async dashboardSummary(userId: string): Promise<{
+    activeRuns: number;
+    totalRuns: number;
+    clients: number;
+    projects: number;
+    skills: number;
+    pendingApprovals: number;
+    outstandingUsd: number;
+  }> {
+    const rows = (await sql`
+      SELECT
+        (SELECT COUNT(*)::int FROM run WHERE user_id = ${userId} AND status = 'running') AS active_runs,
+        (SELECT COUNT(*)::int FROM run WHERE user_id = ${userId}) AS total_runs,
+        (SELECT COUNT(*)::int FROM client WHERE user_id = ${userId}) AS clients,
+        (SELECT COUNT(*)::int FROM project WHERE user_id = ${userId}) AS projects,
+        (SELECT COUNT(*)::int FROM skill WHERE user_id = ${userId}) AS skills,
+        (SELECT COUNT(*)::int FROM approval WHERE user_id = ${userId} AND status = 'pending') AS pending_approvals,
+        (SELECT COALESCE(SUM(total_usd), 0) FROM invoice WHERE user_id = ${userId} AND status IN ('sent', 'overdue')) AS outstanding_usd
+    `) as Array<{
+      active_runs: number;
+      total_runs: number;
+      clients: number;
+      projects: number;
+      skills: number;
+      pending_approvals: number;
+      outstanding_usd: string | number;
+    }>;
+    const r = rows[0];
+    return {
+      activeRuns: r?.active_runs ?? 0,
+      totalRuns: r?.total_runs ?? 0,
+      clients: r?.clients ?? 0,
+      projects: r?.projects ?? 0,
+      skills: r?.skills ?? 0,
+      pendingApprovals: r?.pending_approvals ?? 0,
+      outstandingUsd: num(r?.outstanding_usd),
+    };
+  },
+
+  async leverageTopSkills(
+    userId: string,
+    windowDays: number,
+    limit = 5,
+  ): Promise<Array<{ skillId: string; skillName: string; runs: number; hours: number }>> {
+    const cutoff = new Date(Date.now() - windowDays * DAY).toISOString();
+    const rows = (await sql`
+      SELECT
+        r.skill_id AS skill_id,
+        s.name AS skill_name,
+        COUNT(*)::int AS runs,
+        COALESCE(SUM(r.baseline_hours), 0) AS hours
+      FROM run r
+      JOIN skill s ON s.id = r.skill_id AND s.user_id = r.user_id
+      WHERE r.user_id = ${userId}
+        AND r.status = 'shipped'
+        AND r.started_at >= ${cutoff}::timestamptz
+      GROUP BY r.skill_id, s.name
+      ORDER BY hours DESC
+      LIMIT ${limit}
+    `) as Array<{ skill_id: string; skill_name: string; runs: number; hours: string }>;
+    return rows.map((r) => ({
+      skillId: r.skill_id,
+      skillName: r.skill_name,
+      runs: r.runs,
+      hours: Number(num(r.hours).toFixed(2)),
+    }));
   },
 };
 

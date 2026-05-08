@@ -22,22 +22,35 @@ import {
 } from "@/components/ui/dropdown";
 import type { Client, Project, Run } from "@/lib/agency/types";
 import { formatClock, formatTime, elapsedSec } from "./lib";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { formatCurrency } from "@/lib/agency/format";
 
 type Props = {
   run: Run;
   clients: Client[];
   projects: Project[];
+  currency?: string;
   liveElapsed?: number; // only provided when run.status === "running"
   onReplay?: (run: Run) => void;
   onDelete?: (run: Run) => void;
   onUpdate?: (runId: string, patch: { description?: string; billable?: boolean }) => void;
 };
 
-export function RunRow({ run, clients, projects, liveElapsed, onReplay, onDelete, onUpdate }: Props) {
+export function RunRow({
+  run,
+  clients,
+  projects,
+  currency = "USD",
+  liveElapsed,
+  onReplay,
+  onDelete,
+  onUpdate,
+}: Props) {
   const [editing, setEditing] = React.useState(false);
   const [editDesc, setEditDesc] = React.useState(run.prompt ?? "");
   const [savingDesc, setSavingDesc] = React.useState(false);
   const [tagsOpen, setTagsOpen] = React.useState(false);
+  const confirm = useConfirm();
 
   const project = projects.find((p) => p.id === run.projectId);
   const client = clients.find((c) => c.id === run.clientId);
@@ -87,8 +100,15 @@ export function RunRow({ run, clients, projects, liveElapsed, onReplay, onDelete
   }
 
   async function handleDelete() {
-    if (isMcp) return;
-    if (!confirm("Delete this time entry?")) return;
+    const ok = await confirm({
+      title: isMcp ? "Delete this MCP run?" : "Delete this time entry?",
+      description: run.prompt
+        ? `"${run.prompt.slice(0, 80)}" will be removed.`
+        : "This entry will be removed.",
+      destructive: true,
+      confirmLabel: "Delete",
+    });
+    if (!ok) return;
     try {
       const res = await fetch(`/api/agency/runs/${run.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error(await res.text());
@@ -150,7 +170,7 @@ export function RunRow({ run, clients, projects, liveElapsed, onReplay, onDelete
             )}
           >
             {isMcp
-              ? `agent: ${run.agentName}${run.prompt ? " · " + run.prompt.slice(0, 60) : ""}`
+              ? (run.prompt || `Claude Code session ${run.id.slice(-6)}`)
               : isBreak
               ? "Break"
               : (run.prompt || "(no description)")}
@@ -161,7 +181,7 @@ export function RunRow({ run, clients, projects, liveElapsed, onReplay, onDelete
       {/* Project pill */}
       <div className="shrink-0">
         {project ? (
-          <span className="flex items-center gap-[5px] rounded-[20px] bg-[color-mix(in_oklab,white_5%,transparent)] px-[8px] py-[3px] text-[12px] text-[var(--color-text-sub)]">
+          <span className="flex items-center gap-[5px] rounded-[6px] bg-[color-mix(in_oklab,white_5%,transparent)] px-[8px] py-[3px] text-[12px] text-[var(--color-text-sub)]">
             <span
               className="size-[7px] shrink-0 rounded-full"
               style={{ backgroundColor: project.color }}
@@ -213,6 +233,31 @@ export function RunRow({ run, clients, projects, liveElapsed, onReplay, onDelete
         {formatTime(run.startedAt)}
         {run.endedAt ? ` – ${formatTime(run.endedAt)}` : " – …"}
       </span>
+
+      {/* Cost / billable amount */}
+      {!isBreak && (run.billableUsd > 0 || run.costUsd > 0) && (
+        <span
+          className={cn(
+            "shrink-0 min-w-[68px] text-right font-mono text-[12px] tabular-nums",
+            "tooltip-cost",
+          )}
+          title={
+            isMcp
+              ? `Bill ${formatCurrency(run.billableUsd, 2, currency)} · AI cost ${formatCurrency(run.costUsd, 4, currency)} · margin ${formatCurrency(run.billableUsd - run.costUsd, 2, currency)}`
+              : `Billable ${formatCurrency(run.billableUsd, 2, currency)} at ${formatCurrency(run.rateUsd, 0, currency)}/h`
+          }
+        >
+          {run.billableUsd > 0 ? (
+            <span className="font-semibold text-[var(--color-brand-400)]">
+              {formatCurrency(run.billableUsd, 2, currency)}
+            </span>
+          ) : (
+            <span className="text-[var(--color-text-soft)]">
+              {formatCurrency(run.costUsd, 4, currency)}
+            </span>
+          )}
+        </span>
+      )}
 
       {/* Duration */}
       <span
@@ -266,18 +311,14 @@ export function RunRow({ run, clients, projects, liveElapsed, onReplay, onDelete
               View timeline
             </Link>
           </DropdownItem>
-          {!isMcp && (
-            <>
-              <DropdownSeparator />
-              <DropdownItem
-                onClick={handleDelete}
-                className="text-red-400 data-[highlighted]:text-red-300"
-              >
-                <RiDeleteBinLine size={14} />
-                Delete
-              </DropdownItem>
-            </>
-          )}
+          <DropdownSeparator />
+          <DropdownItem
+            onClick={handleDelete}
+            className="text-red-400 data-[highlighted]:text-red-300"
+          >
+            <RiDeleteBinLine size={14} />
+            Delete
+          </DropdownItem>
         </DropdownContent>
       </Dropdown>
     </div>

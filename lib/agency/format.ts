@@ -1,7 +1,11 @@
-export function formatCurrency(value: number, fractionDigits = 2) {
+export function formatCurrency(
+  value: number,
+  fractionDigits = 2,
+  currency: string = "USD",
+) {
   return value.toLocaleString("en-US", {
     style: "currency",
-    currency: "USD",
+    currency,
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
   });

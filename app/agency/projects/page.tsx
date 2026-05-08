@@ -29,7 +29,7 @@ export default async function ProjectsPage() {
     <AppShell>
       <div className="flex flex-wrap items-center justify-between gap-[16px]">
         <div className="flex items-center gap-[14px]">
-          <span className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-100)] text-[var(--color-brand-400)]">
+          <span className="flex size-[44px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--color-brand-100)] text-[var(--color-brand-400)]">
             <RiFolder3Line size={20} />
           </span>
           <div className="flex flex-col">

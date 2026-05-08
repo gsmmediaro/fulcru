@@ -16,9 +16,10 @@ type Props = {
   initialRuns: Run[];
   clients: Client[];
   projects: Project[];
+  currency?: string;
 };
 
-export function TimerView({ initialRuns, clients, projects }: Props) {
+export function TimerView({ initialRuns, clients, projects, currency }: Props) {
   const [runs, setRuns] = React.useState<Run[]>(initialRuns);
 
   // Identify the current active (running) run (manual or break only)
@@ -74,21 +75,25 @@ export function TimerView({ initialRuns, clients, projects }: Props) {
     );
   }
 
-  function handleReplay(run: Run) {
-    // Pre-fill entry bar with same description and project — start a new manual timer
-    fetch("/api/agency/runs/start-manual", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        description: run.prompt,
-        clientId: run.clientId || undefined,
-        projectId: run.projectId || undefined,
-        billable: run.billableUsd > 0,
-      }),
-    })
-      .then((res) => res.json())
-      .then((newRun) => handleRunStarted(newRun as Run))
-      .catch(console.error);
+  async function handleReplay(run: Run) {
+    try {
+      const res = await fetch("/api/agency/runs/start-manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          description: run.prompt,
+          clientId: run.clientId || undefined,
+          projectId: run.projectId || undefined,
+          skillId: run.skillId || undefined,
+          billable: run.billableUsd > 0,
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const newRun = (await res.json()) as Run;
+      handleRunStarted(newRun);
+    } catch (e) {
+      console.error("Failed to replay run:", e);
+    }
   }
 
   const isEmpty = runs.length === 0;
@@ -170,6 +175,7 @@ export function TimerView({ initialRuns, clients, projects }: Props) {
           group={group}
           clients={clients}
           projects={projects}
+          currency={currency}
           activeRunId={activeRun?.id}
           onReplay={handleReplay}
           onDelete={handleDelete}

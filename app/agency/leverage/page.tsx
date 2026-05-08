@@ -4,7 +4,6 @@ import { AppShell } from "@/components/layout/app-shell";
 import {
   LeverageAreaChart,
   MarginBarChart,
-  type LeverageDailyPoint,
 } from "@/components/agency/leverage-chart";
 import { getApi } from "@/lib/agency/server-api";
 import { getT } from "@/lib/i18n/server";
@@ -21,8 +20,6 @@ const usdExact = new Intl.NumberFormat("en-US", {
   currency: "USD",
   maximumFractionDigits: 2,
 });
-
-const DAY = 24 * 60 * 60 * 1000;
 
 const WINDOWS = [
   { label: "7d", value: 7 },
@@ -43,61 +40,17 @@ export default async function LeveragePage({
       : 30;
 
   const api = await getApi();
-  const [lev, allRuns, skills] = await Promise.all([
+  const [lev, series, topSkills] = await Promise.all([
     api.leverage(windowDays),
-    api.listRuns(),
-    api.listSkills(),
+    api.leverageDailyBuckets(windowDays),
+    api.leverageTopSkills(windowDays, 5),
   ]);
-
-  const cutoff = Date.now() - windowDays * DAY;
-  const runs = allRuns.filter(
-    (r) => new Date(r.startedAt).getTime() >= cutoff && r.status === "shipped",
-  );
-
-  const buckets = new Map<string, { effective: number; runtime: number }>();
-  for (let i = windowDays - 1; i >= 0; i--) {
-    const d = new Date(Date.now() - i * DAY);
-    const k = d.toISOString().slice(5, 10);
-    buckets.set(k, { effective: 0, runtime: 0 });
-  }
-  runs.forEach((r) => {
-    const k = r.startedAt.slice(5, 10);
-    const b = buckets.get(k);
-    if (b) {
-      b.effective += r.baselineHours;
-      b.runtime += r.runtimeSec / 3600;
-    }
-  });
-  const series: LeverageDailyPoint[] = Array.from(buckets.entries()).map(
-    ([date, v]) => ({
-      date,
-      effective: Number(v.effective.toFixed(2)),
-      runtime: Number(v.runtime.toFixed(2)),
-    }),
-  );
-
-  const skillTotals = new Map<string, number>();
-  runs.forEach((r) => {
-    skillTotals.set(
-      r.skillId,
-      (skillTotals.get(r.skillId) ?? 0) + r.baselineHours,
-    );
-  });
-  const topSkills = Array.from(skillTotals.entries())
-    .map(([skillId, hours]) => ({
-      skill: skills.find((s) => s.id === skillId),
-      hours,
-      runs: runs.filter((r) => r.skillId === skillId).length,
-    }))
-    .filter((r) => r.skill)
-    .sort((a, b) => b.hours - a.hours)
-    .slice(0, 5);
 
   return (
     <AppShell>
       <div className="flex flex-wrap items-center justify-between gap-[16px]">
         <div className="flex items-center gap-[14px]">
-          <span className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-100)] text-[var(--color-brand-400)]">
+          <span className="flex size-[44px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--color-brand-100)] text-[var(--color-brand-400)]">
             <RiBarChartBoxLine size={20} />
           </span>
           <div className="flex flex-col">
@@ -192,11 +145,11 @@ export default async function LeveragePage({
             <tbody>
               {topSkills.map((row) => (
                 <tr
-                  key={row.skill!.id}
+                  key={row.skillId}
                   className="border-t border-[var(--color-stroke-soft)]"
                 >
                   <td className="px-[12px] py-[12px] font-semibold text-[var(--color-text-strong)]">
-                    {row.skill!.name}
+                    {row.skillName}
                   </td>
                   <td className="px-[12px] py-[12px] tabular-nums text-[var(--color-text-sub)]">
                     {row.runs}

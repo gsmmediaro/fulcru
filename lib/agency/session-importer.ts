@@ -49,6 +49,12 @@ export type SessionStats = {
   cacheWrite: number;
   cacheRead: number;
   tokenCostUsd: number;
+  /** Claude Code's auto-summary (post-compaction) if present in the JSONL. */
+  summary?: string;
+  /** Claude Code's auto-generated topic title (added per session as a semantic label). */
+  aiTitle?: string;
+  /** First human user prompt in the session - useful as a human-readable run name. */
+  firstUserPrompt?: string;
 };
 
 type Line = {
@@ -57,19 +63,38 @@ type Line = {
   message?: { model?: string; usage?: Record<string, number>; content?: unknown };
   toolUseResult?: unknown;
   cwd?: string;
+  summary?: string;
+  aiTitle?: string;
+  isMeta?: boolean;
 };
+
+function extractText(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((b) => {
+        if (b && typeof b === "object" && "text" in b) {
+          const t = (b as { text?: unknown }).text;
+          return typeof t === "string" ? t : "";
+        }
+        return "";
+      })
+      .join(" ")
+      .trim();
+  }
+  return "";
+}
 
 export function defaultProjectsRoot() {
   return path.join(homedir(), ".claude", "projects");
 }
 
 export function encodeCwdForClaude(cwd: string) {
+  // Windows drive prefix: C:\foo -> C--foo (strips both `:` and the separator).
+  // Then any remaining \ or / becomes -.
   return cwd
-    .replace(/\\/g, "/")
-    .replace(/^([A-Za-z]):\//, "$1--")
-    .replace(/[\/]/g, "-")
-    .replace(/^-+/, "")
-    .replace(/^([A-Za-z])--/, "$1--");
+    .replace(/^([A-Za-z]):[\\/]/, "$1--")
+    .replace(/[\\/]/g, "-");
 }
 
 export function findSessionJsonl(opts: {
@@ -120,6 +145,9 @@ export function parseSession(filePath: string): SessionStats {
   let fileEdits = 0;
   let activeMs = 0;
   let prevTs: number | undefined;
+  let summary: string | undefined;
+  let aiTitle: string | undefined;
+  let firstUserPrompt: string | undefined;
 
   const modelTotals: SessionStats["modelTotals"] = {};
 
@@ -129,6 +157,12 @@ export function parseSession(filePath: string): SessionStats {
       d = JSON.parse(line);
     } catch {
       continue;
+    }
+    if (d.type === "summary" && !summary && typeof d.summary === "string") {
+      summary = d.summary.trim() || undefined;
+    }
+    if (d.type === "ai-title" && !aiTitle && typeof d.aiTitle === "string") {
+      aiTitle = d.aiTitle.trim() || undefined;
     }
     if (d.cwd && !cwd) cwd = d.cwd;
     const ts = d.timestamp;
@@ -142,7 +176,16 @@ export function parseSession(filePath: string): SessionStats {
       }
       prevTs = t;
     }
-    if (d.type === "user") userMsgs++;
+    if (d.type === "user") {
+      userMsgs++;
+      if (!firstUserPrompt && !d.isMeta) {
+        const text = extractText(d.message?.content);
+        // Skip tool_result-only user messages (no real text) and system reminders.
+        if (text && !text.startsWith("<") && !text.startsWith("[Request interrupted")) {
+          firstUserPrompt = text;
+        }
+      }
+    }
     if (d.type === "assistant") {
       assistantMsgs++;
       const msg = d.message ?? {};
@@ -214,7 +257,19 @@ export function parseSession(filePath: string): SessionStats {
     cacheWrite: totalCw,
     cacheRead: totalCr,
     tokenCostUsd: Number(totalCost.toFixed(4)),
+    summary,
+    aiTitle,
+    firstUserPrompt,
   };
+}
+
+function deriveSessionLabel(s: SessionStats): string {
+  // Preference order: Claude Code's own ai-title > post-compaction summary >
+  // first human prompt > sessionId fallback.
+  const raw = (s.aiTitle ?? s.summary ?? s.firstUserPrompt ?? "").trim();
+  if (!raw) return `Claude Code session ${s.sessionId.slice(0, 8)}`;
+  const oneLine = raw.replace(/\s+/g, " ");
+  return oneLine.length > 100 ? oneLine.slice(0, 97) + "..." : oneLine;
 }
 
 export async function enrichRunFromSession(
@@ -431,7 +486,7 @@ export async function importSessionAsRun(
     VALUES (
       ${runId}, ${userId}, ${client.id}, ${project.id}, ${skill.id},
       ${agentName}, 'shipped',
-      ${input.prompt ?? `Imported Claude Code session ${s.sessionId.slice(0, 8)}`},
+      ${input.prompt ?? deriveSessionLabel(s)},
       ${s.cwd ?? null}, ${mode},
       ${s.startedAt}, ${s.endedAt}, ${s.wallSec}, ${s.activeSec},
       ${tokensIn}, ${tokensOut}, ${cacheHits}, ${costUsd},

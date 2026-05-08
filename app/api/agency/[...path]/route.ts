@@ -842,6 +842,25 @@ async function route(
                   ? null
                   : asString(body.businessEmail),
               businessCurrency: asString(body.businessCurrency),
+              aiCostMode:
+                body.aiCostMode === "per_token" ||
+                body.aiCostMode === "subscription"
+                  ? body.aiCostMode
+                  : undefined,
+              aiSubscriptionMonthlyUsd:
+                body.aiSubscriptionMonthlyUsd === undefined
+                  ? undefined
+                  : Number(body.aiSubscriptionMonthlyUsd),
+              defaultBillMode:
+                body.defaultBillMode === "time_only" ||
+                body.defaultBillMode === "time_plus_tokens" ||
+                body.defaultBillMode === "baseline"
+                  ? body.defaultBillMode
+                  : undefined,
+              billActiveMultiplier:
+                body.billActiveMultiplier === undefined
+                  ? undefined
+                  : Number(body.billActiveMultiplier),
             });
             return json(updated);
           } catch (e) {
@@ -849,6 +868,12 @@ async function route(
           }
         }
         return bad("Method not allowed", 405);
+      }
+
+      case "recompute-billable": {
+        if (method !== "POST") return bad("Method not allowed", 405);
+        const result = await api.recomputeBillable();
+        return json(result);
       }
 
       default:

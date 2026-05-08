@@ -4,6 +4,19 @@ import { getPool } from "./db";
 
 const APP_URL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
 
+// Allow both the production base URL and local dev ports without env juggling.
+// In dev, Next picks the next available port (3000, 3001, ...) so we whitelist
+// the common range to avoid Origin-Forbidden 403s during sign-in/sign-up.
+const DEV_LOCAL_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:3002",
+  "http://localhost:3100",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3001",
+];
+const TRUSTED_ORIGINS = Array.from(new Set([APP_URL, ...DEV_LOCAL_ORIGINS]));
+
 export const auth = betterAuth({
   database: getPool(),
   baseURL: APP_URL,
@@ -33,7 +46,7 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 30,
     updateAge: 60 * 60 * 24,
   },
-  trustedOrigins: [APP_URL],
+  trustedOrigins: TRUSTED_ORIGINS,
   plugins: [nextCookies()],
 });
 

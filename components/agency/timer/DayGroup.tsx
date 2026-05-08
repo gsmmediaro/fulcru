@@ -11,6 +11,7 @@ type Props = {
   group: DayGroupType;
   clients: Client[];
   projects: Project[];
+  currency?: string;
   activeRunId?: string | null; // ID of current live run (for clock)
   onReplay?: (run: Run) => void;
   onDelete?: (run: Run) => void;
@@ -21,6 +22,7 @@ export function DayGroup({
   group,
   clients,
   projects,
+  currency,
   activeRunId,
   onReplay,
   onDelete,
@@ -70,6 +72,7 @@ export function DayGroup({
             run={run}
             clients={clients}
             projects={projects}
+            currency={currency}
             liveElapsed={liveElapsed}
             onReplay={onReplay}
             onDelete={onDelete}

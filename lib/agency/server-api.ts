@@ -105,6 +105,16 @@ export function bindApi(userId: string) {
 
     leverage: (windowDays?: number): Promise<LeverageSnapshot> =>
       store.leverage(userId, windowDays),
+    leverageDailyBuckets: (windowDays: number) =>
+      store.leverageDailyBuckets(userId, windowDays),
+    leverageTopSkills: (windowDays: number, limit?: number) =>
+      store.leverageTopSkills(userId, windowDays, limit),
+    dashboardSummary: () => store.dashboardSummary(userId),
+    clientBillingSummary: (clientId: string) =>
+      store.clientBillingSummary(userId, clientId),
+    listUninvoicedRunsForClient: (clientId: string, limit?: number) =>
+      store.listUninvoicedRunsForClient(userId, clientId, limit),
+    recomputeBillable: () => store.recomputeBillable(userId),
 
     getSettings: (): Promise<AgencySettings> => store.getSettings(userId),
     updateSettings: (patch: Parameters<typeof store.updateSettings>[1]) =>

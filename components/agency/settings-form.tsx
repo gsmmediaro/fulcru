@@ -7,7 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/agency/client-modal";
 import { useLocale } from "@/lib/i18n/provider";
 import { cn } from "@/lib/cn";
-import type { AgencySettings } from "@/lib/agency/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type {
+  AgencySettings,
+  AiCostMode,
+  BillMode,
+} from "@/lib/agency/types";
 
 const CURRENCIES = ["USD", "EUR", "RON", "GBP"] as const;
 
@@ -27,10 +38,38 @@ export function SettingsForm({ initial }: { initial: AgencySettings }) {
     initial.defaultHourlyRate != null ? String(initial.defaultHourlyRate) : "",
   );
   const [currency, setCurrency] = React.useState(initial.businessCurrency);
+  const [aiCostMode, setAiCostMode] = React.useState<AiCostMode>(
+    initial.aiCostMode,
+  );
+  const [aiSub, setAiSub] = React.useState(
+    String(initial.aiSubscriptionMonthlyUsd ?? 200),
+  );
+  const [defaultBillMode, setDefaultBillMode] = React.useState<BillMode>(
+    initial.defaultBillMode,
+  );
+  const [activeMultiplier, setActiveMultiplier] = React.useState(
+    String(initial.billActiveMultiplier ?? 1.5),
+  );
 
   const [saving, setSaving] = React.useState(false);
   const [savedAt, setSavedAt] = React.useState<number | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [recomputing, setRecomputing] = React.useState(false);
+  const [recomputeMsg, setRecomputeMsg] = React.useState<string | null>(null);
+
+  const isDirty =
+    businessName !== (initial.businessName ?? "") ||
+    businessEmail !== (initial.businessEmail ?? "") ||
+    businessAddress !== (initial.businessAddress ?? "") ||
+    defaultRate !==
+      (initial.defaultHourlyRate != null
+        ? String(initial.defaultHourlyRate)
+        : "") ||
+    currency !== initial.businessCurrency ||
+    aiCostMode !== initial.aiCostMode ||
+    aiSub !== String(initial.aiSubscriptionMonthlyUsd ?? 200) ||
+    defaultBillMode !== initial.defaultBillMode ||
+    activeMultiplier !== String(initial.billActiveMultiplier ?? 1.5);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -41,6 +80,10 @@ export function SettingsForm({ initial }: { initial: AgencySettings }) {
       if (rateNum !== null && (!Number.isFinite(rateNum) || rateNum < 0)) {
         throw new Error(t("settings.errors.rate"));
       }
+      const subNum = Number(aiSub);
+      if (!Number.isFinite(subNum) || subNum < 0) {
+        throw new Error("Subscription amount must be 0 or greater");
+      }
       const res = await fetch("/api/agency/settings", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
@@ -50,6 +93,10 @@ export function SettingsForm({ initial }: { initial: AgencySettings }) {
           businessAddress: businessAddress.trim() || null,
           defaultHourlyRate: rateNum,
           businessCurrency: currency,
+          aiCostMode,
+          aiSubscriptionMonthlyUsd: subNum,
+          defaultBillMode,
+          billActiveMultiplier: Number(activeMultiplier) || 1,
         }),
       });
       if (!res.ok) {
@@ -114,32 +161,150 @@ export function SettingsForm({ initial }: { initial: AgencySettings }) {
               placeholder="0.00"
               className="flex-1"
             />
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className={cn(
-                "h-[40px] rounded-[6px] bg-[color-mix(in_oklab,white_3%,transparent)]",
-                "px-[12px] text-[14px] font-medium",
-                "text-[var(--color-text-strong)]",
-                "ring-1 ring-[var(--color-stroke-soft)] outline-none",
-                "hover:ring-[var(--color-stroke-sub)]",
-                "focus-visible:ring-2 focus-visible:ring-[var(--color-brand-400)]",
-              )}
-            >
-              {CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+            <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger className="h-[40px] w-[96px] shrink-0 text-[14px] font-medium">
+                <SelectValue placeholder="USD" />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCIES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <p className="mt-[6px] text-[11.5px] font-normal normal-case tracking-normal text-[var(--color-text-soft)]">
             {t("settings.field.defaultRateHint")}
           </p>
         </Field>
+
+        <Field label="Default bill mode">
+          <Select
+            value={defaultBillMode}
+            onValueChange={(v) => setDefaultBillMode(v as BillMode)}
+          >
+            <SelectTrigger className="h-[40px] text-[14px] font-medium">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="time_only">
+                Time only (active hours × rate)
+              </SelectItem>
+              <SelectItem value="time_plus_tokens">
+                Time + tokens (active hours × rate + token cost)
+              </SelectItem>
+              <SelectItem value="baseline">
+                Baseline (skill baseline hours × rate)
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="mt-[6px] text-[11.5px] font-normal normal-case tracking-normal text-[var(--color-text-soft)]">
+            How new runs price out by default. MCP runs may override this per call.
+          </p>
+        </Field>
+
+        {defaultBillMode === "time_only" ? (
+          <Field label="Active hours multiplier">
+            <Input
+              type="number"
+              inputMode="decimal"
+              min={1}
+              step="0.1"
+              value={activeMultiplier}
+              onChange={(e) => setActiveMultiplier(e.target.value)}
+              placeholder="1.5"
+            />
+            <p className="mt-[6px] text-[11.5px] font-normal normal-case tracking-normal text-[var(--color-text-soft)]">
+              Multiplies the active hours captured in-session to cover research, design thinking, and time spent off-Claude. 1.5× means 1h active = 1.5h billed.
+            </p>
+          </Field>
+        ) : null}
       </Section>
 
-      <div className="flex items-center justify-between border-t border-[var(--color-stroke-soft)] pt-[16px]">
+      <Section title="AI cost">
+        <Field label="Cost model">
+          <Select
+            value={aiCostMode}
+            onValueChange={(v) => setAiCostMode(v as AiCostMode)}
+          >
+            <SelectTrigger className="h-[40px] text-[14px] font-medium">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="subscription">
+                Flat subscription (Claude Pro / Max)
+              </SelectItem>
+              <SelectItem value="per_token">
+                Pay per token (API rates)
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="mt-[6px] text-[11.5px] font-normal normal-case tracking-normal text-[var(--color-text-soft)]">
+            Subscription mode amortizes your monthly fee across active hours, so margin reflects your real cost.
+          </p>
+        </Field>
+
+        {aiCostMode === "subscription" ? (
+          <Field label="Subscription / month (USD)">
+            <Input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="1"
+              value={aiSub}
+              onChange={(e) => setAiSub(e.target.value)}
+              placeholder="200"
+            />
+            <p className="mt-[6px] text-[11.5px] font-normal normal-case tracking-normal text-[var(--color-text-soft)]">
+              Claude Pro = $20, Max 5x = $100, Max 20x = $200. Enter what you actually pay.
+            </p>
+          </Field>
+        ) : null}
+
+        <div className="mt-[4px] flex flex-wrap items-center gap-[12px] rounded-[8px] bg-[color-mix(in_oklab,white_2%,transparent)] p-[12px] ring-1 ring-[var(--color-stroke-soft)]">
+          <div className="min-w-0 flex-1 text-[12px] text-[var(--color-text-soft)]">
+            Recompute billable on every shipped run using the current bill mode. Token cost stays attached to each run for reference.
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={recomputing}
+            onClick={async () => {
+              setRecomputing(true);
+              setRecomputeMsg(null);
+              try {
+                const res = await fetch("/api/agency/recompute-billable", {
+                  method: "POST",
+                });
+                if (!res.ok) {
+                  const j = (await res.json().catch(() => ({}))) as {
+                    error?: string;
+                  };
+                  throw new Error(j.error ?? `HTTP ${res.status}`);
+                }
+                const j = (await res.json()) as { updated: number };
+                setRecomputeMsg(`Updated ${j.updated} runs`);
+                router.refresh();
+              } catch (e) {
+                setRecomputeMsg((e as Error).message);
+              } finally {
+                setRecomputing(false);
+              }
+            }}
+          >
+            {recomputing ? "Recomputing…" : "Recompute existing runs"}
+          </Button>
+          {recomputeMsg ? (
+            <div className="w-full text-[11px] text-[var(--color-text-soft)]">
+              {recomputeMsg}
+            </div>
+          ) : null}
+        </div>
+      </Section>
+
+      {savedAt || error ? (
         <div className="text-[12px] text-[var(--color-text-soft)]">
           {error ? (
             <span className="text-rose-300">{error}</span>
@@ -149,9 +314,40 @@ export function SettingsForm({ initial }: { initial: AgencySettings }) {
             </span>
           ) : null}
         </div>
-        <Button type="submit" variant="primary-orange" size="md" disabled={saving}>
-          {saving ? t("settings.saving") : t("settings.save")}
-        </Button>
+      ) : null}
+
+      {/* Sticky save bar - appears only when there are unsaved changes */}
+      <div
+        aria-hidden={!isDirty}
+        className={cn(
+          "sticky bottom-[16px] z-10 mt-[8px]",
+          "transition-[opacity,transform] duration-200",
+          isDirty
+            ? "pointer-events-auto translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-[12px] opacity-0",
+        )}
+      >
+        <div
+          className={cn(
+            "flex items-center justify-between gap-[12px] rounded-[10px]",
+            "bg-[var(--color-bg-surface-elevated)]/95 px-[16px] py-[12px]",
+            "ring-1 ring-[var(--color-stroke-sub)]",
+            "shadow-[var(--shadow-regular-md)] backdrop-blur-xl",
+            "supports-[backdrop-filter]:bg-[var(--color-bg-surface-elevated)]/82",
+          )}
+        >
+          <span className="text-[12px] text-[var(--color-text-soft)]">
+            You have unsaved changes
+          </span>
+          <Button
+            type="submit"
+            variant="primary-orange"
+            size="md"
+            disabled={saving}
+          >
+            {saving ? t("settings.saving") : t("settings.save")}
+          </Button>
+        </div>
       </div>
     </form>
   );

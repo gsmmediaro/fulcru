@@ -23,29 +23,18 @@ import { cn } from "@/lib/cn";
 export default async function AgencyHomePage() {
   const { t } = await getT();
   const api = await getApi();
-  const [runs, clients, projects, skills, approvals, invoices, leverage30] =
-    await Promise.all([
-      api.listRuns(),
-      api.listClients(),
-      api.listProjects(),
-      api.listSkills(),
-      api.listApprovals("pending"),
-      api.listInvoices(),
-      api.leverage(30),
-    ]);
-
-  const activeRuns = runs.filter((r) => r.status === "running").length;
-  const outstanding = invoices
-    .filter((i) => i.status === "sent" || i.status === "overdue")
-    .reduce((s, i) => s + i.totalUsd, 0);
+  const [summary, leverage30] = await Promise.all([
+    api.dashboardSummary(),
+    api.leverage(30),
+  ]);
 
   const cards: HeroCardProps[] = [
     {
       icon: RiPulseLine,
       title: t("nav.runs"),
       eyebrow: t("home.runs.eyebrow", {
-        active: activeRuns,
-        total: runs.length,
+        active: summary.activeRuns,
+        total: summary.totalRuns,
       }),
       bullets: [t("home.runs.b1"), t("home.runs.b2"), t("home.runs.b3")],
       href: "/agency/runs",
@@ -69,8 +58,8 @@ export default async function AgencyHomePage() {
       icon: RiShieldCheckLine,
       title: t("nav.approvals"),
       eyebrow:
-        approvals.length > 0
-          ? t("home.approvals.pending", { n: approvals.length })
+        summary.pendingApprovals > 0
+          ? t("home.approvals.pending", { n: summary.pendingApprovals })
           : t("home.approvals.clear"),
       bullets: [
         t("home.approvals.b1"),
@@ -79,12 +68,12 @@ export default async function AgencyHomePage() {
       ],
       href: "/agency/approvals",
       cta: t("home.approvals.cta"),
-      tone: approvals.length > 0 ? "warn" : "default",
+      tone: summary.pendingApprovals > 0 ? "warn" : "default",
     },
     {
       icon: RiBriefcase4Line,
       title: t("nav.clients"),
-      eyebrow: t("home.clients.eyebrow", { n: clients.length }),
+      eyebrow: t("home.clients.eyebrow", { n: summary.clients }),
       bullets: [
         t("home.clients.b1"),
         t("home.clients.b2"),
@@ -96,7 +85,7 @@ export default async function AgencyHomePage() {
     {
       icon: RiFolder3Line,
       title: t("nav.projects"),
-      eyebrow: t("home.projects.eyebrow", { n: projects.length }),
+      eyebrow: t("home.projects.eyebrow", { n: summary.projects }),
       bullets: [
         t("home.projects.b1"),
         t("home.projects.b2"),
@@ -108,7 +97,7 @@ export default async function AgencyHomePage() {
     {
       icon: RiSparkling2Line,
       title: t("nav.skills"),
-      eyebrow: t("home.skills.eyebrow", { n: skills.length }),
+      eyebrow: t("home.skills.eyebrow", { n: summary.skills }),
       bullets: [
         t("home.skills.b1"),
         t("home.skills.b2"),
@@ -134,7 +123,7 @@ export default async function AgencyHomePage() {
             <RiArrowRightUpLine size={14} />
             <span className="ml-[6px] text-[var(--color-text-soft)] tabular-nums">
               {t("home.outstanding", {
-                amount: formatCurrency(outstanding, 0),
+                amount: formatCurrency(summary.outstandingUsd, 0),
               })}
             </span>
           </Link>

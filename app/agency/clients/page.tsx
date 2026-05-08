@@ -33,7 +33,7 @@ export default async function ClientsPage() {
     <AppShell>
       <div className="flex flex-wrap items-center justify-between gap-[16px]">
         <div className="flex items-center gap-[14px]">
-          <span className="flex size-[44px] shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-100)] text-[var(--color-brand-400)]">
+          <span className="flex size-[44px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--color-brand-100)] text-[var(--color-brand-400)]">
             <RiBriefcase4Line size={20} />
           </span>
           <div className="flex flex-col">
@@ -121,12 +121,20 @@ export default async function ClientsPage() {
                 />
               </div>
 
-              <Link
-                href={`/agency/runs?clientId=${c.id}`}
-                className="inline-flex items-center gap-[6px] self-start text-[13px] font-semibold text-[var(--color-brand-400)] hover:underline"
-              >
-                {t("clients.viewRuns")} <RiArrowRightLine size={14} />
-              </Link>
+              <div className="flex flex-wrap items-center gap-[12px] text-[13px] font-semibold">
+                <Link
+                  href={`/agency/clients/${c.id}`}
+                  className="inline-flex items-center gap-[6px] text-[var(--color-brand-400)] hover:underline"
+                >
+                  View billing <RiArrowRightLine size={14} />
+                </Link>
+                <Link
+                  href={`/agency/runs?clientId=${c.id}`}
+                  className="inline-flex items-center gap-[6px] text-[var(--color-text-soft)] hover:text-[var(--color-text-strong)]"
+                >
+                  {t("clients.viewRuns")}
+                </Link>
+              </div>
             </article>
           );
         })}

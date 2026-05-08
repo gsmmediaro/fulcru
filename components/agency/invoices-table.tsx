@@ -10,6 +10,7 @@ import {
   RiSettings4Line,
   RiAddLine,
   RiFileDownloadLine,
+  RiBillLine,
 } from "@remixicon/react";
 import { ClientAvatar } from "@/components/agency/client-avatar";
 import { InvoiceStatusPill } from "@/components/agency/invoice-status-pill";
@@ -776,7 +777,12 @@ export function InvoicesTable({
         {sorted.length === 0 ? (
           /* Empty state */
           <div className="flex flex-col items-center justify-center gap-[16px] px-[24px] py-[60px] text-center">
-            <div className="text-[32px] leading-none">📄</div>
+            <span
+              aria-hidden
+              className="flex size-[48px] items-center justify-center rounded-[10px] bg-[var(--color-brand-100)] text-[var(--color-brand-400)]"
+            >
+              <RiBillLine size={22} />
+            </span>
             <div className="flex flex-col gap-[6px]">
               <p className="text-[16px] font-semibold text-[var(--color-text-strong)]">
                 {t("invoiceList.emptyTitle")}

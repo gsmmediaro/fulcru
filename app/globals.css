@@ -565,3 +565,17 @@ button {
   border-radius: 4px;
   border: 1px solid var(--color-stroke-soft);
 }
+
+/* ──────────────────────────────────────────────────────────
+   Hide native number-input spinner buttons across the app.
+   Use UI-driven steppers (or just type numbers) instead.
+   ────────────────────────────────────────────────────────── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

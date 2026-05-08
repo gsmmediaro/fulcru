@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
 const PROTECTED_PREFIXES = ["/agency", "/onboarding"];
-const ONBOARDING_PATH = "/onboarding";
 const SIGN_IN_PATH = "/sign-in";
+const HOME_REDIRECT = "/agency/runs";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  if (pathname === "/") {
+    const url = req.nextUrl.clone();
+    url.pathname = HOME_REDIRECT;
+    return NextResponse.redirect(url);
+  }
 
   const isProtected = PROTECTED_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(p + "/"),
@@ -25,5 +31,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/agency/:path*", "/onboarding/:path*", "/onboarding"],
+  matcher: ["/", "/agency/:path*", "/onboarding/:path*", "/onboarding"],
 };

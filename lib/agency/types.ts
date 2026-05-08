@@ -69,7 +69,7 @@ export type Run = {
   deliverableUrl?: string;
   notes?: string;
   cwd?: string;
-  pricingMode?: "baseline" | "time_plus_tokens";
+  pricingMode?: BillMode;
 };
 
 export type RunEventKind =
@@ -183,12 +183,19 @@ export type Expense = {
   createdAt: string;
 };
 
+export type AiCostMode = "per_token" | "subscription";
+export type BillMode = "time_only" | "time_plus_tokens" | "baseline";
+
 export type AgencySettings = {
   defaultHourlyRate?: number;
   businessName?: string;
   businessAddress?: string;
   businessEmail?: string;
   businessCurrency: string;
+  aiCostMode: AiCostMode;
+  aiSubscriptionMonthlyUsd: number;
+  defaultBillMode: BillMode;
+  billActiveMultiplier: number;
 };
 
 export type LeverageSnapshot = {

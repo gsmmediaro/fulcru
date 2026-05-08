@@ -44,7 +44,7 @@ export default async function ApprovalsPage() {
       <div className="flex items-center gap-[14px]">
         <span
           className={cn(
-            "flex size-[44px] shrink-0 items-center justify-center rounded-full",
+            "flex size-[44px] shrink-0 items-center justify-center rounded-[10px]",
             "bg-[var(--color-brand-100)] text-[var(--color-brand-400)]",
           )}
         >
