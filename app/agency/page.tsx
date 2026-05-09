@@ -246,7 +246,7 @@ function ConnectMcpCard({
       <div className="flex items-center gap-[14px]">
         <span
           className={cn(
-            "flex size-[44px] shrink-0 items-center justify-center rounded-full",
+            "flex size-[44px] shrink-0 items-center justify-center rounded-[10px]",
             "bg-[color-mix(in_oklab,var(--color-brand-400)_22%,transparent)]",
             "text-[var(--color-brand-400)]",
           )}

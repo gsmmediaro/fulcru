@@ -88,6 +88,17 @@ export function ConnectMcpButton({
         variant={variant}
         size={size}
         className={className}
+        leadingIcon={
+          <span
+            className={cn(
+              "flex size-[24px] items-center justify-center rounded-[6px]",
+              "bg-[color-mix(in_oklab,var(--color-brand-400)_18%,transparent)]",
+              "text-[var(--color-brand-400)]",
+            )}
+          >
+            <RiPlugLine size={14} />
+          </span>
+        }
         onClick={() => setOpen(true)}
       >
         {children ?? t("sidebar.connectMcp")}
@@ -227,7 +238,7 @@ function ConnectMcpModal({
         <header className="flex items-start gap-[12px] px-[24px] pb-[16px] pt-[24px]">
           <span
             className={cn(
-              "flex size-[36px] shrink-0 items-center justify-center rounded-full",
+              "flex size-[36px] shrink-0 items-center justify-center rounded-[8px]",
               "bg-[var(--color-brand-100)] text-[var(--color-brand-400)]",
             )}
           >

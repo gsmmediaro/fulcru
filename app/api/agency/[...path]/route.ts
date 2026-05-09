@@ -195,6 +195,15 @@ async function route(
             return bad((e as Error).message, 404);
           }
         }
+        if (method === "DELETE") {
+          if (!id) return bad("Client id is required for DELETE");
+          try {
+            await api.deleteClient(id);
+            return json({ ok: true });
+          } catch (e) {
+            return bad((e as Error).message, 404);
+          }
+        }
         if (id) return bad("Method not allowed", 405);
         if (!body) return bad("Missing body");
         const name = asString(body.name);

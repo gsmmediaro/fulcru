@@ -253,7 +253,7 @@ function McpStatusCard() {
       <div className="flex items-center gap-[10px]">
         <div
           className={cn(
-            "flex size-[28px] items-center justify-center rounded-full",
+            "flex size-[28px] items-center justify-center rounded-[7px]",
             "bg-[color-mix(in_oklab,var(--color-brand-400)_18%,transparent)]",
             "text-[var(--color-brand-400)]",
           )}

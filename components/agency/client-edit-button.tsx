@@ -1,14 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { RiMoreLine, RiEditLine } from "@remixicon/react";
+import { useRouter } from "next/navigation";
+import { RiMoreLine, RiEditLine, RiDeleteBinLine } from "@remixicon/react";
 import { ClientModal } from "@/components/agency/client-modal";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/cn";
 import type { Client } from "@/lib/agency/types";
 
 export function ClientEditButton({ client }: { client: Client }) {
+  const router = useRouter();
+  const confirm = useConfirm();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [modalOpen, setModalOpen] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
 
   // Close menu on outside click
@@ -22,6 +27,29 @@ export function ClientEditButton({ client }: { client: Client }) {
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [menuOpen]);
+
+  async function handleDelete() {
+    setMenuOpen(false);
+    const ok = await confirm({
+      title: `Delete ${client.name}?`,
+      description:
+        "This permanently deletes the client plus its projects, runs, invoices, expenses, and agent folder mappings.",
+      confirmLabel: "Delete client",
+      destructive: true,
+    });
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/agency/clients/${client.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      router.push("/agency/clients");
+      router.refresh();
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <>
@@ -66,6 +94,21 @@ export function ClientEditButton({ client }: { client: Client }) {
             >
               <RiEditLine size={14} className="text-[var(--color-text-soft)]" />
               Edit
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className={cn(
+                "flex w-full items-center gap-[8px] px-[12px] py-[8px]",
+                "text-[13px] font-medium text-rose-300",
+                "hover:bg-[color-mix(in_oklab,#ef4444_12%,transparent)]",
+                "disabled:cursor-not-allowed disabled:opacity-50",
+                "transition-colors duration-150",
+              )}
+            >
+              <RiDeleteBinLine size={14} />
+              Delete client
             </button>
           </div>
         )}

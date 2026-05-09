@@ -599,6 +599,41 @@ export const store = {
     return mapClient(rows[0]);
   },
 
+  async deleteClient(userId: string, id: string): Promise<void> {
+    const existing = await store.getClient(userId, id);
+    if (!existing) throw new Error("Unknown client");
+
+    await sql`
+      DELETE FROM cwd_mapping
+      WHERE user_id = ${userId} AND client_id = ${id}
+    `;
+
+    await sql`
+      DELETE FROM run
+      WHERE user_id = ${userId} AND client_id = ${id}
+    `;
+
+    await sql`
+      DELETE FROM expense
+      WHERE user_id = ${userId} AND client_id = ${id}
+    `;
+
+    await sql`
+      DELETE FROM invoice
+      WHERE user_id = ${userId} AND client_id = ${id}
+    `;
+
+    await sql`
+      DELETE FROM project
+      WHERE user_id = ${userId} AND client_id = ${id}
+    `;
+
+    await sql`
+      DELETE FROM client
+      WHERE user_id = ${userId} AND id = ${id}
+    `;
+  },
+
   // ─── Projects ──────────────────────────────────────────────
   async listProjects(userId: string, clientId?: string): Promise<Project[]> {
     const rows = (clientId
@@ -657,6 +692,11 @@ export const store = {
 
     await sql`
       DELETE FROM cwd_mapping
+      WHERE user_id = ${userId} AND project_id = ${id}
+    `;
+
+    await sql`
+      DELETE FROM run
       WHERE user_id = ${userId} AND project_id = ${id}
     `;
 

@@ -36,6 +36,7 @@ export function bindApi(userId: string) {
       id: string,
       patch: Parameters<typeof store.updateClient>[2],
     ) => store.updateClient(userId, id, patch),
+    deleteClient: (id: string) => store.deleteClient(userId, id),
 
     listProjects: (clientId?: string): Promise<Project[]> =>
       store.listProjects(userId, clientId),
