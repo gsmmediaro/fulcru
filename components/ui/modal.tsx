@@ -67,7 +67,7 @@ export function Modal({
         tabIndex={-1}
         style={{ maxWidth: `${width}px` }}
         className={cn(
-          "modal-rise relative flex w-full flex-col overflow-hidden",
+          "modal-panel modal-rise relative flex w-full flex-col overflow-hidden",
           "rounded-[8px] bg-[var(--color-bg-surface)] outline-none",
           "ring-1 ring-[var(--color-stroke-soft)]",
           "shadow-[0_18px_40px_rgb(0_0_0/0.48)]",

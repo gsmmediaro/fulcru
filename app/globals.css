@@ -659,6 +659,17 @@ button {
   background: transparent;
 }
 
+.modal-panel,
+.modal-panel * {
+  scrollbar-width: none;
+}
+.modal-panel::-webkit-scrollbar,
+.modal-panel *::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 /* Recharts overrides (dark theme) */
 .recharts-cartesian-axis-tick-value {
   fill: var(--color-text-soft) !important;

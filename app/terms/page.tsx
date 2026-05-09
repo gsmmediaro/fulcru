@@ -22,8 +22,8 @@ export default function TermsPage() {
       <h2>2. The service</h2>
       <p>
         Fulcru is a dashboard for tracking, approving, and invoicing
-        AI-assisted client work - primarily Claude Code sessions captured via
-        the Model Context Protocol (MCP). The product is provided
+        AI-assisted client work - including AI agent sessions captured via the
+        Model Context Protocol (MCP). The product is provided
         &quot;as-is&quot;, in active development, and may change without
         notice.
       </p>

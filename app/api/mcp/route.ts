@@ -9,6 +9,11 @@ import {
   parseSession,
   type SessionStats,
 } from "@/lib/agency/session-importer";
+import {
+  findCodexSessionJsonl,
+  listCodexSessions,
+  parseCodexSession,
+} from "@/lib/agency/codex-session-importer";
 import { readdirSync, statSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
@@ -89,13 +94,14 @@ const INVOICE_RECURRENCES: InvoiceRecurrence[] = [
 // ────────────────────────────────────────────────────────────────────────────
 // PREFERRED ENTRY POINTS
 //
-// To bill historical Claude Code sessions:
+// To bill historical LLM/agent sessions:
 //   submit_session_data  -> works in any deployment (cloud or self-hosted).
-//                           You parse the JSONL locally with your file tools
-//                           and submit the numbers inline. Auto-creates
-//                           project (from cwd basename) and skill if missing.
-//   import_session       -> only when the MCP server has filesystem access
-//                           to the user's ~/.claude/projects/ folder.
+//                           You parse the source transcript locally and submit
+//                           the timing/tokens/cost inline. Auto-creates project
+//                           (from cwd basename) and skill if missing.
+//   import_session       -> Claude Code JSONL convenience importer, only when
+//                           the MCP server has filesystem access to the user's
+//                           ~/.claude/projects/ folder.
 //
 // To track work as it happens:
 //   run_start -> run_event* -> run_end.
@@ -160,7 +166,7 @@ const TOOLS = [
         cwd: {
           type: "string",
           description:
-            "Absolute working directory of this Claude Code session - required to look up the JSONL for live token-cost enrichment at run_end.",
+            "Absolute working directory of this agent session. For Claude Code, this lets run_end find the local JSONL for token-cost enrichment.",
         },
         pricingMode: {
           type: "string",
@@ -214,7 +220,7 @@ const TOOLS = [
   {
     name: "run_end",
     description:
-      "End the run when work is complete. The server reads your session JSONL from run_start to now, sums token usage, and computes billable = runtime_hours × rate + token_cost. Use status=shipped on success (with deliverableUrl), failed on unrecoverable error, cancelled if the user aborted.",
+      "End the run when work is complete. When a supported local transcript is available, the server enriches token usage and computes billable = runtime_hours × rate + token_cost. Use status=shipped on success (with deliverableUrl), failed on unrecoverable error, cancelled if the user aborted.",
     inputSchema: {
       type: "object",
       properties: {
@@ -294,7 +300,7 @@ const TOOLS = [
   {
     name: "create_skill",
     description:
-      "Create a new skill in the catalog. Skills carry baseline_hours and rate_modifier used to price runs. Pick the closest existing skill via list_skills first; only create when none fits AND you genuinely need a separate billing category. For most agentic Claude work prefer the auto-created generic 'AI development' skill over inventing opinionated names like 'Frontend Engineering' or 'Backend Engineering' - those clutter the catalog and don't help pricing.",
+      "Create a new skill in the catalog. Skills carry baseline_hours and rate_modifier used to price runs. Pick the closest existing skill via list_skills first; only create when none fits AND you genuinely need a separate billing category. For most agentic LLM work prefer the auto-created generic 'AI development' skill over inventing opinionated names like 'Frontend Engineering' or 'Backend Engineering' - those clutter the catalog and don't help pricing.",
     inputSchema: {
       type: "object",
       properties: {
@@ -751,6 +757,88 @@ const TOOLS = [
     },
   },
 
+  // ─── Codex / ChatGPT session import ───────────────────────
+  {
+    name: "list_codex_sessions",
+    description:
+      "List local Codex Desktop/ChatGPT agent session JSONL files. Reads ~/.codex/sessions recursively and can filter by cwd. Returns sessionId, cwd, title, filePath, size, and modifiedAt - no importing yet.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        cwd: {
+          type: "string",
+          description:
+            "Optional absolute project path to filter sessions by cwd.",
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "preview_codex_session",
+    description:
+      "Parse a local Codex Desktop/ChatGPT agent session JSONL and return stats (tokens, model, runtime, active time, tool calls, file edits, computed token cost) WITHOUT creating a run.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: { type: "string", description: "Codex session UUID." },
+        cwd: {
+          type: "string",
+          description: "Optional project cwd to scope session lookup.",
+        },
+        filePath: {
+          type: "string",
+          description: "Direct .jsonl path. Overrides sessionId+cwd.",
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "import_codex_session",
+    description:
+      "Parse a local Codex Desktop/ChatGPT agent session JSONL and create a billable run under the given client/project/skill. Re-importing the same sessionId replaces the prior run. Default pricingMode is `time_plus_tokens`.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: { type: "string" },
+        cwd: { type: "string" },
+        filePath: { type: "string" },
+        clientId: { type: "string" },
+        projectId: { type: "string" },
+        skillId: { type: "string" },
+        agentName: { type: "string" },
+        prompt: { type: "string" },
+        hourlyRate: {
+          type: "number",
+          description: "Override; default is client.hourlyRate x skill.rateModifier.",
+        },
+        pricingMode: { type: "string", enum: ["time_plus_tokens", "baseline"] },
+      },
+      required: ["clientId", "projectId", "skillId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "import_all_codex_sessions",
+    description:
+      "Bulk-import all local Codex Desktop/ChatGPT agent sessions for a cwd as billable runs under the same client/project/skill. Skips sessions with no timestamped events. Returns a summary per session.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        cwd: { type: "string" },
+        clientId: { type: "string" },
+        projectId: { type: "string" },
+        skillId: { type: "string" },
+        agentName: { type: "string" },
+        hourlyRate: { type: "number" },
+        pricingMode: { type: "string", enum: ["time_plus_tokens", "baseline"] },
+      },
+      required: ["cwd", "clientId", "projectId", "skillId"],
+      additionalProperties: false,
+    },
+  },
+
   // ─── Cloud-friendly session submission + Inbox triage ──────
   {
     name: "set_cwd_mapping",
@@ -816,7 +904,7 @@ const TOOLS = [
   {
     name: "submit_session_data",
     description:
-      "Submit a parsed Claude Code session as a billable run when this server can NOT read the user's local filesystem (e.g. Fulcru deployed to the cloud). You parse the JSONL yourself with your local file tools - extract first/last timestamps, sum gaps under 5 minutes for activeSec, count tokens per model - and post the numbers here. Auto-resolves missing pieces: clientId defaults to the only client when there is exactly one, projectId is auto-created from the cwd basename if not found, skillId falls back to the user's first skill (auto-creates 'AI development' if none exist). Re-submitting the same sessionId replaces any prior run for that session. Use this to bill historical sessions in a single call - no list_clients/list_projects/list_skills round-trip needed unless ambiguous.",
+      "Submit a parsed LLM/agent session as a billable run. Use this for Codex, Claude Code, opencode, Cursor, or any other tool when you can provide timing, token, and optional cost totals. Auto-resolves missing pieces: cwd mappings win; if clientId is given, projectId is reused or auto-created from projectName/cwd basename; skillId falls back to the user's first skill (auto-creates 'AI development' if none exist). Re-submitting the same sessionId replaces any prior run for that session.",
     inputSchema: {
       type: "object",
       properties: {
@@ -861,7 +949,7 @@ const TOOLS = [
         },
         model: {
           type: "string",
-          description: "Primary model id (e.g. claude-opus-4-7). Optional.",
+          description: "Primary model id (for example claude-opus-4-7, gpt-5.5, or another provider id). Optional.",
         },
         toolUses: { type: "number", description: "Total tool calls. Optional." },
         fileEdits: { type: "number", description: "Tool calls that modified files. Optional." },
@@ -1552,6 +1640,117 @@ async function callTool(
       };
     }
 
+    case "list_codex_sessions": {
+      const cwd = asString(args.cwd);
+      const sessions = listCodexSessions({ cwd });
+      return { cwd, sessions, sessionsFound: sessions.length };
+    }
+
+    case "preview_codex_session": {
+      const filePath =
+        asString(args.filePath) ||
+        findCodexSessionJsonl({
+          sessionId: asString(args.sessionId),
+          cwd: asString(args.cwd),
+        });
+      return parseCodexSession(filePath);
+    }
+
+    case "import_codex_session": {
+      const clientId = asString(args.clientId);
+      const projectId = asString(args.projectId);
+      const skillId = asString(args.skillId);
+      if (!clientId || !projectId || !skillId) {
+        throw new Error("clientId, projectId, skillId are required");
+      }
+      const filePath =
+        asString(args.filePath) ||
+        findCodexSessionJsonl({
+          sessionId: asString(args.sessionId),
+          cwd: asString(args.cwd),
+        });
+      const stats = parseCodexSession(filePath);
+      const pm = asString(args.pricingMode);
+      const { run, events } = await importSessionAsRun(userId, {
+        stats,
+        clientId,
+        projectId,
+        skillId,
+        agentName: asString(args.agentName) ?? "codex",
+        prompt: asString(args.prompt),
+        hourlyRate: asNumber(args.hourlyRate),
+        pricingMode:
+          pm === "baseline" || pm === "time_plus_tokens" ? pm : undefined,
+      });
+      return { run, events, stats };
+    }
+
+    case "import_all_codex_sessions": {
+      const cwd = asString(args.cwd);
+      const clientId = asString(args.clientId);
+      const projectId = asString(args.projectId);
+      const skillId = asString(args.skillId);
+      if (!cwd || !clientId || !projectId || !skillId) {
+        throw new Error("cwd, clientId, projectId, skillId are required");
+      }
+      const sessions = listCodexSessions({ cwd });
+      const pm = asString(args.pricingMode);
+      const pricingMode =
+        pm === "baseline" || pm === "time_plus_tokens" ? pm : undefined;
+      const hourlyRate = asNumber(args.hourlyRate);
+      const agentName = asString(args.agentName) ?? "codex";
+      const results: Array<{
+        sessionId: string;
+        ok: boolean;
+        runId?: string;
+        billableUsd?: number;
+        wallSec?: number;
+        error?: string;
+      }> = [];
+      for (const session of sessions) {
+        try {
+          const stats = parseCodexSession(session.filePath);
+          const { run } = await importSessionAsRun(userId, {
+            stats,
+            clientId,
+            projectId,
+            skillId,
+            agentName,
+            hourlyRate,
+            pricingMode,
+          });
+          results.push({
+            sessionId: session.sessionId,
+            ok: true,
+            runId: run.id,
+            billableUsd: run.billableUsd,
+            wallSec: stats.wallSec,
+          });
+        } catch (e) {
+          results.push({
+            sessionId: session.sessionId,
+            ok: false,
+            error: (e as Error).message,
+          });
+        }
+      }
+      const totalBillable = results
+        .filter((r) => r.ok)
+        .reduce((s, r) => s + (r.billableUsd ?? 0), 0);
+      const totalWallSec = results
+        .filter((r) => r.ok)
+        .reduce((s, r) => s + (r.wallSec ?? 0), 0);
+      return {
+        cwd,
+        sessionsFound: sessions.length,
+        imported: results.filter((r) => r.ok).length,
+        skipped: results.filter((r) => !r.ok).length,
+        totalBillableUsd: Number(totalBillable.toFixed(2)),
+        totalWallHours: Number((totalWallSec / 3600).toFixed(2)),
+        results,
+      };
+    }
+
     case "submit_session_data": {
       const sessionId = asString(args.sessionId);
       const startedAt = asString(args.startedAt);
@@ -1634,7 +1833,7 @@ async function callTool(
             category: "engineering",
             baselineHours: 1,
             rateModifier: 1,
-            description: "Generic agentic Claude work, billed by active hours.",
+            description: "Generic agentic LLM work, billed by active hours.",
           });
           skillId = created.id;
         }
@@ -1645,7 +1844,7 @@ async function callTool(
       const tokensOut = asNumber(args.tokensOut) ?? 0;
       const cacheRead = asNumber(args.cacheReadTokens) ?? 0;
       const tokenCostUsd = asNumber(args.tokenCostUsd) ?? 0;
-      const model = asString(args.model) ?? "claude-code-session";
+      const model = asString(args.model) ?? "llm-session";
       const toolUses = asNumber(args.toolUses) ?? 0;
       const fileEdits = asNumber(args.fileEdits) ?? 0;
       const title = asString(args.title);

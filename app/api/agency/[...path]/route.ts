@@ -228,6 +228,22 @@ async function route(
           const p = await api.getProject(id);
           return p ? json(p) : notFound("Project not found");
         }
+        if (method === "PATCH") {
+          if (!id) return bad("Project id is required for PATCH");
+          if (!body) return bad("Missing body");
+          try {
+            const updated = await api.updateProject(id, {
+              clientId: asString(body.clientId),
+              name: asString(body.name),
+              description:
+                body.description === null ? null : asString(body.description),
+              color: asString(body.color),
+            });
+            return json(updated);
+          } catch (e) {
+            return bad((e as Error).message, 404);
+          }
+        }
         if (id) return bad("Method not allowed", 405);
         if (!body) return bad("Missing body");
         const clientId = asString(body.clientId);

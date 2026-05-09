@@ -146,7 +146,7 @@ export function TimerView({ initialRuns, clients, projects, currency }: Props) {
               No tracked time yet
             </p>
             <p className="mt-[4px] text-[13px] text-[var(--color-text-soft)]">
-              Start a timer above, or connect Claude Code to track agent runs automatically.
+              Start a timer above, or connect an AI agent to track runs automatically.
             </p>
           </div>
           <div className="flex items-center gap-[10px]">
@@ -162,7 +162,7 @@ export function TimerView({ initialRuns, clients, projects, currency }: Props) {
               Start a timer
             </button>
             <ConnectMcpButton variant="outline" size="sm">
-              Connect Claude Code
+              Connect agent
             </ConnectMcpButton>
           </div>
         </div>

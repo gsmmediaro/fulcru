@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Field, Input, Textarea } from "@/components/agency/new-client-modal";
 import { useLocale } from "@/lib/i18n/provider";
-import type { Client } from "@/lib/agency/types";
+import type { Client, Project } from "@/lib/agency/types";
 
 export function NewProjectButton({
   clients,
@@ -35,7 +35,8 @@ export function NewProjectButton({
       >
         {t("projects.new")}
       </Button>
-      <NewProjectModal
+      <ProjectModal
+        mode="create"
         open={open}
         onOpenChange={setOpen}
         clients={clients}
@@ -45,59 +46,90 @@ export function NewProjectButton({
   );
 }
 
-function NewProjectModal({
-  open,
-  onOpenChange,
-  clients,
-  defaultClientId,
-}: {
-  open: boolean;
-  onOpenChange: (next: boolean) => void;
-  clients: Client[];
-  defaultClientId?: string;
-}) {
+type ProjectModalProps =
+  | {
+      mode: "create";
+      open: boolean;
+      onOpenChange: (next: boolean) => void;
+      clients: Client[];
+      defaultClientId?: string;
+    }
+  | {
+      mode: "edit";
+      open: boolean;
+      onOpenChange: (next: boolean) => void;
+      clients: Client[];
+      project: Project;
+      onSaved?: (project: Project) => void;
+    };
+
+export function ProjectModal(props: ProjectModalProps) {
   const { t } = useLocale();
   const router = useRouter();
+  const isEdit = props.mode === "edit";
+  const project = props.mode === "edit" ? props.project : undefined;
+  const defaultClientId =
+    props.mode === "create" ? props.defaultClientId : undefined;
+  const { open, onOpenChange, clients } = props;
   const [clientId, setClientId] = React.useState(
-    defaultClientId ?? clients[0]?.id ?? "",
+    project?.clientId ?? defaultClientId ?? clients[0]?.id ?? "",
   );
-  const [name, setName] = React.useState("");
-  const [description, setDescription] = React.useState("");
-  const [color, setColor] = React.useState("#FF7A1A");
+  const [name, setName] = React.useState(project?.name ?? "");
+  const [description, setDescription] = React.useState(
+    project?.description ?? "",
+  );
+  const [color, setColor] = React.useState(
+    project?.color ?? "#FF7A1A",
+  );
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!open) {
-      setClientId(defaultClientId ?? clients[0]?.id ?? "");
-      setName("");
-      setDescription("");
-      setColor("#FF7A1A");
+    if (open) {
+      setClientId(
+        project?.clientId ?? defaultClientId ?? clients[0]?.id ?? "",
+      );
+      setName(project?.name ?? "");
+      setDescription(project?.description ?? "");
+      setColor(project?.color ?? "#FF7A1A");
       setError(null);
       setSubmitting(false);
     }
-  }, [open, clients, defaultClientId]);
+  }, [
+    open,
+    clients,
+    defaultClientId,
+    project?.clientId,
+    project?.color,
+    project?.description,
+    project?.name,
+  ]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch("/api/agency/projects", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          clientId,
-          name,
-          description: description || undefined,
-          color,
-        }),
-      });
+      const res = await fetch(
+        project ? `/api/agency/projects/${project.id}` : "/api/agency/projects",
+        {
+          method: project ? "PATCH" : "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            clientId,
+            name,
+            description: description.trim() || null,
+            color,
+          }),
+        },
+      );
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error ?? `Request failed (${res.status})`);
       }
+      const saved = (await res.json()) as Project;
       onOpenChange(false);
+      if (props.mode === "edit") props.onSaved?.(saved);
       router.refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -110,18 +142,20 @@ function NewProjectModal({
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      ariaLabel="Create a new project"
+      ariaLabel={isEdit ? t("editProject.title") : t("newProject.title")}
       width={520}
     >
       <ModalCloseButton onClick={() => onOpenChange(false)} />
       <form onSubmit={onSubmit} className="flex flex-col">
         <header className="flex flex-col gap-[4px] px-[24px] pb-[16px] pt-[24px]">
           <h2 className="text-[20px] font-semibold leading-[26px] tracking-tight text-[var(--color-text-strong)]">
-            {t("newProject.title")}
+            {isEdit ? t("editProject.title") : t("newProject.title")}
           </h2>
-          <p className="text-[13px] text-[var(--color-text-soft)]">
-            {t("newProject.subtitle")}
-          </p>
+          {!isEdit ? (
+            <p className="text-[13px] text-[var(--color-text-soft)]">
+              {t("newProject.subtitle")}
+            </p>
+          ) : null}
         </header>
 
         <div className="flex flex-col gap-[16px] px-[24px] pb-[8px]">
@@ -192,7 +226,13 @@ function NewProjectModal({
             variant="primary-orange"
             disabled={submitting || !name.trim() || !clientId}
           >
-            {submitting ? t("modal.creating") : t("newProject.submit")}
+            {isEdit
+              ? submitting
+                ? t("editProject.saving")
+                : t("editProject.submit")
+              : submitting
+                ? t("modal.creating")
+                : t("newProject.submit")}
           </Button>
         </footer>
       </form>

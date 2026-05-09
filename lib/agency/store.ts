@@ -651,6 +651,97 @@ export const store = {
     return mapProject(rows[0]);
   },
 
+  async updateProject(
+    userId: string,
+    id: string,
+    patch: {
+      clientId?: string;
+      name?: string;
+      description?: string | null;
+      color?: string;
+    },
+  ): Promise<Project> {
+    const existing = await store.getProject(userId, id);
+    if (!existing) throw new Error("Unknown project");
+
+    const nextClientId = patch.clientId ?? existing.clientId;
+    const client = await store.getClient(userId, nextClientId);
+    if (!client) throw new Error("Unknown client");
+
+    const nextName =
+      patch.name !== undefined ? patch.name.trim() : existing.name;
+    if (!nextName) throw new Error("Name is required");
+
+    const nextDescription =
+      patch.description !== undefined
+        ? patch.description?.trim() || null
+        : existing.description ?? null;
+    const nextColor =
+      patch.color !== undefined
+        ? patch.color.trim() || client.accentColor
+        : existing.color;
+
+    const rows = (await sql`
+      UPDATE project
+      SET client_id = ${nextClientId},
+          name = ${nextName},
+          description = ${nextDescription},
+          color = ${nextColor}
+      WHERE user_id = ${userId} AND id = ${id}
+      RETURNING id, client_id, name, description, color, created_at
+    `) as ProjectRow[];
+    if (!rows[0]) throw new Error("Unknown project");
+
+    if (nextClientId !== existing.clientId) {
+      const settings = await store.getSettings(userId);
+      const billMode = settings.defaultBillMode;
+      const mult =
+        settings.billingStyle === "pure_active"
+          ? 1
+          : settings.billActiveMultiplier || 1;
+
+      await sql`
+        UPDATE run
+        SET client_id = ${nextClientId},
+            rate_usd = (${client.hourlyRate}::numeric * s.rate_modifier),
+            billable_usd = CASE
+              WHEN run.kind = 'break' OR run.billable_usd = 0
+                THEN 0
+              WHEN run.pricing_mode = 'baseline'
+                THEN run.baseline_hours * ${client.hourlyRate}::numeric * s.rate_modifier
+              WHEN ${billMode} = 'time_only'
+                THEN (run.active_sec::numeric / 3600)
+                     * ${mult}::numeric
+                     * ${client.hourlyRate}::numeric
+                     * s.rate_modifier
+              ELSE (run.active_sec::numeric / 3600)
+                   * ${client.hourlyRate}::numeric
+                   * s.rate_modifier
+                   + run.cost_usd
+            END
+        FROM skill s
+        WHERE run.user_id = ${userId}
+          AND run.project_id = ${id}
+          AND s.id = run.skill_id
+          AND s.user_id = run.user_id
+      `;
+
+      await sql`
+        UPDATE expense
+        SET client_id = ${nextClientId}
+        WHERE user_id = ${userId} AND project_id = ${id}
+      `;
+
+      await sql`
+        UPDATE cwd_mapping
+        SET client_id = ${nextClientId}
+        WHERE user_id = ${userId} AND project_id = ${id}
+      `;
+    }
+
+    return mapProject(rows[0]);
+  },
+
   // ─── Skills ────────────────────────────────────────────────
   async listSkills(userId: string): Promise<Skill[]> {
     const rows = (await sql`
@@ -782,7 +873,7 @@ export const store = {
       throw new Error("Unknown client / project / skill");
     }
     const id = genId("run");
-    const agentName = input.agentName ?? "claude-opus-4-7";
+    const agentName = input.agentName ?? "ai-agent";
     const pricingMode = input.pricingMode ?? settings.defaultBillMode;
     const rateUsd = client.hourlyRate * skill.rateModifier;
     const rows = (await sql`

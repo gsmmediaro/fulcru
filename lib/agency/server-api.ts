@@ -42,6 +42,10 @@ export function bindApi(userId: string) {
     getProject: (id: string) => store.getProject(userId, id),
     createProject: (input: Parameters<typeof store.createProject>[1]) =>
       store.createProject(userId, input),
+    updateProject: (
+      id: string,
+      patch: Parameters<typeof store.updateProject>[2],
+    ) => store.updateProject(userId, id, patch),
 
     listSkills: (): Promise<Skill[]> => store.listSkills(userId),
     getSkill: (id: string) => store.getSkill(userId, id),

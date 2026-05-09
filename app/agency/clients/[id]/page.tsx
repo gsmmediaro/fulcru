@@ -329,7 +329,7 @@ export default async function ClientBillingPage({
                   <div className="mt-[2px] text-[11px] text-[var(--color-text-soft)] tabular-nums">
                     {r.startedAt.slice(0, 10)} ·{" "}
                     {(r.runtimeSec / 3600).toFixed(2)}h ·{" "}
-                    {r.kind === "mcp" ? "MCP" : "Manual"}
+                    {r.kind === "mcp" ? formatAgentLabel(r.agentName) : "Manual"}
                   </div>
                 </div>
                 <div className="text-right">
@@ -480,4 +480,19 @@ function Lifetime({ label, value }: { label: string; value: string }) {
       </div>
     </div>
   );
+}
+
+function formatAgentLabel(agentName: string) {
+  const raw = agentName.trim();
+  const normalized = raw.toLowerCase();
+  if (normalized.includes("claude")) return "Claude";
+  if (normalized.includes("codex") || normalized.includes("gpt")) return "Codex";
+  if (normalized.includes("opencode")) return "OpenCode";
+  if (normalized.includes("cursor")) return "Cursor";
+  if (normalized.includes("cline")) return "Cline";
+  if (normalized.includes("windsurf")) return "Windsurf";
+  if (!raw || normalized === "ai-agent" || normalized === "llm-session") {
+    return "Agent";
+  }
+  return raw.length > 12 ? raw.slice(0, 12) : raw;
 }

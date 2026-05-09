@@ -420,7 +420,7 @@ export function RunsTable({ runs, clients, projects, skills }: Props) {
                   </div>
                   <div className="mt-[4px] text-[13px] text-[var(--color-text-soft)]">
                     {runs.length === 0
-                      ? "Start one from your Claude Code session - runs land here as they begin."
+                      ? "Start one from your AI agent session - runs land here as they begin."
                       : "Try clearing search or widening the status filter."}
                   </div>
                 </td>

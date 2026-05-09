@@ -78,11 +78,17 @@ export default async function ClientsPage() {
             <article
               key={c.id}
               className={cn(
+                "relative",
                 "flex flex-col gap-[16px] rounded-[8px] bg-[var(--color-bg-surface)] p-[20px]",
                 "ring-1 ring-[var(--color-stroke-soft)] transition-colors",
                 "hover:ring-[var(--color-stroke-sub)]",
               )}
             >
+              <Link
+                href={`/agency/clients/${c.id}`}
+                className="absolute inset-0 z-[10] rounded-[8px] focus-visible:outline-2 focus-visible:outline-[var(--color-brand-400)] focus-visible:outline-offset-2"
+                aria-label={`Open billing for ${c.name}`}
+              />
               <div className="flex items-start gap-[14px]">
                 <ClientAvatar
                   initials={c.initials}
@@ -106,7 +112,9 @@ export default async function ClientsPage() {
                     </span>
                   </div>
                 </div>
-                <ClientEditButton client={c} />
+                <div className="relative z-[20]">
+                  <ClientEditButton client={c} />
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-[8px] rounded-[6px] bg-[var(--color-bg-tint-2)] p-[12px] ring-1 ring-[var(--color-stroke-soft)]">
@@ -123,16 +131,11 @@ export default async function ClientsPage() {
 
               <div className="flex flex-wrap items-center gap-[12px] text-[13px] font-semibold">
                 <Link
-                  href={`/agency/clients/${c.id}`}
-                  className="inline-flex items-center gap-[6px] text-[var(--color-brand-400)] hover:underline"
-                >
-                  View billing <RiArrowRightLine size={14} />
-                </Link>
-                <Link
+                  aria-label={`View runs for ${c.name}`}
                   href={`/agency/runs?clientId=${c.id}`}
-                  className="inline-flex items-center gap-[6px] text-[var(--color-text-soft)] hover:text-[var(--color-text-strong)]"
+                  className="relative z-[20] inline-flex items-center gap-[6px] text-[var(--color-brand-400)] hover:underline"
                 >
-                  {t("clients.viewRuns")}
+                  {t("clients.viewRuns")} <RiArrowRightLine size={14} />
                 </Link>
               </div>
             </article>

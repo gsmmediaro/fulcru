@@ -17,7 +17,7 @@ Call `list_skills`. Pick the skill whose `name` and `tags` best match the task (
 
 ## 3. Start the run
 
-Call `run_start` with `clientId`, `projectId`, `skillId`, the user's original request as `prompt`, and **always pass `cwd`** - your absolute working directory (it's in your system prompt). The server uses `cwd` at `run_end` to find your session JSONL and compute real token cost. Remember the returned `run.id` - every subsequent call references it.
+Call `run_start` with `clientId`, `projectId`, `skillId`, the user's original request as `prompt`, and **always pass `cwd`** - your absolute working directory (it's in your system prompt). The server uses `cwd` at `run_end` to find supported local transcripts, such as Claude Code JSONL, and compute real token cost when available. Remember the returned `run.id` - every subsequent call references it.
 
 Default pricing is `time_plus_tokens` - billable = runtime_hours × rate + token_cost. Pass `pricingMode: "baseline"` only when the user explicitly wants flat-rate pricing.
 
@@ -39,7 +39,7 @@ Before any destructive or production-impacting action - db migrations, prod depl
 
 ## 6. Ending
 
-When the deliverable is shipped, call `run_end` with `status: "shipped"` and a `deliverableUrl` (PR link, staging URL, doc link). The server reads your session JSONL between `run_start` and now, sums tokens by model, and sets the run's COGS + billable. On unrecoverable failure use `failed`; if the user cancels, use `cancelled`. Never leave a run in `running` after a session ends.
+When the deliverable is shipped, call `run_end` with `status: "shipped"` and a `deliverableUrl` (PR link, staging URL, doc link). If a supported transcript is available, the server reads usage between `run_start` and now, sums tokens by model, and sets the run's COGS + billable. On unrecoverable failure use `failed`; if the user cancels, use `cancelled`. Never leave a run in `running` after a session ends.
 
 ## Example
 
@@ -49,7 +49,7 @@ When the deliverable is shipped, call `run_end` with `status: "shipped"` and a `
 
 ## Auto-logging (Stop hook)
 
-For users who want every Claude Code session billed automatically without calling `run_start`/`run_end`, install the Stop hook. It runs once when `claude` exits, parses the session transcript, and posts a billable run via `submit_session_data`.
+For users who want every Claude Code session billed automatically without calling `run_start`/`run_end`, install the Stop hook. It runs once when `claude` exits, parses the session transcript, and posts a billable run via `submit_session_data`. Other LLM tools can use the same `submit_session_data` MCP tool by submitting their own session id, timing, token totals, model id, and optional computed cost.
 
 **Install (Windows / macOS / Linux):**
 

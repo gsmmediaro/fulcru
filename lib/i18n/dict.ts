@@ -21,13 +21,13 @@ const en: Dict = {
   "nav.projects": "Projects",
   "nav.invoices": "Invoices",
   "nav.settings": "Settings",
-  "sidebar.connect": "Connect Claude Code",
+  "sidebar.connect": "Connect agent",
   "sidebar.connectMcp": "Connect MCP",
   "sidebar.connected": "Connected",
   "sidebar.reconnect": "Reconnect MCP",
   "mcpModal.title": "Connect MCP",
   "mcpModal.subtitle":
-    "Pick your client and run the command - every session it spawns is tracked here.",
+    "Pick your agent client and run the command - every session can be tracked here.",
   "mcpModal.tab.claude": "Claude Code",
   "mcpModal.tab.codex": "Codex",
   "mcpModal.tab.opencode": "opencode",
@@ -47,14 +47,14 @@ const en: Dict = {
   "mcpModal.statusFail": "Server unreachable",
   "mcpModal.statusChecking": "Checking…",
   "mcpModal.help":
-    "Once added, every Claude Code session run from your terminal can call run_start / run_event / run_end and will be tracked here automatically.",
+    "Once added, any compatible AI agent can call run_start / run_event / run_end and be tracked here.",
   "mcpModal.step1": "Copy the command above.",
-  "mcpModal.step2": "Run it in your terminal - it registers the MCP server with Claude Code globally.",
+  "mcpModal.step2": "Run it in your terminal - it registers the MCP server with that agent client.",
   "mcpModal.step3":
-    "Start a Claude Code session from any project. Runs are tracked here automatically.",
+    "Start an AI agent session from any project. Runs are tracked here automatically.",
   "mcpModal.close": "Close",
   "mcpModal.keyLoading": "Looking up your MCP key…",
-  "mcpModal.keyNone": "No MCP key yet. Generate one to authorize Claude Code.",
+  "mcpModal.keyNone": "No MCP key yet. Generate one to authorize your agent client.",
   "mcpModal.keyStored": "An MCP key already exists for this account.",
   "mcpModal.keyFresh": "New key generated - save it now.",
   "mcpModal.keyOnceWarning":
@@ -115,7 +115,7 @@ const en: Dict = {
   "home.skills.b2": "Rate modifier per skill",
   "home.skills.b3": "Tagged for easy matching",
   "home.skills.cta": "Open Skills",
-  "home.connect.title": "Connect Claude Code",
+  "home.connect.title": "Connect an agent",
   "home.connect.eyebrow": "One MCP endpoint",
   "home.connect.body":
     "Wire your agent to /api/mcp and every run is automatically tracked, priced, and billable.",
@@ -324,6 +324,9 @@ const en: Dict = {
   "newProject.descPh": "What is this project about?",
   "newProject.color": "Color",
   "newProject.submit": "Create project",
+  "editProject.title": "Edit project",
+  "editProject.submit": "Save project",
+  "editProject.saving": "Saving…",
 
   // New skill modal
   "newSkill.title": "Create skill",
@@ -640,7 +643,7 @@ const en: Dict = {
   "timer.noProject": "No project",
   "timer.empty.title": "No tracked time yet",
   "timer.empty.startTimer": "Start a timer",
-  "timer.empty.connectMcp": "Connect Claude Code",
+  "timer.empty.connectMcp": "Connect agent",
   "timer.mcp": "MCP",
   "timer.err.deleteKind": "Cannot delete MCP-tracked runs",
   "timer.duration": "Duration",
@@ -681,7 +684,7 @@ const ro: Dict = {
   "nav.projects": "Proiecte",
   "nav.invoices": "Facturi",
   "nav.settings": "Setări",
-  "sidebar.connect": "Conectează Claude Code",
+  "sidebar.connect": "Conectează agent",
   "sidebar.connectMcp": "Conectează MCP",
   "sidebar.connected": "Conectat",
   "sidebar.reconnect": "Reconectează MCP",
@@ -697,7 +700,7 @@ const ro: Dict = {
   "mcpModal.others.hint":
     "Lipește în configul MCP al clientului - funcționează pentru Cursor, Cline, Continue, Windsurf și similare.",
   "mcpModal.subtitle":
-    "Alege clientul și rulează comanda - orice sesiune pornită din el va fi urmărită aici.",
+    "Alege clientul agentului și rulează comanda - orice sesiune poate fi urmărită aici.",
   "mcpModal.commandLabel": "Comandă",
   "mcpModal.serverLabel": "URL server",
   "mcpModal.copy": "Copiază",
@@ -707,16 +710,16 @@ const ro: Dict = {
   "mcpModal.statusFail": "Serverul nu răspunde",
   "mcpModal.statusChecking": "Se verifică…",
   "mcpModal.help":
-    "După adăugare, orice sesiune Claude Code din terminalul tău poate apela run_start / run_event / run_end și va fi urmărită automat aici.",
+    "După adăugare, orice agent AI compatibil poate apela run_start / run_event / run_end și va fi urmărit aici.",
   "mcpModal.step1": "Copiază comanda de mai sus.",
   "mcpModal.step2":
-    "Rulează-o în terminal - înregistrează serverul MCP în Claude Code, global.",
+    "Rulează-o în terminal - înregistrează serverul MCP în acel client agent.",
   "mcpModal.step3":
-    "Pornește o sesiune Claude Code din orice proiect. Sesiunile vor fi urmărite automat aici.",
+    "Pornește o sesiune de agent AI din orice proiect. Sesiunile vor fi urmărite automat aici.",
   "mcpModal.close": "Închide",
   "mcpModal.keyLoading": "Căutăm cheia ta MCP…",
   "mcpModal.keyNone":
-    "Nu ai încă o cheie MCP. Generează una ca să autorizezi Claude Code.",
+    "Nu ai încă o cheie MCP. Generează una ca să autorizezi clientul agent.",
   "mcpModal.keyStored": "O cheie MCP există deja pe contul tău.",
   "mcpModal.keyFresh": "Cheie nouă generată - salveaz-o acum.",
   "mcpModal.keyOnceWarning":
@@ -777,7 +780,7 @@ const ro: Dict = {
   "home.skills.b2": "Modificator de tarif per competență",
   "home.skills.b3": "Etichetate pentru potrivire rapidă",
   "home.skills.cta": "Deschide Competențe",
-  "home.connect.title": "Conectează Claude Code",
+  "home.connect.title": "Conectează un agent",
   "home.connect.eyebrow": "Un singur endpoint MCP",
   "home.connect.body":
     "Conectează agentul la /api/mcp și fiecare sesiune este urmărită, prețuită și facturabilă automat.",
@@ -988,6 +991,9 @@ const ro: Dict = {
   "newProject.descPh": "Despre ce este acest proiect?",
   "newProject.color": "Culoare",
   "newProject.submit": "Creează proiect",
+  "editProject.title": "Editează proiect",
+  "editProject.submit": "Salvează proiect",
+  "editProject.saving": "Se salvează…",
 
   // New skill modal
   "newSkill.title": "Adaugă competență",
@@ -1304,7 +1310,7 @@ const ro: Dict = {
   "timer.noProject": "Fără proiect",
   "timer.empty.title": "Nicio sesiune înregistrată",
   "timer.empty.startTimer": "Pornește un timer",
-  "timer.empty.connectMcp": "Conectează Claude Code",
+  "timer.empty.connectMcp": "Conectează agent",
   "timer.mcp": "MCP",
   "timer.err.deleteKind": "Nu se pot șterge sesiunile MCP",
   "timer.duration": "Durată",

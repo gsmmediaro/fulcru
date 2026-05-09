@@ -57,6 +57,7 @@ export function RunRow({
   const isMcp = run.kind === "mcp";
   const isBreak = run.kind === "break";
   const isRunning = run.status === "running";
+  const agentLabel = formatAgentLabel(run.agentName);
 
   const displaySec = isRunning
     ? (liveElapsed ?? elapsedSec(run.startedAt))
@@ -131,10 +132,10 @@ export function RunRow({
     >
       {/* Description */}
       <div className="flex min-w-0 flex-1 items-center gap-[8px]">
-        {/* MCP chip */}
+        {/* Agent chip */}
         {isMcp && (
           <span className="shrink-0 rounded-[4px] bg-[color-mix(in_oklab,var(--color-brand-400)_20%,transparent)] px-[5px] py-[2px] text-[10px] font-semibold uppercase tracking-wider text-[var(--color-brand-400)]">
-            MCP
+            {agentLabel}
           </span>
         )}
         {isBreak && (
@@ -170,7 +171,7 @@ export function RunRow({
             )}
           >
             {isMcp
-              ? (run.prompt || `Claude Code session ${run.id.slice(-6)}`)
+              ? (run.prompt || `${agentLabel} session ${run.id.slice(-6)}`)
               : isBreak
               ? "Break"
               : (run.prompt || "(no description)")}
@@ -323,4 +324,19 @@ export function RunRow({
       </Dropdown>
     </div>
   );
+}
+
+function formatAgentLabel(agentName: string) {
+  const raw = agentName.trim();
+  const normalized = raw.toLowerCase();
+  if (normalized.includes("claude")) return "Claude";
+  if (normalized.includes("codex") || normalized.includes("gpt")) return "Codex";
+  if (normalized.includes("opencode")) return "OpenCode";
+  if (normalized.includes("cursor")) return "Cursor";
+  if (normalized.includes("cline")) return "Cline";
+  if (normalized.includes("windsurf")) return "Windsurf";
+  if (!raw || normalized === "ai-agent" || normalized === "llm-session") {
+    return "Agent";
+  }
+  return raw.length > 12 ? raw.slice(0, 12) : raw;
 }

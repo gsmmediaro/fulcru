@@ -43,6 +43,34 @@ const HAIKU_4_X: ModelPricing = {
   cacheReadPerM: 0.1,
 };
 
+const GPT_5_5: ModelPricing = {
+  inputPerM: 5,
+  outputPerM: 30,
+  cacheWritePerM: 0,
+  cacheReadPerM: 0.5,
+};
+
+const GPT_5_4: ModelPricing = {
+  inputPerM: 2.5,
+  outputPerM: 15,
+  cacheWritePerM: 0,
+  cacheReadPerM: 0.25,
+};
+
+const GPT_5_4_MINI: ModelPricing = {
+  inputPerM: 0.75,
+  outputPerM: 4.5,
+  cacheWritePerM: 0,
+  cacheReadPerM: 0.075,
+};
+
+const GPT_5_2: ModelPricing = {
+  inputPerM: 1.25,
+  outputPerM: 10,
+  cacheWritePerM: 0,
+  cacheReadPerM: 0.125,
+};
+
 export const MODEL_PRICING: Record<string, ModelPricing> = {
   "claude-opus-4-7": OPUS_4_X,
   "claude-opus-4-7[1m]": OPUS_4_X_1M,
@@ -53,6 +81,12 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   "claude-sonnet-4-6[1m]": SONNET_4_X_1M,
   "claude-haiku-4-5": HAIKU_4_X,
   "claude-haiku-4-5-20251001": HAIKU_4_X,
+  "gpt-5.5": GPT_5_5,
+  "gpt-5.4": GPT_5_4,
+  "gpt-5.4-mini": GPT_5_4_MINI,
+  "gpt-5.3-codex": GPT_5_4,
+  "gpt-5.2": GPT_5_2,
+  "gpt-5": GPT_5_2,
 };
 
 export const DEFAULT_PRICING: ModelPricing = OPUS_4_X;
@@ -65,6 +99,10 @@ export function priceFor(model: string | undefined): ModelPricing {
   if (model.includes("opus")) return model.includes("[1m]") ? OPUS_4_X_1M : OPUS_4_X;
   if (model.includes("sonnet")) return model.includes("[1m]") ? SONNET_4_X_1M : SONNET_4_X;
   if (model.includes("haiku")) return HAIKU_4_X;
+  if (model.includes("gpt-5.5")) return GPT_5_5;
+  if (model.includes("gpt-5.4-mini")) return GPT_5_4_MINI;
+  if (model.includes("gpt-5.4") || model.includes("gpt-5.3-codex")) return GPT_5_4;
+  if (model.includes("gpt-5.2") || model.includes("gpt-5")) return GPT_5_2;
   return DEFAULT_PRICING;
 }
 

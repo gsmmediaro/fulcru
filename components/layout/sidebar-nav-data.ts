@@ -58,7 +58,6 @@ export const sidebarNav: NavGroup[] = [
     labelKey: "nav.catalog",
     icon: RiStackLine,
     children: [
-      { labelKey: "nav.skills", href: "/agency/skills" },
       { labelKey: "nav.clients", href: "/agency/clients" },
       { labelKey: "nav.projects", href: "/agency/projects" },
     ],

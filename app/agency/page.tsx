@@ -5,7 +5,6 @@ import {
   RiShieldCheckLine,
   RiBriefcase4Line,
   RiFolder3Line,
-  RiSparkling2Line,
   RiBillLine,
   RiCheckLine,
   RiPlugLine,
@@ -95,18 +94,6 @@ export default async function AgencyHomePage() {
       ],
       href: "/agency/projects",
       cta: t("home.projects.cta"),
-    },
-    {
-      icon: RiSparkling2Line,
-      title: t("nav.skills"),
-      eyebrow: t("home.skills.eyebrow", { n: summary.skills }),
-      bullets: [
-        t("home.skills.b1"),
-        t("home.skills.b2"),
-        t("home.skills.b3"),
-      ],
-      href: "/agency/skills",
-      cta: t("home.skills.cta"),
     },
   ];
 
