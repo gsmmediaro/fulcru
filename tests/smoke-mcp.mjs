@@ -33,6 +33,10 @@ const ctx = {
   mcpKeyId: null,
   clientId: null,
   runId: null,
+  // Tracks every project id auto-created via submit_session_data so the
+  // after() hook can purge them. Otherwise empty smoke-test projects pile
+  // up under whatever client we used.
+  autoProjects: new Set(),
 };
 
 async function rpc(method, params, key) {
@@ -104,6 +108,13 @@ after(async () => {
       await sql`DELETE FROM run WHERE id = ${ctx.runId}`;
     } catch {}
   }
+  // Purge any auto-created projects so the user's client list stays clean.
+  for (const projectId of ctx.autoProjects) {
+    try {
+      await sql`DELETE FROM cwd_mapping WHERE project_id = ${projectId}`;
+      await sql`DELETE FROM project WHERE id = ${projectId}`;
+    } catch {}
+  }
 });
 
 test("MCP: tools/list exposes submit_session_data with the right schema", async () => {
@@ -144,6 +155,7 @@ test("MCP: submit_session_data auto-resolves project + skill, creates a run", as
   );
 
   ctx.runId = out.run.id;
+  ctx.autoProjects.add(out.resolved.projectId);
   assert.ok(out.run.id.startsWith("run_"));
   assert.equal(out.run.status, "shipped");
   assert.ok(out.resolved.projectId, "should auto-resolve projectId");
@@ -376,6 +388,7 @@ test("scoring: submit_session_data classifies category and stores difficulty", a
   const row = (
     await sql`SELECT change_category, difficulty_score, quality_confidence FROM run WHERE id = ${out.run.id}`
   )[0];
+  if (out.resolved.projectId) ctx.autoProjects.add(out.resolved.projectId);
   assert.equal(row.change_category, "bugfix");
   assert.ok(
     row.difficulty_score === null || Number(row.difficulty_score) >= 0,
@@ -406,6 +419,7 @@ test("quality: manual quality patch lowers confidence and records a signal", asy
     ctx.mcpKey,
   );
   const runId = out.run.id;
+  if (out.resolved.projectId) ctx.autoProjects.add(out.resolved.projectId);
 
   // Apply a manual quality adjust directly via store helper through SQL.
   // We can't hit the REST endpoint without a session cookie, so we exercise
@@ -456,6 +470,7 @@ test("quality: follow-up bugfix in same cwd auto-drops the prior run's quality",
     },
     ctx.mcpKey,
   );
+  if (first.resolved.projectId) ctx.autoProjects.add(first.resolved.projectId);
   assert.equal(
     (
       await sql`SELECT quality_confidence FROM run WHERE id = ${first.run.id}`
@@ -542,6 +557,7 @@ test("billing: pure_active mode keeps multiplier at 1, effort_adjusted applies i
       },
       ctx.mcpKey,
     );
+    if (out.resolved.projectId) ctx.autoProjects.add(out.resolved.projectId);
     return out.run;
   };
 
