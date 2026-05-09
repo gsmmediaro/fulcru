@@ -316,9 +316,75 @@ async function route(
               }),
             );
           }
+          if (action === "quality-signals") {
+            const run = await api.getRun(id);
+            if (!run) return notFound("Run not found");
+            const signals = await api.listQualitySignals(id);
+            return json({ run, signals });
+          }
           const run = await api.getRun(id);
           if (!run) return notFound("Run not found");
           return json({ run, events: await api.listRunEvents(id) });
+        }
+
+        // POST /api/agency/runs/:id/quality
+        if (method === "POST" && id && action === "quality") {
+          if (!body) return bad("Missing body");
+          const confidence = asNumber(body.confidence);
+          if (confidence === undefined) {
+            return bad("confidence is required (0.3..1.0)");
+          }
+          try {
+            const result = await api.setManualQualityConfidence(id, {
+              confidence,
+              reason: asString(body.reason),
+            });
+            return json(result);
+          } catch (e) {
+            return bad((e as Error).message);
+          }
+        }
+
+        // PATCH /api/agency/runs/:id/category
+        if (method === "PATCH" && id && action === "category") {
+          if (!body) return bad("Missing body");
+          const category = asString(body.category);
+          const allowed = [
+            "feature",
+            "bugfix",
+            "refactor",
+            "infra",
+            "docs",
+            "test",
+            "performance",
+            "research",
+          ] as const;
+          if (!category || !(allowed as readonly string[]).includes(category)) {
+            return bad(`category must be one of ${allowed.join(", ")}`);
+          }
+          try {
+            const updated = await api.setChangeCategory(
+              id,
+              category as (typeof allowed)[number],
+            );
+            return json(updated);
+          } catch (e) {
+            return bad((e as Error).message);
+          }
+        }
+
+        // PATCH /api/agency/runs/:id/impact-note
+        if (method === "PATCH" && id && action === "impact-note") {
+          if (!body) return bad("Missing body");
+          const noteRaw = body.note;
+          const note =
+            noteRaw === null ? null : (asString(noteRaw) ?? undefined);
+          try {
+            const updated = await api.setImpactNote(id, note ?? null);
+            return json(updated);
+          } catch (e) {
+            return bad((e as Error).message);
+          }
         }
 
         // DELETE /api/agency/runs/:id
@@ -353,6 +419,30 @@ async function route(
 
         // POST
         if (!body) return bad("Missing body");
+
+        // POST /api/agency/runs/bulk-assign
+        if (id === "bulk-assign") {
+          const runIds = Array.isArray(body.runIds)
+            ? (body.runIds as unknown[]).filter(
+                (x): x is string => typeof x === "string",
+              )
+            : [];
+          const clientId = asString(body.clientId);
+          const projectId = asString(body.projectId);
+          if (runIds.length === 0 || !clientId || !projectId) {
+            return bad("runIds (non-empty), clientId, projectId are required");
+          }
+          try {
+            const result = await api.bulkAssignRuns(runIds, {
+              clientId,
+              projectId,
+              alsoMapCwd: Boolean(body.alsoMapCwd),
+            });
+            return json(result);
+          } catch (e) {
+            return bad((e as Error).message);
+          }
+        }
 
         // POST /api/agency/runs/start-manual
         if (id === "start-manual") {
@@ -861,6 +951,31 @@ async function route(
                 body.billActiveMultiplier === undefined
                   ? undefined
                   : Number(body.billActiveMultiplier),
+              billingStyle:
+                body.billingStyle === "pure_active" ||
+                body.billingStyle === "effort_adjusted"
+                  ? body.billingStyle
+                  : undefined,
+              useQualityConfidence:
+                typeof body.useQualityConfidence === "boolean"
+                  ? body.useQualityConfidence
+                  : undefined,
+              useDifficultyWeight:
+                typeof body.useDifficultyWeight === "boolean"
+                  ? body.useDifficultyWeight
+                  : undefined,
+              useCategoryWeight:
+                typeof body.useCategoryWeight === "boolean"
+                  ? body.useCategoryWeight
+                  : undefined,
+              markBillingOnboarded:
+                body.markBillingOnboarded === true ? true : undefined,
+              theme:
+                body.theme === "auto" ||
+                body.theme === "light" ||
+                body.theme === "dark"
+                  ? body.theme
+                  : undefined,
             });
             return json(updated);
           } catch (e) {

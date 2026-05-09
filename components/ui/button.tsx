@@ -36,7 +36,7 @@ const variantClasses: Record<Variant, string> = {
   ),
   ghost: cn(
     "text-[var(--color-text-sub)] hover:text-[var(--color-text-strong)]",
-    "hover:bg-[color-mix(in_oklab,white_6%,transparent)]",
+    "hover:bg-[var(--color-bg-tint-6)]",
   ),
   link: cn(
     "text-[var(--color-text-strong)] hover:text-[var(--color-brand-400)]",

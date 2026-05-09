@@ -37,7 +37,7 @@ export function AuthLanguageToggle() {
         className={cn(
           "inline-flex items-center gap-[6px] rounded-[6px] px-[8px] py-[6px]",
           "text-[13px] font-medium text-[var(--color-text-sub)]",
-          "hover:bg-[color-mix(in_oklab,white_5%,transparent)] hover:text-[var(--color-text-strong)]",
+          "hover:bg-[var(--color-bg-tint-5)] hover:text-[var(--color-text-strong)]",
           "transition-colors duration-150",
         )}
       >
@@ -65,7 +65,7 @@ export function AuthLanguageToggle() {
                   "text-[13px]",
                   l === locale
                     ? "bg-[color-mix(in_oklab,var(--color-brand-400)_14%,transparent)] text-[var(--color-brand-400)] font-semibold"
-                    : "text-[var(--color-text-strong)] hover:bg-[color-mix(in_oklab,white_5%,transparent)]",
+                    : "text-[var(--color-text-strong)] hover:bg-[var(--color-bg-tint-5)]",
                 )}
               >
                 <span>{LOCALE_LABELS[l]}</span>

@@ -4,6 +4,7 @@ import path from "node:path";
 import { tokenCostUsd } from "./pricing";
 import { sql } from "@/lib/db";
 import { store } from "./store";
+import { classifyChangeCategory, computeDifficulty } from "./scoring";
 import type { Run, RunEvent } from "./types";
 
 export type EnrichmentResult = {
@@ -426,22 +427,32 @@ export async function importSessionAsRun(
   userId: string,
   input: {
     stats: SessionStats;
-    clientId: string;
-    projectId: string;
+    clientId?: string;
+    projectId?: string;
     skillId: string;
     agentName?: string;
     prompt?: string;
     hourlyRate?: number;
     pricingMode?: "time_plus_tokens" | "baseline";
+    /** When true and no clientId/projectId given, create the run as unsorted. */
+    allowUnsorted?: boolean;
   },
 ): Promise<{ run: Run; events: RunEvent[] }> {
   const s = input.stats;
-  const [client, project, skill] = await Promise.all([
-    store.getClient(userId, input.clientId),
-    store.getProject(userId, input.projectId),
-    store.getSkill(userId, input.skillId),
-  ]);
-  if (!client || !project || !skill) {
+  const skill = await store.getSkill(userId, input.skillId);
+  if (!skill) throw new Error("Unknown skill");
+
+  const wantsUnsorted =
+    !input.clientId && !input.projectId && input.allowUnsorted === true;
+
+  const client = input.clientId
+    ? await store.getClient(userId, input.clientId)
+    : undefined;
+  const project = input.projectId
+    ? await store.getProject(userId, input.projectId)
+    : undefined;
+
+  if (!wantsUnsorted && (!client || !project)) {
     throw new Error("Unknown client / project / skill");
   }
 
@@ -456,7 +467,9 @@ export async function importSessionAsRun(
   const runId = genId("run");
   const agentName =
     input.agentName ?? Object.keys(s.modelTotals)[0] ?? "claude-opus-4-7";
-  const rateUsd = input.hourlyRate ?? client.hourlyRate * skill.rateModifier;
+  const rateUsd = wantsUnsorted
+    ? 0
+    : input.hourlyRate ?? client!.hourlyRate * skill.rateModifier;
   const tokensIn = s.tokensIn + s.cacheWrite;
   const tokensOut = s.tokensOut;
   const cacheHits = s.cacheRead;
@@ -475,22 +488,38 @@ export async function importSessionAsRun(
   billable = Number(billable.toFixed(2));
   const notes = `${sessionTag} cwd:${s.cwd ?? "?"} model:${Object.keys(s.modelTotals).join(",")}`;
 
+  const promptForRun = input.prompt ?? deriveSessionLabel(s);
+  const changeCategory = classifyChangeCategory(promptForRun);
+  const history = await store.recentRunSignals(userId);
+  const { score: difficultyScore } = computeDifficulty(
+    {
+      totalTokens: tokensIn + tokensOut,
+      activeSec: s.activeSec,
+      eventCount: 4, // We always insert exactly 4 synthetic events below.
+    },
+    history,
+  );
+
   await sql`
     INSERT INTO run (
       id, user_id, client_id, project_id, skill_id, agent_name, status,
       prompt, cwd, pricing_mode,
       started_at, ended_at, runtime_sec, active_sec,
       tokens_in, tokens_out, cache_hits, cost_usd,
-      baseline_hours, rate_usd, billable_usd, notes
+      baseline_hours, rate_usd, billable_usd, notes, unsorted,
+      difficulty_score, change_category
     )
     VALUES (
-      ${runId}, ${userId}, ${client.id}, ${project.id}, ${skill.id},
+      ${runId}, ${userId},
+      ${client?.id ?? null}, ${project?.id ?? null}, ${skill.id},
       ${agentName}, 'shipped',
-      ${input.prompt ?? deriveSessionLabel(s)},
+      ${promptForRun},
       ${s.cwd ?? null}, ${mode},
       ${s.startedAt}, ${s.endedAt}, ${s.wallSec}, ${s.activeSec},
       ${tokensIn}, ${tokensOut}, ${cacheHits}, ${costUsd},
-      ${baselineHours}, ${rateUsd}, ${billable}, ${notes}
+      ${baselineHours}, ${rateUsd}, ${billable}, ${notes},
+      ${wantsUnsorted},
+      ${difficultyScore}, ${changeCategory}
     )
   `;
 
@@ -542,6 +571,13 @@ export async function importSessionAsRun(
 
   const run = await store.getRun(userId, runId);
   if (!run) throw new Error("Failed to create run");
+  if (run.changeCategory === "bugfix" && run.cwd) {
+    try {
+      await store.recordFollowUpBugfix(userId, run);
+    } catch {
+      // Quality scoring should never block a session import.
+    }
+  }
   const evRows = await store.listRunEvents(userId, runId);
   return { run, events: evRows };
 }

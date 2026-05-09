@@ -7,6 +7,7 @@ import {
   findSessionJsonl,
   importSessionAsRun,
   parseSession,
+  type SessionStats,
 } from "@/lib/agency/session-importer";
 import { readdirSync, statSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -85,11 +86,34 @@ const INVOICE_RECURRENCES: InvoiceRecurrence[] = [
   "yearly",
 ];
 
+// ────────────────────────────────────────────────────────────────────────────
+// PREFERRED ENTRY POINTS
+//
+// To bill historical Claude Code sessions:
+//   submit_session_data  -> works in any deployment (cloud or self-hosted).
+//                           You parse the JSONL locally with your file tools
+//                           and submit the numbers inline. Auto-creates
+//                           project (from cwd basename) and skill if missing.
+//   import_session       -> only when the MCP server has filesystem access
+//                           to the user's ~/.claude/projects/ folder.
+//
+// To track work as it happens:
+//   run_start -> run_event* -> run_end.
+//
+// To log a manual block of time the user already spent:
+//   add_time_entry.
+//
+// Don't ask the user "which skill?" up front - prefer auto-pick (first skill,
+// or auto-create a generic 'AI development' skill). Only ask the user the ONE
+// thing that genuinely needs deciding (which client, or import-history vs
+// track-forward when both are plausible).
+// ────────────────────────────────────────────────────────────────────────────
+
 const TOOLS = [
   {
     name: "list_clients",
     description:
-      "List every client the agency works with. Call at the start of a session when you need to identify which client the user's task belongs to.",
+      "List every client the agency works with. Optional: submit_session_data and add_time_entry auto-pick the only client when there is exactly one. Only call when more than one client is plausible and you need to disambiguate.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -111,7 +135,7 @@ const TOOLS = [
   {
     name: "list_skills",
     description:
-      "List the agency's skill catalog (each has a baseline_hours and rate modifier used to price the run). Call before run_start to pick the closest skill to the task.",
+      "List the agency's skill catalog (each has a baseline_hours and rate modifier used to price the run). Optional: submit_session_data, add_time_entry and start_manual_timer auto-pick the user's first skill (or auto-create 'AI development' if none exist). Only call if you need a specific skill or to verify what exists.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -270,7 +294,7 @@ const TOOLS = [
   {
     name: "create_skill",
     description:
-      "Create a new skill in the catalog. Skills carry baseline_hours and rate_modifier used to price runs. Pick the closest existing skill via list_skills first; only create when none fits.",
+      "Create a new skill in the catalog. Skills carry baseline_hours and rate_modifier used to price runs. Pick the closest existing skill via list_skills first; only create when none fits AND you genuinely need a separate billing category. For most agentic Claude work prefer the auto-created generic 'AI development' skill over inventing opinionated names like 'Frontend Engineering' or 'Backend Engineering' - those clutter the catalog and don't help pricing.",
     inputSchema: {
       type: "object",
       properties: {
@@ -688,7 +712,7 @@ const TOOLS = [
   {
     name: "import_session",
     description:
-      "Parse a Claude Code session JSONL and create a billable run from it under the given client/project/skill. Re-importing the same sessionId replaces the prior run. Default pricingMode is `time_plus_tokens` (active hours × rate + token cost). Use this to retroactively bill all the time Claude spent on a project.",
+      "Parse a Claude Code session JSONL and create a billable run from it under the given client/project/skill. Re-importing the same sessionId replaces the prior run. Default pricingMode is `time_plus_tokens` (active hours × rate + token cost). Only works when this MCP server has filesystem access to the user's ~/.claude/projects/ folder (i.e. self-hosted on the same machine). For cloud-deployed Fulcru, use submit_session_data instead - read the JSONL with your local file tool, parse it yourself, and submit the numbers.",
     inputSchema: {
       type: "object",
       properties: {
@@ -710,7 +734,7 @@ const TOOLS = [
   {
     name: "import_all_sessions",
     description:
-      "Bulk-import ALL Claude Code sessions for a given cwd as billable runs under the same client/project/skill. Skips sessions that have no timestamped events. Returns a summary per session. Use after list_sessions when the user wants to bill the entire history of a project at once.",
+      "Bulk-import ALL Claude Code sessions for a given cwd as billable runs under the same client/project/skill. Skips sessions that have no timestamped events. Returns a summary per session. Only works when this MCP server has filesystem access to ~/.claude/projects/. For cloud-deployed Fulcru, loop submit_session_data instead.",
     inputSchema: {
       type: "object",
       properties: {
@@ -723,6 +747,157 @@ const TOOLS = [
         pricingMode: { type: "string", enum: ["time_plus_tokens", "baseline"] },
       },
       required: ["cwd", "clientId", "projectId", "skillId"],
+      additionalProperties: false,
+    },
+  },
+
+  // ─── Cloud-friendly session submission + Inbox triage ──────
+  {
+    name: "set_cwd_mapping",
+    description:
+      "Pin a working directory to a (client, project). After this, every future submit_session_data call with the same cwd lands directly on that project, no Inbox triage needed. Use this when the user says 'always log work in this folder to project X'.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        cwd: { type: "string" },
+        clientId: { type: "string" },
+        projectId: { type: "string" },
+      },
+      required: ["cwd", "clientId", "projectId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "list_unsorted_runs",
+    description:
+      "List runs that landed in the Inbox (created by the Stop hook for cwds with no mapping yet). Use to show the user what needs triage and how much billable potential is sitting unsorted.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "bulk_assign_runs",
+    description:
+      "Reassign N runs to a different client + project in one shot. Recomputes rate and billable from the new client's hourlyRate. Use when the user splits work into a new project, renames a client, or wants to bulk-clear the Inbox. Pass alsoMapCwd=true to also pin every distinct cwd among the selected runs to the destination project.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        runIds: { type: "array", items: { type: "string" }, minItems: 1 },
+        clientId: { type: "string" },
+        projectId: { type: "string" },
+        alsoMapCwd: { type: "boolean" },
+      },
+      required: ["runIds", "clientId", "projectId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "assign_unsorted_run",
+    description:
+      "Assign one Inbox run to a client + project. With alsoMapCwd=true, also pin the run's cwd so future sessions from there route automatically AND retro-assigns every other unsorted run from the same cwd. This is how you 'claim' a folder once and stop seeing its sessions in the Inbox.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        runId: { type: "string" },
+        clientId: { type: "string" },
+        projectId: { type: "string" },
+        alsoMapCwd: {
+          type: "boolean",
+          description:
+            "Also create a permanent cwd_mapping so future runs from this cwd skip the Inbox.",
+        },
+      },
+      required: ["runId", "clientId", "projectId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "submit_session_data",
+    description:
+      "Submit a parsed Claude Code session as a billable run when this server can NOT read the user's local filesystem (e.g. Fulcru deployed to the cloud). You parse the JSONL yourself with your local file tools - extract first/last timestamps, sum gaps under 5 minutes for activeSec, count tokens per model - and post the numbers here. Auto-resolves missing pieces: clientId defaults to the only client when there is exactly one, projectId is auto-created from the cwd basename if not found, skillId falls back to the user's first skill (auto-creates 'AI development' if none exist). Re-submitting the same sessionId replaces any prior run for that session. Use this to bill historical sessions in a single call - no list_clients/list_projects/list_skills round-trip needed unless ambiguous.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: {
+          type: "string",
+          description: "UUID of the source JSONL (used to dedupe re-imports).",
+        },
+        cwd: {
+          type: "string",
+          description:
+            "Absolute working directory of the session. Used to auto-derive a project name from its basename when projectId is missing.",
+        },
+        title: {
+          type: "string",
+          description:
+            "Human-readable summary - first user prompt or the task the user asked Claude to do. Becomes the invoice line item description.",
+        },
+        startedAt: {
+          type: "string",
+          description: "ISO timestamp of the first event in the session.",
+        },
+        endedAt: {
+          type: "string",
+          description: "ISO timestamp of the last event in the session.",
+        },
+        wallSec: {
+          type: "number",
+          description: "endedAt - startedAt in seconds (clock time).",
+        },
+        activeSec: {
+          type: "number",
+          description:
+            "Sum of gaps under 5 minutes between consecutive timestamped events - this is the 'real focused time'. If you cannot compute, reuse wallSec.",
+        },
+        tokensIn: { type: "number", description: "Total input + cache-write tokens. Defaults to 0." },
+        tokensOut: { type: "number", description: "Total output tokens. Defaults to 0." },
+        cacheReadTokens: { type: "number", description: "Total cache-read tokens. Optional." },
+        tokenCostUsd: {
+          type: "number",
+          description:
+            "Computed compute cost (USD) for the session. Optional - leave 0 if the user is on a flat subscription.",
+        },
+        model: {
+          type: "string",
+          description: "Primary model id (e.g. claude-opus-4-7). Optional.",
+        },
+        toolUses: { type: "number", description: "Total tool calls. Optional." },
+        fileEdits: { type: "number", description: "Tool calls that modified files. Optional." },
+        clientId: {
+          type: "string",
+          description:
+            "Optional - if omitted and the user has exactly one client, that one is used.",
+        },
+        projectName: {
+          type: "string",
+          description:
+            "Optional - human-friendly project name. If projectId is omitted and a project with this name exists, it is reused; otherwise it is auto-created. Falls back to basename(cwd).",
+        },
+        projectId: {
+          type: "string",
+          description: "Optional - direct project id; takes precedence over projectName.",
+        },
+        skillId: {
+          type: "string",
+          description:
+            "Optional - if omitted, the user's first skill is used (auto-creates 'AI development' if none exist).",
+        },
+        agentName: { type: "string", description: "Defaults to model id." },
+        hourlyRate: {
+          type: "number",
+          description:
+            "Override the per-run rate. Defaults to client.hourlyRate × skill.rateModifier.",
+        },
+        pricingMode: {
+          type: "string",
+          enum: ["time_plus_tokens", "baseline"],
+          description:
+            "Default time_plus_tokens (active_hours × rate + token_cost). Use baseline for fixed-price work.",
+        },
+      },
+      required: ["sessionId", "startedAt", "endedAt", "wallSec", "activeSec"],
       additionalProperties: false,
     },
   },
@@ -1375,6 +1550,200 @@ async function callTool(
         totalWallHours: Number((totalWallSec / 3600).toFixed(2)),
         results,
       };
+    }
+
+    case "submit_session_data": {
+      const sessionId = asString(args.sessionId);
+      const startedAt = asString(args.startedAt);
+      const endedAt = asString(args.endedAt);
+      const wallSec = asNumber(args.wallSec);
+      const activeSec = asNumber(args.activeSec);
+      if (!sessionId || !startedAt || !endedAt || wallSec === undefined || activeSec === undefined) {
+        throw new Error(
+          "sessionId, startedAt, endedAt, wallSec and activeSec are required",
+        );
+      }
+
+      const cwd = asString(args.cwd);
+
+      // Step 1: see if this cwd is already mapped to a project. If so, the
+      // mapping wins over everything and we route silently.
+      let mapped: { clientId: string; projectId: string } | undefined;
+      if (cwd) {
+        mapped = await api.findCwdMapping(cwd);
+      }
+
+      // Step 2: resolve client / project. Three paths in priority order:
+      //   (a) cwd_mapping match -> deterministic, no auto-create
+      //   (b) explicit clientId given -> auto-create project from cwd basename
+      //   (c) neither -> unsorted (run lands in Inbox)
+      let clientId: string | undefined;
+      let projectId: string | undefined;
+      let unsorted = false;
+      let routedBy: "cwd_mapping" | "explicit_client" | "unsorted_inbox" =
+        "unsorted_inbox";
+
+      if (mapped) {
+        clientId = mapped.clientId;
+        projectId = mapped.projectId;
+        routedBy = "cwd_mapping";
+      } else {
+        const explicitClientId = asString(args.clientId);
+        const explicitProjectId = asString(args.projectId);
+        const explicitProjectName = asString(args.projectName);
+        if (explicitClientId) {
+          clientId = explicitClientId;
+          if (explicitProjectId) {
+            projectId = explicitProjectId;
+          } else {
+            const desiredName =
+              explicitProjectName ||
+              (cwd ? path.basename(cwd.replace(/[\\/]+$/, "")) : undefined) ||
+              "Default project";
+            const projects = await api.listProjects(clientId);
+            const match = projects.find(
+              (p) => p.name.toLowerCase() === desiredName.toLowerCase(),
+            );
+            if (match) {
+              projectId = match.id;
+            } else {
+              const created = await api.createProject({
+                clientId,
+                name: desiredName,
+              });
+              projectId = created.id;
+            }
+          }
+          routedBy = "explicit_client";
+        } else {
+          unsorted = true;
+          routedBy = "unsorted_inbox";
+        }
+      }
+
+      // Skill always resolves to something. Falls back to the user's first
+      // skill or auto-creates a generic 'AI development'.
+      let skillId = asString(args.skillId);
+      if (!skillId) {
+        const skills = await api.listSkills();
+        if (skills.length > 0) {
+          skillId = skills[0].id;
+        } else {
+          const created = await api.createSkill({
+            name: "AI development",
+            category: "engineering",
+            baselineHours: 1,
+            rateModifier: 1,
+            description: "Generic agentic Claude work, billed by active hours.",
+          });
+          skillId = created.id;
+        }
+      }
+
+      // Build a SessionStats-shaped payload from the inline data.
+      const tokensIn = asNumber(args.tokensIn) ?? 0;
+      const tokensOut = asNumber(args.tokensOut) ?? 0;
+      const cacheRead = asNumber(args.cacheReadTokens) ?? 0;
+      const tokenCostUsd = asNumber(args.tokenCostUsd) ?? 0;
+      const model = asString(args.model) ?? "claude-code-session";
+      const toolUses = asNumber(args.toolUses) ?? 0;
+      const fileEdits = asNumber(args.fileEdits) ?? 0;
+      const title = asString(args.title);
+      const stats: SessionStats = {
+        sessionId,
+        filePath: `submitted:${sessionId}`,
+        cwd,
+        startedAt,
+        endedAt,
+        wallSec,
+        activeSec,
+        userMsgs: 0,
+        assistantMsgs: 0,
+        toolUses,
+        fileEdits,
+        modelTotals: {
+          [model]: {
+            inputTokens: tokensIn,
+            outputTokens: tokensOut,
+            cacheWriteTokens: 0,
+            cacheReadTokens: cacheRead,
+            messages: 0,
+          },
+        },
+        tokensIn,
+        tokensOut,
+        cacheWrite: 0,
+        cacheRead,
+        tokenCostUsd,
+        firstUserPrompt: title,
+        aiTitle: title,
+      };
+
+      const pm = asString(args.pricingMode);
+      const { run, events } = await importSessionAsRun(userId, {
+        stats,
+        clientId,
+        projectId,
+        skillId,
+        agentName: asString(args.agentName) ?? model,
+        prompt: title,
+        hourlyRate: asNumber(args.hourlyRate),
+        pricingMode:
+          pm === "baseline" || pm === "time_plus_tokens" ? pm : undefined,
+        allowUnsorted: unsorted,
+      });
+      return {
+        run,
+        events,
+        resolved: { clientId, projectId, skillId, unsorted, routedBy },
+      };
+    }
+
+    case "set_cwd_mapping": {
+      const cwd = asString(args.cwd);
+      const clientId = asString(args.clientId);
+      const projectId = asString(args.projectId);
+      if (!cwd || !clientId || !projectId) {
+        throw new Error("cwd, clientId and projectId are required");
+      }
+      const mapping = await api.upsertCwdMapping({
+        cwd,
+        clientId,
+        projectId,
+      });
+      return { mapping };
+    }
+
+    case "list_unsorted_runs": {
+      const runs = await api.listUnsortedRuns();
+      return { runs, count: runs.length };
+    }
+
+    case "assign_unsorted_run": {
+      const runId = asString(args.runId);
+      const clientId = asString(args.clientId);
+      const projectId = asString(args.projectId);
+      if (!runId || !clientId || !projectId) {
+        throw new Error("runId, clientId and projectId are required");
+      }
+      const alsoMapCwd = asBool(args.alsoMapCwd) ?? false;
+      const run = await api.assignUnsortedRun(runId, {
+        clientId,
+        projectId,
+        alsoMapCwd,
+      });
+      return { run };
+    }
+
+    case "bulk_assign_runs": {
+      const runIds = asStringArray(args.runIds);
+      const clientId = asString(args.clientId);
+      const projectId = asString(args.projectId);
+      if (!runIds || runIds.length === 0 || !clientId || !projectId) {
+        throw new Error("runIds (non-empty), clientId, projectId are required");
+      }
+      const alsoMapCwd = asBool(args.alsoMapCwd) ?? false;
+      return api.bulkAssignRuns(runIds, { clientId, projectId, alsoMapCwd });
     }
 
     default:

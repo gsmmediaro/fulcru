@@ -125,8 +125,8 @@ test("REST: leverage returns numeric snapshot", async () => {
 
 test("MCP: tools/list exposes the full toolset with cwd on run_start", async () => {
   const r = await rpc("tools/list");
-  // 8 lifecycle tools + 26 write/read tools added in v0.3
-  assert.equal(r.tools.length, 34);
+  // 8 lifecycle + 26 v0.3 write/read + 5 expense/import + submit_session_data + 3 inbox/cwd-mapping + bulk_assign_runs (v0.4)
+  assert.equal(r.tools.length, 44);
   const start = r.tools.find((t) => t.name === "run_start");
   assert.ok(start.inputSchema.properties.cwd, "run_start must accept cwd");
   // Spot-check a few new write tools are exposed

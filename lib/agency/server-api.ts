@@ -4,12 +4,15 @@ import type {
   AgencySettings,
   Approval,
   ApprovalStatus,
+  ChangeCategory,
   Client,
+  CwdMapping,
   Expense,
   ExpenseCategory,
   Invoice,
   LeverageSnapshot,
   Project,
+  QualitySignal,
   Run,
   RunEvent,
   RunEventKind,
@@ -119,6 +122,33 @@ export function bindApi(userId: string) {
     getSettings: (): Promise<AgencySettings> => store.getSettings(userId),
     updateSettings: (patch: Parameters<typeof store.updateSettings>[1]) =>
       store.updateSettings(userId, patch),
+
+    findCwdMapping: (cwd: string) => store.findCwdMapping(userId, cwd),
+    listCwdMappings: (): Promise<CwdMapping[]> => store.listCwdMappings(userId),
+    upsertCwdMapping: (
+      input: Parameters<typeof store.upsertCwdMapping>[1],
+    ): Promise<CwdMapping> => store.upsertCwdMapping(userId, input),
+    deleteCwdMapping: (id: string) => store.deleteCwdMapping(userId, id),
+    listUnsortedRuns: (): Promise<Run[]> => store.listUnsortedRuns(userId),
+    assignUnsortedRun: (
+      runId: string,
+      input: Parameters<typeof store.assignUnsortedRun>[2],
+    ): Promise<Run> => store.assignUnsortedRun(userId, runId, input),
+    bulkAssignRuns: (
+      runIds: string[],
+      input: Parameters<typeof store.bulkAssignRuns>[2],
+    ) => store.bulkAssignRuns(userId, runIds, input),
+
+    listQualitySignals: (runId: string): Promise<QualitySignal[]> =>
+      store.listQualitySignals(userId, runId),
+    setManualQualityConfidence: (
+      runId: string,
+      input: Parameters<typeof store.setManualQualityConfidence>[2],
+    ) => store.setManualQualityConfidence(userId, runId, input),
+    setImpactNote: (runId: string, note: string | null) =>
+      store.setImpactNote(userId, runId, note),
+    setChangeCategory: (runId: string, category: ChangeCategory) =>
+      store.setChangeCategory(userId, runId, category),
   };
 }
 

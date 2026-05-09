@@ -63,7 +63,7 @@ function fromDateInputValue(v: string): string | null {
 // ─── Inline input styling ──────────────────────────────────────────────────────
 
 const inputCls = cn(
-  "h-[36px] w-full rounded-[6px] bg-[color-mix(in_oklab,white_3%,transparent)]",
+  "h-[36px] w-full rounded-[6px] bg-[var(--color-bg-tint-3)]",
   "px-[10px] text-[13px] font-normal text-[var(--color-text-strong)]",
   "placeholder:text-[var(--color-text-soft)]",
   "ring-1 ring-[var(--color-stroke-soft)] outline-none",
@@ -73,7 +73,7 @@ const inputCls = cn(
 );
 
 const textareaCls = cn(
-  "min-h-[80px] w-full rounded-[6px] bg-[color-mix(in_oklab,white_3%,transparent)]",
+  "min-h-[80px] w-full rounded-[6px] bg-[var(--color-bg-tint-3)]",
   "px-[10px] py-[8px] text-[13px] font-normal text-[var(--color-text-strong)]",
   "placeholder:text-[var(--color-text-soft)]",
   "ring-1 ring-[var(--color-stroke-soft)] outline-none resize-none",
@@ -200,7 +200,7 @@ function RecurringModal({
                 "transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-[var(--color-brand-400)]",
                 enabled
                   ? "bg-[var(--color-brand-400)]"
-                  : "bg-[color-mix(in_oklab,white_12%,transparent)]",
+                  : "bg-[var(--color-bg-tint-12)]",
               )}
             >
               <span
@@ -442,7 +442,7 @@ function ImportTimeModal({
                   <tr
                     key={expense.id}
                     onClick={() => toggle(expense.id)}
-                    className="cursor-pointer border-b border-[var(--color-stroke-soft)] last:border-0 hover:bg-[color-mix(in_oklab,white_2%,transparent)]"
+                    className="cursor-pointer border-b border-[var(--color-stroke-soft)] last:border-0 hover:bg-[var(--color-bg-tint-2)]"
                   >
                     <td className="py-[10px]">
                       <input
@@ -1201,7 +1201,7 @@ export function InvoiceEditor({
 
         {/* Bill from / to */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[20px] mb-[24px]">
-          <div className="rounded-[6px] bg-[color-mix(in_oklab,white_2%,transparent)] p-[16px] ring-1 ring-[var(--color-stroke-soft)]">
+          <div className="rounded-[6px] bg-[var(--color-bg-tint-2)] p-[16px] ring-1 ring-[var(--color-stroke-soft)]">
             <PartyBlock
               title={t("invoice.editor.billFrom")}
               name={billFromName}
@@ -1216,7 +1216,7 @@ export function InvoiceEditor({
               t={t}
             />
           </div>
-          <div className="rounded-[6px] bg-[color-mix(in_oklab,white_2%,transparent)] p-[16px] ring-1 ring-[var(--color-stroke-soft)]">
+          <div className="rounded-[6px] bg-[var(--color-bg-tint-2)] p-[16px] ring-1 ring-[var(--color-stroke-soft)]">
             <PartyBlock
               title={t("invoice.editor.billTo")}
               name={client?.name ?? initialInvoice.billToName ?? ""}
@@ -1335,7 +1335,7 @@ export function InvoiceEditor({
 
         {/* Totals block */}
         <div className="flex justify-end mb-[28px]">
-          <dl className="w-full max-w-[340px] rounded-[6px] bg-[color-mix(in_oklab,white_2%,transparent)] p-[16px] ring-1 ring-[var(--color-stroke-soft)] space-y-[10px]">
+          <dl className="w-full max-w-[340px] rounded-[6px] bg-[var(--color-bg-tint-2)] p-[16px] ring-1 ring-[var(--color-stroke-soft)] space-y-[10px]">
             <TotalsRow
               label={t("invoice.editor.subtotal")}
               value={usd.format(subtotal)}

@@ -58,9 +58,10 @@ export default async function InvoicesPage({
 }) {
   const { t } = await getT();
   const api = await getApi();
-  const [invoicesRaw, clients] = await Promise.all([
+  const [invoicesRaw, clients, settings] = await Promise.all([
     api.listInvoices(),
     api.listClients(),
+    api.getSettings(),
   ]);
 
   const sp = await searchParams;
@@ -92,7 +93,7 @@ export default async function InvoicesPage({
           <CompactButton aria-label={t("invoiceList.settings")} variant="neutral" size="sm">
             <RiSettings4Line size={16} />
           </CompactButton>
-          <NewInvoiceButton clients={clients} />
+          <NewInvoiceButton clients={clients} currency={settings.businessCurrency} />
         </div>
       </div>
 

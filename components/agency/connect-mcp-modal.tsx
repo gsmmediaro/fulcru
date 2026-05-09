@@ -271,7 +271,7 @@ function ConnectMcpModal({
               </Button>
             </div>
           ) : keyState.phase === "stored" ? (
-            <div className="flex items-center justify-between gap-[8px] rounded-[6px] bg-[color-mix(in_oklab,white_3%,transparent)] px-[12px] py-[10px] ring-1 ring-[var(--color-stroke-soft)]">
+            <div className="flex items-center justify-between gap-[8px] rounded-[6px] bg-[var(--color-bg-tint-3)] px-[12px] py-[10px] ring-1 ring-[var(--color-stroke-soft)]">
               <div className="flex items-center gap-[8px] text-[12px] text-[var(--color-text-sub)]">
                 <RiKey2Line size={14} className="text-[var(--color-text-soft)]" />
                 <span className="font-mono">{keyState.key.prefix}…</span>
@@ -310,7 +310,7 @@ function ConnectMcpModal({
           <div
             role="tablist"
             aria-label={t("mcpModal.title")}
-            className="flex items-center gap-[2px] rounded-[6px] bg-[color-mix(in_oklab,white_3%,transparent)] p-[3px] ring-1 ring-[var(--color-stroke-soft)]"
+            className="flex items-center gap-[2px] rounded-[6px] bg-[var(--color-bg-tint-3)] p-[3px] ring-1 ring-[var(--color-stroke-soft)]"
           >
             {CLIENT_TABS.map((tab) => {
               const active = tab.id === client;
@@ -325,7 +325,7 @@ function ConnectMcpModal({
                     "flex-1 rounded-[4px] px-[10px] py-[6px] text-[12.5px] font-medium leading-[18px] transition-colors duration-150",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-400)]",
                     active
-                      ? "bg-[var(--color-bg-surface)] text-[var(--color-text-strong)] shadow-[0_1px_0_color-mix(in_oklab,white_8%,transparent)] ring-1 ring-[var(--color-stroke-soft)]"
+                      ? "bg-[var(--color-bg-surface)] text-[var(--color-text-strong)] shadow-[0_1px_0_var(--color-bg-tint-8)] ring-1 ring-[var(--color-stroke-soft)]"
                       : "text-[var(--color-text-soft)] hover:text-[var(--color-text-strong)]",
                   )}
                 >
@@ -356,7 +356,7 @@ function ConnectMcpModal({
           <div
             className={cn(
               "relative rounded-[6px]",
-              "bg-[color-mix(in_oklab,white_3%,transparent)]",
+              "bg-[var(--color-bg-tint-3)]",
               "ring-1 ring-[var(--color-stroke-soft)]",
             )}
           >
@@ -376,7 +376,7 @@ function ConnectMcpModal({
               className={cn(
                 "absolute right-[8px] top-[8px] flex size-[28px] items-center justify-center rounded-[4px]",
                 "text-[var(--color-text-soft)] transition-colors duration-150",
-                "hover:bg-[color-mix(in_oklab,white_6%,transparent)] hover:text-[var(--color-text-strong)]",
+                "hover:bg-[var(--color-bg-tint-6)] hover:text-[var(--color-text-strong)]",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-400)]",
                 copied && "text-[var(--color-accent-green)]",
                 !command && "opacity-40",
@@ -459,7 +459,7 @@ function KeyRow({
       className={cn(
         "flex items-center gap-[8px] rounded-[6px] px-[12px] py-[10px] text-[12px]",
         tone === "muted" &&
-          "bg-[color-mix(in_oklab,white_3%,transparent)] text-[var(--color-text-soft)] ring-1 ring-[var(--color-stroke-soft)]",
+          "bg-[var(--color-bg-tint-3)] text-[var(--color-text-soft)] ring-1 ring-[var(--color-stroke-soft)]",
       )}
     >
       {icon}

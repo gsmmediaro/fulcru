@@ -1,3 +1,6 @@
+import type { AgencySettings, ChangeCategory, Run } from "./types";
+import { CATEGORY_WEIGHTS } from "./types";
+
 export type ModelPricing = {
   inputPerM: number;
   outputPerM: number;
@@ -82,4 +85,66 @@ export function tokenCostUsd(
       (usage.cache_read_input_tokens ?? 0) * p.cacheReadPerM) /
     1_000_000
   );
+}
+
+export type EffortInputs = {
+  category?: ChangeCategory;
+  difficultyScore?: number;
+  qualityConfidence?: number;
+};
+
+/**
+ * Compute the effort multiplier the user agreed to in settings.
+ *
+ * pure_active mode short-circuits to 1.0 - the user wants raw active hours
+ * billed and nothing more. effort_adjusted layers in each opt-in flag:
+ *   - quality_confidence: shrinks billable when post-hoc signals fire
+ *   - difficulty_weight: 1 + score * 0.5, capped at 1.5x
+ *   - category_weight: per-category fixed weights from CATEGORY_WEIGHTS
+ *
+ * The function never multiplies all five "frosting" factors at once on its
+ * own - each layer is opt-in so total fanout stays bounded and predictable
+ * (max ~1.65x with everything on).
+ */
+export function effortMultiplier(
+  settings: Pick<
+    AgencySettings,
+    | "billingStyle"
+    | "useQualityConfidence"
+    | "useDifficultyWeight"
+    | "useCategoryWeight"
+  >,
+  inputs: EffortInputs,
+): number {
+  if (settings.billingStyle === "pure_active") return 1;
+  let m = 1;
+  if (settings.useQualityConfidence) {
+    const q = inputs.qualityConfidence ?? 1;
+    m *= Math.max(0.3, Math.min(1, q));
+  }
+  if (settings.useDifficultyWeight && inputs.difficultyScore != null) {
+    const score = Math.max(0, Math.min(1, inputs.difficultyScore));
+    m *= Math.min(1.5, 1 + score * 0.5);
+  }
+  if (settings.useCategoryWeight && inputs.category) {
+    m *= CATEGORY_WEIGHTS[inputs.category] ?? 1;
+  }
+  return Number(m.toFixed(4));
+}
+
+export function effortMultiplierForRun(
+  settings: Pick<
+    AgencySettings,
+    | "billingStyle"
+    | "useQualityConfidence"
+    | "useDifficultyWeight"
+    | "useCategoryWeight"
+  >,
+  run: Pick<Run, "changeCategory" | "difficultyScore" | "qualityConfidence">,
+): number {
+  return effortMultiplier(settings, {
+    category: run.changeCategory,
+    difficultyScore: run.difficultyScore,
+    qualityConfidence: run.qualityConfidence,
+  });
 }

@@ -17,13 +17,13 @@ interface CompactButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 const variantClasses: Record<Variant, string> = {
   neutral: cn(
     "bg-transparent text-[var(--color-text-soft)]",
-    "hover:bg-[color-mix(in_oklab,white_6%,transparent)] hover:text-[var(--color-text-strong)]",
+    "hover:bg-[var(--color-bg-tint-6)] hover:text-[var(--color-text-strong)]",
   ),
   brand: cn(
     "bg-transparent text-[var(--color-brand-400)]",
     "hover:bg-[color-mix(in_oklab,var(--color-brand-400)_10%,transparent)]",
   ),
-  ghost: "text-[var(--color-text-strong)] hover:bg-white/5",
+  ghost: "text-[var(--color-text-strong)] hover:bg-[var(--color-bg-tint-5)]",
 };
 
 const sizeClasses: Record<Size, string> = {

@@ -69,7 +69,7 @@ export const TextField = React.forwardRef<HTMLInputElement, Props>(
               aria-label={reveal ? hideLabel : showLabel}
               className={cn(
                 "absolute right-[8px] top-1/2 -translate-y-1/2 flex size-[28px] items-center justify-center rounded-[4px]",
-                "text-[var(--color-text-soft)] hover:text-[var(--color-text-strong)] hover:bg-[color-mix(in_oklab,white_6%,transparent)]",
+                "text-[var(--color-text-soft)] hover:text-[var(--color-text-strong)] hover:bg-[var(--color-bg-tint-6)]",
                 "transition-colors duration-150",
               )}
             >

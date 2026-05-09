@@ -39,7 +39,7 @@ export const DropdownItem = React.forwardRef<
     className={cn(
       "flex cursor-pointer items-center gap-[10px] h-[36px] px-[10px] rounded-[6px]",
       "text-[14px] leading-[20px] text-[var(--color-text-strong)]",
-      "outline-none data-[highlighted]:bg-[color-mix(in_oklab,white_6%,transparent)]",
+      "outline-none data-[highlighted]:bg-[var(--color-bg-tint-6)]",
       className,
     )}
     {...props}

@@ -99,7 +99,7 @@ export default async function ProjectsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-[8px] rounded-[6px] bg-[color-mix(in_oklab,white_2%,transparent)] p-[12px] ring-1 ring-[var(--color-stroke-soft)]">
+              <div className="grid grid-cols-3 gap-[8px] rounded-[6px] bg-[var(--color-bg-tint-2)] p-[12px] ring-1 ring-[var(--color-stroke-soft)]">
                 <Mini label={t("projects.runs")} value={`${runs.length}`} />
                 <Mini
                   label={t("projects.eff")}

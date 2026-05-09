@@ -84,7 +84,7 @@ export default async function SkillsPage() {
               {sk.tags.map((t) => (
                 <span
                   key={t}
-                  className="inline-flex rounded-[4px] bg-[color-mix(in_oklab,white_4%,transparent)] px-[8px] py-[2px] text-[11px] text-[var(--color-text-sub)] ring-1 ring-[var(--color-stroke-soft)]"
+                  className="inline-flex rounded-[4px] bg-[var(--color-bg-tint-4)] px-[8px] py-[2px] text-[11px] text-[var(--color-text-sub)] ring-1 ring-[var(--color-stroke-soft)]"
                 >
                   {t}
                 </span>

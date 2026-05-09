@@ -3,6 +3,8 @@ import { LocaleProvider } from "@/lib/i18n/provider";
 import { getLocale } from "@/lib/i18n/server";
 import { getSession, isOnboarded } from "@/lib/auth-server";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
+import { ThemeApplier } from "@/components/layout/theme-applier";
+import { getApi } from "@/lib/agency/server-api";
 
 export default async function AgencyLayout({
   children,
@@ -17,8 +19,11 @@ export default async function AgencyLayout({
     redirect("/onboarding");
   }
   const locale = await getLocale();
+  const api = await getApi();
+  const settings = await api.getSettings();
   return (
     <LocaleProvider locale={locale}>
+      <ThemeApplier theme={settings.theme} />
       <ConfirmProvider>{children}</ConfirmProvider>
     </LocaleProvider>
   );

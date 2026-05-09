@@ -20,7 +20,7 @@ export const SelectTrigger = React.forwardRef<
     className={cn(
       "group inline-flex w-full items-center justify-between gap-[10px]",
       "h-[40px] px-[12px] rounded-[6px]",
-      "bg-[color-mix(in_oklab,white_3%,transparent)]",
+      "bg-[var(--color-bg-tint-3)]",
       "ring-1 ring-[var(--color-stroke-soft)]",
       "text-[14px] leading-[20px] text-[var(--color-text-strong)]",
       "transition-[box-shadow,background-color] duration-150",
@@ -92,7 +92,7 @@ export const SelectItem = React.forwardRef<
       "h-[36px] px-[10px] pr-[28px] rounded-[6px]",
       "text-[14px] leading-[20px] text-[var(--color-text-strong)]",
       "outline-none",
-      "data-[highlighted]:bg-[color-mix(in_oklab,white_6%,transparent)]",
+      "data-[highlighted]:bg-[var(--color-bg-tint-6)]",
       "data-[state=checked]:text-[var(--color-brand-400)]",
       "data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed",
       className,

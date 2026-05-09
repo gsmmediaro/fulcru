@@ -19,7 +19,7 @@ const STATUS_CLASSES: Record<RunStatus, string> = {
   failed:
     "bg-[color-mix(in_oklab,#f43f5e_18%,transparent)] text-rose-300 ring-[color-mix(in_oklab,#f43f5e_28%,transparent)]",
   cancelled:
-    "bg-[color-mix(in_oklab,white_6%,transparent)] text-[var(--color-text-soft)] ring-[var(--color-stroke-soft)]",
+    "bg-[var(--color-bg-tint-6)] text-[var(--color-text-soft)] ring-[var(--color-stroke-soft)]",
 };
 
 export function StatusPill({

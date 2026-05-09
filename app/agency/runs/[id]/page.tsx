@@ -14,6 +14,7 @@ import { AgentAvatar } from "@/components/agency/agent-avatar";
 import { MetricRow } from "@/components/agency/metric-row";
 import { RunTimeline } from "@/components/agency/run-timeline";
 import { CopyIdButton } from "@/components/agency/copy-id-button";
+import { ScoringPanel } from "@/components/agency/scoring-panel";
 import {
   formatCurrency,
   formatRuntime,
@@ -32,8 +33,8 @@ export default async function RunDetailPage({
   if (!run) notFound();
 
   const [client, project, skill, events] = await Promise.all([
-    api.getClient(run.clientId),
-    api.getProject(run.projectId),
+    run.clientId ? api.getClient(run.clientId) : Promise.resolve(undefined),
+    run.projectId ? api.getProject(run.projectId) : Promise.resolve(undefined),
     api.getSkill(run.skillId),
     api.listRunEvents(run.id),
   ]);
@@ -291,6 +292,8 @@ export default async function RunDetailPage({
               </div>
             </SidebarCard>
 
+            <ScoringPanel run={run} />
+
             <SidebarCard label="AI cost breakdown">
               <dl className="grid grid-cols-2 gap-y-[8px] text-[12px]">
                 <SidebarStat
@@ -329,7 +332,7 @@ function Pill({
     <span
       className={cn(
         "inline-flex rounded-[6px] px-[8px] py-[3px] text-[12px] font-semibold tabular-nums",
-        "bg-[color-mix(in_oklab,white_4%,transparent)] text-[var(--color-text-sub)]",
+        "bg-[var(--color-bg-tint-4)] text-[var(--color-text-sub)]",
         tone === "emerald" &&
           "bg-[color-mix(in_oklab,var(--color-accent-green)_18%,transparent)] text-emerald-300",
       )}

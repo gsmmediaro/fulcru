@@ -14,12 +14,12 @@ const KEYS: Record<InvoiceStatus, string> = {
 
 const CLASSES: Record<InvoiceStatus, string> = {
   draft:
-    "bg-[color-mix(in_oklab,white_6%,transparent)] text-[var(--color-text-soft)] ring-[var(--color-stroke-soft)]",
+    "bg-[var(--color-bg-tint-6)] text-[var(--color-text-soft)] ring-[var(--color-stroke-soft)]",
   sent: "bg-[color-mix(in_oklab,var(--color-brand-400)_18%,transparent)] text-[var(--color-brand-400)] ring-[color-mix(in_oklab,var(--color-brand-400)_28%,transparent)]",
   paid: "bg-[color-mix(in_oklab,var(--color-accent-green)_18%,transparent)] text-emerald-300 ring-[color-mix(in_oklab,var(--color-accent-green)_28%,transparent)]",
   overdue:
     "bg-[color-mix(in_oklab,#f43f5e_18%,transparent)] text-rose-300 ring-[color-mix(in_oklab,#f43f5e_28%,transparent)]",
-  void: "bg-[color-mix(in_oklab,white_4%,transparent)] text-[var(--color-text-soft)] ring-[var(--color-stroke-soft)] line-through",
+  void: "bg-[var(--color-bg-tint-4)] text-[var(--color-text-soft)] ring-[var(--color-stroke-soft)] line-through",
 };
 
 export function InvoiceStatusPill({

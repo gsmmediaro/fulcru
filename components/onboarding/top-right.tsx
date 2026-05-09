@@ -61,7 +61,7 @@ export function OnboardingTopRight({
           <button
             type="button"
             onClick={() => authClient.signOut().then(() => (window.location.href = "/"))}
-            className="flex w-full items-center gap-[8px] rounded-[6px] px-[10px] py-[8px] text-left text-[13px] text-[var(--color-text-strong)] hover:bg-[color-mix(in_oklab,white_5%,transparent)]"
+            className="flex w-full items-center gap-[8px] rounded-[6px] px-[10px] py-[8px] text-left text-[13px] text-[var(--color-text-strong)] hover:bg-[var(--color-bg-tint-5)]"
           >
             <RiLogoutBoxRLine size={14} />
             Sign out

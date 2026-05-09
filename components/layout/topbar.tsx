@@ -96,7 +96,7 @@ function LanguageSelect() {
     >
       <SelectTrigger
         leadingIcon={<RiTranslate2 size={16} />}
-        className="h-[36px] w-[140px] border-none bg-transparent px-[10px] text-[13px] ring-0 hover:bg-white/5"
+        className="h-[36px] w-[140px] border-none bg-transparent px-[10px] text-[13px] ring-0 hover:bg-[var(--color-bg-tint-5)]"
       >
         <SelectValue placeholder={LOCALE_LABELS.en} />
       </SelectTrigger>
@@ -117,11 +117,11 @@ function WorkspaceButton() {
       className={cn(
         "inline-flex h-[40px] items-center gap-[10px] rounded-[6px] sm:h-[44px]",
         "px-[10px] md:px-[14px]",
-        "bg-[color-mix(in_oklab,white_3%,transparent)]",
+        "bg-[var(--color-bg-tint-3)]",
         "ring-1 ring-[var(--color-stroke-soft)]",
         "text-[13px] font-semibold md:text-[14px]",
         "transition-[background,transform] duration-200",
-        "hover:bg-[color-mix(in_oklab,white_6%,transparent)] hover:-translate-y-px",
+        "hover:bg-[var(--color-bg-tint-6)] hover:-translate-y-px",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-400)]",
       )}
     >
@@ -149,11 +149,11 @@ function UserMenu() {
           className={cn(
             "inline-flex h-[40px] items-center gap-[10px] rounded-[6px] sm:h-[44px]",
             "px-[6px] md:px-[10px]",
-            "bg-[color-mix(in_oklab,white_3%,transparent)]",
+            "bg-[var(--color-bg-tint-3)]",
             "ring-1 ring-[var(--color-stroke-soft)]",
             "text-[13px] font-medium",
             "transition-[background,transform] duration-200",
-            "hover:bg-[color-mix(in_oklab,white_6%,transparent)] hover:-translate-y-px",
+            "hover:bg-[var(--color-bg-tint-6)] hover:-translate-y-px",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-400)]",
           )}
         >

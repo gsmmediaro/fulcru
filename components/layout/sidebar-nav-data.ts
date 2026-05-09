@@ -4,6 +4,7 @@ import {
   RiMailLine,
   RiPulseLine,
   RiBarChartBoxLine,
+  RiFileChart2Line,
   RiShieldCheckLine,
   RiBillLine,
   RiReceiptLine,
@@ -39,6 +40,12 @@ export const sidebarNav: NavGroup[] = [
     labelKey: "nav.leverage",
     icon: RiBarChartBoxLine,
     href: "/agency/leverage",
+  },
+  {
+    id: "value",
+    labelKey: "nav.value",
+    icon: RiFileChart2Line,
+    href: "/agency/value",
   },
   {
     id: "approvals",

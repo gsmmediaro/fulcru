@@ -15,6 +15,7 @@ import {
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { ConnectMcpButton } from "@/components/agency/connect-mcp-modal";
+import { BillingStyleWizard } from "@/components/agency/billing-style-wizard";
 import { getApi } from "@/lib/agency/server-api";
 import { formatCurrency } from "@/lib/agency/format";
 import { getT } from "@/lib/i18n/server";
@@ -23,9 +24,10 @@ import { cn } from "@/lib/cn";
 export default async function AgencyHomePage() {
   const { t } = await getT();
   const api = await getApi();
-  const [summary, leverage30] = await Promise.all([
+  const [summary, leverage30, settings] = await Promise.all([
     api.dashboardSummary(),
     api.leverage(30),
+    api.getSettings(),
   ]);
 
   const cards: HeroCardProps[] = [
@@ -110,6 +112,7 @@ export default async function AgencyHomePage() {
 
   return (
     <AppShell>
+      <BillingStyleWizard billingOnboardedAt={settings.billingOnboardedAt} />
       <div className="flex flex-wrap items-end justify-between gap-[16px]">
         <h1 className="text-[28px] font-semibold leading-[36px] tracking-tight sm:text-[32px] sm:leading-[40px] md:text-[36px] md:leading-[44px]">
           {t("home.title")}

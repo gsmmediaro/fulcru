@@ -40,7 +40,7 @@ export const Input = React.forwardRef<
     <input
       ref={ref}
       className={cn(
-        "h-[40px] w-full rounded-[6px] bg-[color-mix(in_oklab,white_3%,transparent)]",
+        "h-[40px] w-full rounded-[6px] bg-[var(--color-bg-tint-3)]",
         "px-[12px] text-[14px] font-normal normal-case tracking-normal",
         "text-[var(--color-text-strong)] placeholder:text-[var(--color-text-soft)]",
         "ring-1 ring-[var(--color-stroke-soft)] outline-none",
@@ -62,7 +62,7 @@ export const Textarea = React.forwardRef<
     <textarea
       ref={ref}
       className={cn(
-        "min-h-[80px] w-full rounded-[6px] bg-[color-mix(in_oklab,white_3%,transparent)]",
+        "min-h-[80px] w-full rounded-[6px] bg-[var(--color-bg-tint-3)]",
         "px-[12px] py-[10px] text-[14px] font-normal normal-case tracking-normal",
         "text-[var(--color-text-strong)] placeholder:text-[var(--color-text-soft)]",
         "ring-1 ring-[var(--color-stroke-soft)] outline-none",
@@ -134,7 +134,7 @@ function CcChipInput({
     <div
       className={cn(
         "flex min-h-[40px] w-full flex-wrap gap-[6px] rounded-[6px]",
-        "bg-[color-mix(in_oklab,white_3%,transparent)]",
+        "bg-[var(--color-bg-tint-3)]",
         "px-[10px] py-[6px]",
         "ring-1 ring-[var(--color-stroke-soft)]",
         "transition-colors duration-150",
@@ -220,10 +220,12 @@ function FormBody({
   state,
   setState,
   isEdit,
+  currency,
 }: {
   state: FormState;
   setState: React.Dispatch<React.SetStateAction<FormState>>;
   isEdit: boolean;
+  currency: string;
 }) {
   const { t } = useLocale();
 
@@ -291,32 +293,28 @@ function FormBody({
         />
       </Field>
 
-      {/* Initials + Rate (2-col) */}
-      <div className="grid grid-cols-2 gap-[12px]">
-        <Field label={t("newClient.initials")} htmlFor="cl-initials">
-          <Input
-            id="cl-initials"
-            value={state.initials}
-            onChange={(e) =>
-              set("initials")(e.target.value.toUpperCase().slice(0, 3))
-            }
-            placeholder="AR"
-            maxLength={3}
-          />
-        </Field>
-        <Field label={t("newClient.rate")} htmlFor="cl-rate">
-          <Input
-            id="cl-rate"
-            type="number"
-            inputMode="decimal"
-            min={1}
-            step={5}
-            value={state.hourlyRate}
-            onChange={(e) => set("hourlyRate")(e.target.value)}
-            required
-          />
-        </Field>
-      </div>
+      {/* Initials */}
+      <Field label={t("newClient.initials")} htmlFor="cl-initials">
+        <Input
+          id="cl-initials"
+          value={state.initials}
+          onChange={(e) =>
+            set("initials")(e.target.value.toUpperCase().slice(0, 3))
+          }
+          placeholder="AR"
+          maxLength={3}
+          className="w-[120px]"
+        />
+      </Field>
+
+      {/* Rate */}
+      <Field label={t("newClient.rate")} htmlFor="cl-rate">
+        <RateSlider
+          value={state.hourlyRate}
+          onChange={set("hourlyRate")}
+          currency={currency}
+        />
+      </Field>
 
       {/* Accent color */}
       <Field label={t("newClient.color")}>
@@ -357,6 +355,7 @@ export function ClientModal(props: ClientModalProps) {
   );
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [currency, setCurrency] = React.useState<string>("USD");
 
   // Re-fill when client prop changes (e.g. switching which card was clicked)
   React.useEffect(() => {
@@ -368,21 +367,30 @@ export function ClientModal(props: ClientModalProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.open]);
 
-  // In create mode, hydrate the default hourly rate from settings the first
-  // time the modal opens, so clients pre-fill with whatever the user set
-  // under /agency/settings.
+  // Hydrate currency (and, in create mode, the default rate) from settings
+  // every time the modal opens, so the rate slider always shows the user's
+  // current currency next to the value.
   React.useEffect(() => {
-    if (!props.open || isEdit) return;
+    if (!props.open) return;
     let cancelled = false;
     fetch("/api/agency/settings", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { defaultHourlyRate?: number } | null) => {
-        if (cancelled || !data?.defaultHourlyRate) return;
-        setState((prev) => ({
-          ...prev,
-          hourlyRate: String(data.defaultHourlyRate),
-        }));
-      })
+      .then(
+        (
+          data:
+            | { defaultHourlyRate?: number; businessCurrency?: string }
+            | null,
+        ) => {
+          if (cancelled || !data) return;
+          if (data.businessCurrency) setCurrency(data.businessCurrency);
+          if (!isEdit && data.defaultHourlyRate) {
+            setState((prev) => ({
+              ...prev,
+              hourlyRate: String(data.defaultHourlyRate),
+            }));
+          }
+        },
+      )
       .catch(() => {});
     return () => {
       cancelled = true;
@@ -485,7 +493,12 @@ export function ClientModal(props: ClientModalProps) {
           ) : null}
         </header>
 
-        <FormBody state={state} setState={setState} isEdit={isEdit} />
+        <FormBody
+          state={state}
+          setState={setState}
+          isEdit={isEdit}
+          currency={currency}
+        />
 
         {error ? (
           <p className="px-[24px] pt-[12px] text-[12px] text-rose-300">
@@ -511,5 +524,63 @@ export function ClientModal(props: ClientModalProps) {
         </footer>
       </form>
     </Modal>
+  );
+}
+
+// ─── Rate slider with currency suffix ──────────────────────────────────────────
+
+const RATE_MIN = 5;
+const RATE_MAX = 500;
+
+function RateSlider({
+  value,
+  onChange,
+  currency,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  currency: string;
+}) {
+  const num = Number(value);
+  const safe = Number.isFinite(num) && num > 0 ? num : RATE_MIN;
+  const sliderValue = Math.min(Math.max(safe, RATE_MIN), RATE_MAX);
+  const pct = ((sliderValue - RATE_MIN) / (RATE_MAX - RATE_MIN)) * 100;
+  return (
+    <div className="flex flex-col gap-[10px]">
+      <div className="flex items-center gap-[12px]">
+        <input
+          id="cl-rate"
+          type="range"
+          min={RATE_MIN}
+          max={RATE_MAX}
+          step={1}
+          value={sliderValue}
+          onChange={(e) => onChange(e.target.value)}
+          aria-label="Hourly rate"
+          className="h-[24px] flex-1 cursor-pointer appearance-none bg-transparent outline-none focus-visible:[&::-webkit-slider-thumb]:ring-2 focus-visible:[&::-webkit-slider-thumb]:ring-[var(--color-brand-400)] [&::-moz-range-thumb]:h-[16px] [&::-moz-range-thumb]:w-[16px] [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-[var(--color-accent-orange)] [&::-moz-range-thumb]:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent-orange)_25%,transparent)] [&::-moz-range-track]:h-[6px] [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-[var(--color-bg-tint-8)] [&::-webkit-slider-runnable-track]:h-[6px] [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-thumb]:-mt-[5px] [&::-webkit-slider-thumb]:h-[16px] [&::-webkit-slider-thumb]:w-[16px] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--color-accent-orange)] [&::-webkit-slider-thumb]:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent-orange)_25%,transparent)]"
+          style={{
+            background: `linear-gradient(to right, var(--color-accent-orange) 0%, var(--color-accent-orange) ${pct}%, var(--color-bg-tint-8) ${pct}%, var(--color-bg-tint-8) 100%)`,
+            backgroundSize: "100% 6px",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        />
+        <div className="flex items-center gap-[6px] rounded-[6px] bg-[var(--color-bg-tint-3)] px-[10px] py-[6px] ring-1 ring-[var(--color-stroke-soft)]">
+          <input
+            type="number"
+            inputMode="decimal"
+            min={1}
+            step={1}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            required
+            className="w-[64px] bg-transparent text-right text-[13px] font-semibold tabular-nums normal-case tracking-normal text-[var(--color-text-strong)] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
+          <span className="text-[12px] font-medium normal-case tracking-normal text-[var(--color-text-soft)]">
+            {currency}/h
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }

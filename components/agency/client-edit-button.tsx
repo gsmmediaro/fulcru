@@ -33,7 +33,7 @@ export function ClientEditButton({ client }: { client: Client }) {
           className={cn(
             "flex size-[28px] items-center justify-center rounded-[6px]",
             "text-[var(--color-text-soft)] hover:text-[var(--color-text-strong)]",
-            "hover:bg-[color-mix(in_oklab,white_6%,transparent)]",
+            "hover:bg-[var(--color-bg-tint-6)]",
             "transition-colors duration-150",
             "focus-visible:outline-2 focus-visible:outline-[var(--color-brand-400)] focus-visible:outline-offset-2",
           )}
@@ -60,7 +60,7 @@ export function ClientEditButton({ client }: { client: Client }) {
               className={cn(
                 "flex w-full items-center gap-[8px] px-[12px] py-[8px]",
                 "text-[13px] font-medium text-[var(--color-text-strong)]",
-                "hover:bg-[color-mix(in_oklab,white_5%,transparent)]",
+                "hover:bg-[var(--color-bg-tint-5)]",
                 "transition-colors duration-150",
               )}
             >

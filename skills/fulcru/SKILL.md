@@ -46,3 +46,53 @@ When the deliverable is shipped, call `run_end` with `status: "shipped"` and a `
 ```json
 { "name": "run_start", "arguments": { "clientId": "cli_dictando", "projectId": "prj_dict_site", "skillId": "skl_landing_page", "prompt": "Refresh the hero section.", "cwd": "C:/Users/shado/Desktop/Altele/iproyal" } }
 ```
+
+## Auto-logging (Stop hook)
+
+For users who want every Claude Code session billed automatically without calling `run_start`/`run_end`, install the Stop hook. It runs once when `claude` exits, parses the session transcript, and posts a billable run via `submit_session_data`.
+
+**Install (Windows / macOS / Linux):**
+
+1. Generate an MCP key under `/agency/settings` and copy it (starts with `fcr_`).
+2. Copy `scripts/fulcru-stop-hook.mjs` from this repo to a stable absolute path on your machine.
+3. Edit `~/.claude/settings.json` (create if missing) and merge:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command",
+            "command": "node /abs/path/to/fulcru-stop-hook.mjs" }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "FULCRU_API_KEY": "fcr_paste_your_key_here",
+    "FULCRU_BASE_URL": "https://your-fulcru.example.com"
+  }
+}
+```
+
+The hook is non-fatal: any error logs to stderr but lets `claude` exit normally.
+
+**How sessions get routed:**
+
+| Situation | Routes to |
+| --- | --- |
+| `cwd` is in `cwd_mapping` (you previously pinned it) | mapped client + project, unsorted=false |
+| You called `run_start` already during the session | the existing run via `run_end` enrichment, hook is a no-op |
+| Otherwise | **Inbox** (unsorted=true) - triage in `/agency/runs` |
+
+**Triage UX:**
+
+- The Inbox shows every unsorted run grouped by `cwd`.
+- Pick a run -> "Assign to project X" -> tick "Always log this folder here" to create a `cwd_mapping`. Future sessions from that folder skip the Inbox.
+- Multi-select to bulk-move sessions between projects (e.g. when you renamed a client or split work into a new project).
+
+**Tuning:**
+
+- `FULCRU_MIN_ACTIVE_SEC` (default `60`): sessions with less active time are skipped, so quick "what's the date?" runs don't pollute the Inbox.

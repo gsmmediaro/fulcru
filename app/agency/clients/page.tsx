@@ -93,7 +93,7 @@ export default async function ClientsPage() {
                     {c.name}
                   </h3>
                   <div className="mt-[6px] flex items-center gap-[8px]">
-                    <span className="inline-flex rounded-[6px] bg-[color-mix(in_oklab,white_4%,transparent)] px-[8px] py-[2px] text-[11px] font-semibold text-[var(--color-text-sub)] ring-1 ring-[var(--color-stroke-soft)] tabular-nums">
+                    <span className="inline-flex rounded-[6px] bg-[var(--color-bg-tint-4)] px-[8px] py-[2px] text-[11px] font-semibold text-[var(--color-text-sub)] ring-1 ring-[var(--color-stroke-soft)] tabular-nums">
                       {usd.format(c.hourlyRate)}/h
                     </span>
                     <span className="text-[11px] text-[var(--color-text-soft)]">
@@ -109,7 +109,7 @@ export default async function ClientsPage() {
                 <ClientEditButton client={c} />
               </div>
 
-              <div className="grid grid-cols-3 gap-[8px] rounded-[6px] bg-[color-mix(in_oklab,white_2%,transparent)] p-[12px] ring-1 ring-[var(--color-stroke-soft)]">
+              <div className="grid grid-cols-3 gap-[8px] rounded-[6px] bg-[var(--color-bg-tint-2)] p-[12px] ring-1 ring-[var(--color-stroke-soft)]">
                 <Mini label={t("clients.activeRuns")} value={`${activeRuns}`} />
                 <Mini
                   label={t("clients.eff30")}

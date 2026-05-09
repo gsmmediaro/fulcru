@@ -147,10 +147,185 @@
   --shadow-regular-lg: 0 10px 24px 0 rgb(0 0 0 / 0.4);
   --shadow-button-orange-focus: 0 0 0 3px rgb(212 104 4 / 0.32);
   --shadow-button-brand-focus: 0 0 0 3px rgb(25 189 200 / 0.28);
+
+  /* Soft accent tint for chip backgrounds; light mode overrides this. */
+  --color-accent-orange-soft: color-mix(in oklab, var(--color-accent-orange) 18%, transparent);
+
+  /* Subtle background tints. Default = white over dark surfaces; light
+     mode overrides these to black tints so they remain visible. */
+  --color-bg-tint-2: color-mix(in oklab, white 2%, transparent);
+  --color-bg-tint-3: color-mix(in oklab, white 3%, transparent);
+  --color-bg-tint-4: color-mix(in oklab, white 4%, transparent);
+  --color-bg-tint-5: color-mix(in oklab, white 5%, transparent);
+  --color-bg-tint-6: color-mix(in oklab, white 6%, transparent);
+  --color-bg-tint-8: color-mix(in oklab, white 8%, transparent);
+  --color-bg-tint-10: color-mix(in oklab, white 10%, transparent);
+  --color-bg-tint-12: color-mix(in oklab, white 12%, transparent);
+  --color-bg-tint-14: color-mix(in oklab, white 14%, transparent);
 }
 
-/* Tailwind dark-mode variant bound to the `dark` class */
+/* Tailwind dark-mode variant bound to the `dark` class (legacy, kept for compat) */
 @custom-variant dark (&:where(.dark, .dark *));
+/* Parallel variant for the new data-theme attribute */
+@custom-variant theme-dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant theme-light (&:where([data-theme="light"], [data-theme="light"] *));
+
+/* ──────────────────────────────────────────────────────────
+   Theme overrides
+
+   Tokens above are the dark defaults. Selectors below override
+   them when the `<html data-theme="...">` attribute is set, or
+   when the OS prefers light and the user is on auto.
+
+   Cascade rules:
+     1. data-theme="dark" reasserts the dark values explicitly so
+        a JS-forced dark beats a system preference of light.
+     2. data-theme="light" applies the light palette unconditionally.
+     3. data-theme="auto" picks dark by default and switches to
+        light only when the OS asks for it.
+   ────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  /* Dark values are already in @theme; no overrides needed here. */
+}
+
+:root[data-theme="auto"] {
+  color-scheme: light dark;
+}
+
+/* Shared light palette, applied either explicitly or via auto.
+   Defined as plain top-level CSS (not inside @layer base) so the
+   selector survives Tailwind v4 / Turbopack processing. */
+:root[data-theme="light"] {
+    color-scheme: light;
+
+    /* Surfaces */
+    --color-bg-app: #f1f3f5;
+    --color-bg-surface: #ffffff;
+    --color-bg-surface-elevated: #ffffff;
+
+    /* Brand teal in light mode: brand-100 is the mint chip/card bg,
+       brand-400 needs to be a darker teal so it stays legible on
+       mint or white. Otherwise teal-on-mint washes out. */
+    --color-brand-100: #ccfbf1;
+    --color-brand-200: #99f6e4;
+    --color-brand-300: #2dd4bf;
+    --color-brand-400: #0d9488;
+    --color-brand-500: #0f766e;
+    --color-brand-600: #115e59;
+    --color-brand-700: #134e4a;
+
+    /* Soft accent tint for chips on a white surface */
+    --color-accent-orange-soft: #ffedd5;
+
+    /* Neutrals tuned for light mode */
+    --color-neutral-0: #ffffff;
+    --color-neutral-50: #f8fafc;
+    --color-neutral-100: #e2e8f0;
+    --color-neutral-200: #cbd5e1;
+    --color-neutral-300: #94a3b8;
+    --color-neutral-400: #64748b;
+    --color-neutral-500: #475569;
+    --color-neutral-600: #334155;
+    --color-neutral-700: #1f2937;
+    --color-neutral-800: #0f172a;
+    --color-neutral-900: #0b1220;
+    --color-neutral-950: #020617;
+
+    /* Text */
+    --color-text-strong: #0f172a;
+    --color-text-sub: #334155;
+    --color-text-soft: #64748b;
+    --color-text-disabled: #94a3b8;
+
+    /* Stroke */
+    --color-stroke-soft: #e2e8f0;
+    --color-stroke-sub: #cbd5e1;
+    --color-stroke-strong: #94a3b8;
+
+    /* Shadows: lighter, more diffuse */
+    --shadow-regular-xs: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+    --shadow-regular-sm: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.06);
+    --shadow-regular-md: 0 4px 10px -2px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.05);
+    --shadow-regular-lg: 0 12px 28px -8px rgb(15 23 42 / 0.14), 0 6px 12px -6px rgb(15 23 42 / 0.08);
+    --shadow-button-orange-focus: 0 0 0 3px rgb(212 104 4 / 0.22);
+    --shadow-button-brand-focus: 0 0 0 3px rgb(25 189 200 / 0.22);
+
+    /* Subtle background tints become black tints on light surfaces.
+       Black tints feel heavier than white tints at the same opacity,
+       so the mappings are slightly compressed for readability. */
+    --color-bg-tint-2: color-mix(in oklab, black 3%, transparent);
+    --color-bg-tint-3: color-mix(in oklab, black 4%, transparent);
+    --color-bg-tint-4: color-mix(in oklab, black 4%, transparent);
+    --color-bg-tint-5: color-mix(in oklab, black 5%, transparent);
+    --color-bg-tint-6: color-mix(in oklab, black 5%, transparent);
+    --color-bg-tint-8: color-mix(in oklab, black 6%, transparent);
+    --color-bg-tint-10: color-mix(in oklab, black 7%, transparent);
+    --color-bg-tint-12: color-mix(in oklab, black 8%, transparent);
+    --color-bg-tint-14: color-mix(in oklab, black 9%, transparent);
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme="auto"] {
+      --color-bg-app: #f1f3f5;
+      --color-bg-surface: #ffffff;
+      --color-bg-surface-elevated: #ffffff;
+
+      --color-brand-100: #ccfbf1;
+      --color-brand-200: #99f6e4;
+      --color-brand-300: #2dd4bf;
+      --color-brand-400: #0d9488;
+      --color-brand-500: #0f766e;
+      --color-brand-600: #115e59;
+      --color-brand-700: #134e4a;
+
+      --color-accent-orange-soft: #ffedd5;
+
+      --color-neutral-0: #ffffff;
+      --color-neutral-50: #f8fafc;
+      --color-neutral-100: #e2e8f0;
+      --color-neutral-200: #cbd5e1;
+      --color-neutral-300: #94a3b8;
+      --color-neutral-400: #64748b;
+      --color-neutral-500: #475569;
+      --color-neutral-600: #334155;
+      --color-neutral-700: #1f2937;
+      --color-neutral-800: #0f172a;
+      --color-neutral-900: #0b1220;
+      --color-neutral-950: #020617;
+
+      --color-text-strong: #0f172a;
+      --color-text-sub: #334155;
+      --color-text-soft: #64748b;
+      --color-text-disabled: #94a3b8;
+
+      --color-stroke-soft: #e2e8f0;
+      --color-stroke-sub: #cbd5e1;
+      --color-stroke-strong: #94a3b8;
+
+      --shadow-regular-xs: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+      --shadow-regular-sm: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.06);
+      --shadow-regular-md: 0 4px 10px -2px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.05);
+      --shadow-regular-lg: 0 12px 28px -8px rgb(15 23 42 / 0.14), 0 6px 12px -6px rgb(15 23 42 / 0.08);
+      --shadow-button-orange-focus: 0 0 0 3px rgb(212 104 4 / 0.22);
+      --shadow-button-brand-focus: 0 0 0 3px rgb(25 189 200 / 0.22);
+
+      --color-bg-tint-2: color-mix(in oklab, black 3%, transparent);
+      --color-bg-tint-3: color-mix(in oklab, black 4%, transparent);
+      --color-bg-tint-4: color-mix(in oklab, black 4%, transparent);
+      --color-bg-tint-5: color-mix(in oklab, black 5%, transparent);
+      --color-bg-tint-6: color-mix(in oklab, black 5%, transparent);
+      --color-bg-tint-8: color-mix(in oklab, black 6%, transparent);
+      --color-bg-tint-10: color-mix(in oklab, black 7%, transparent);
+    --color-bg-tint-12: color-mix(in oklab, black 8%, transparent);
+    --color-bg-tint-14: color-mix(in oklab, black 9%, transparent);
+  }
+}
 
 /* ──────────────────────────────────────────────────────────
    Base
@@ -560,7 +735,7 @@ button {
 .legal-prose code {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 13px;
-  background: color-mix(in oklab, white 4%, transparent);
+  background: var(--color-bg-tint-4);
   padding: 1px 6px;
   border-radius: 4px;
   border: 1px solid var(--color-stroke-soft);

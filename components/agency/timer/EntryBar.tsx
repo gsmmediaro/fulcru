@@ -332,7 +332,7 @@ export function EntryBar({
               onClick={() => setTagsOpen((v) => !v)}
               className={cn(
                 "flex size-[36px] items-center justify-center rounded-[6px] transition-colors",
-                "text-[var(--color-text-soft)] hover:bg-[color-mix(in_oklab,white_6%,transparent)] hover:text-[var(--color-text-strong)]",
+                "text-[var(--color-text-soft)] hover:bg-[var(--color-bg-tint-6)] hover:text-[var(--color-text-strong)]",
               )}
               title="Tags"
             >
@@ -360,7 +360,7 @@ export function EntryBar({
               "flex h-[36px] items-center gap-[4px] rounded-[6px] px-[10px] text-[13px] font-semibold transition-colors",
               billable || (isTimerRunning && (activeRun?.billableUsd ?? 0) > 0)
                 ? "bg-[color-mix(in_oklab,var(--color-brand-400)_15%,transparent)] text-[var(--color-brand-400)]"
-                : "text-[var(--color-text-soft)] hover:bg-[color-mix(in_oklab,white_6%,transparent)] hover:text-[var(--color-text-strong)]",
+                : "text-[var(--color-text-soft)] hover:bg-[var(--color-bg-tint-6)] hover:text-[var(--color-text-strong)]",
             )}
           >
             $
@@ -399,7 +399,7 @@ export function EntryBar({
           {/* Overflow */}
           <Dropdown>
             <DropdownTrigger asChild>
-              <button className="flex size-[36px] items-center justify-center rounded-[6px] text-[var(--color-text-soft)] hover:bg-[color-mix(in_oklab,white_6%,transparent)] hover:text-[var(--color-text-strong)] transition-colors">
+              <button className="flex size-[36px] items-center justify-center rounded-[6px] text-[var(--color-text-soft)] hover:bg-[var(--color-bg-tint-6)] hover:text-[var(--color-text-strong)] transition-colors">
                 <RiMoreLine size={18} />
               </button>
             </DropdownTrigger>
@@ -469,7 +469,7 @@ export function EntryBar({
             {/* Tags placeholder */}
             <button
               onClick={() => setTagsOpen((v) => !v)}
-              className="flex size-[36px] items-center justify-center rounded-[6px] text-[var(--color-text-soft)] hover:bg-[color-mix(in_oklab,white_6%,transparent)] hover:text-[var(--color-text-strong)] transition-colors"
+              className="flex size-[36px] items-center justify-center rounded-[6px] text-[var(--color-text-soft)] hover:bg-[var(--color-bg-tint-6)] hover:text-[var(--color-text-strong)] transition-colors"
             >
               <RiPriceTag3Line size={16} />
             </button>
@@ -481,7 +481,7 @@ export function EntryBar({
                 "flex h-[36px] items-center gap-[4px] rounded-[6px] px-[10px] text-[13px] font-semibold transition-colors",
                 manualBillable
                   ? "bg-[color-mix(in_oklab,var(--color-brand-400)_15%,transparent)] text-[var(--color-brand-400)]"
-                  : "text-[var(--color-text-soft)] hover:bg-[color-mix(in_oklab,white_6%,transparent)] hover:text-[var(--color-text-strong)]",
+                  : "text-[var(--color-text-soft)] hover:bg-[var(--color-bg-tint-6)] hover:text-[var(--color-text-strong)]",
               )}
             >
               $
@@ -491,7 +491,7 @@ export function EntryBar({
           {/* Time range row */}
           <div className="flex flex-wrap items-center gap-[8px]">
             {/* Start time */}
-            <div className="flex items-center gap-[6px] rounded-[6px] ring-1 ring-[var(--color-stroke-soft)] px-[10px] h-[36px] bg-[color-mix(in_oklab,white_3%,transparent)]">
+            <div className="flex items-center gap-[6px] rounded-[6px] ring-1 ring-[var(--color-stroke-soft)] px-[10px] h-[36px] bg-[var(--color-bg-tint-3)]">
               <RiTimeLine size={14} className="text-[var(--color-text-soft)]" />
               <input
                 type="time"
@@ -502,7 +502,7 @@ export function EntryBar({
             </div>
             <span className="text-[var(--color-text-soft)]">–</span>
             {/* End time */}
-            <div className="flex items-center gap-[6px] rounded-[6px] ring-1 ring-[var(--color-stroke-soft)] px-[10px] h-[36px] bg-[color-mix(in_oklab,white_3%,transparent)]">
+            <div className="flex items-center gap-[6px] rounded-[6px] ring-1 ring-[var(--color-stroke-soft)] px-[10px] h-[36px] bg-[var(--color-bg-tint-3)]">
               <input
                 type="time"
                 value={manualEnd}
@@ -512,7 +512,7 @@ export function EntryBar({
             </div>
 
             {/* Date picker */}
-            <div className="flex items-center gap-[6px] rounded-[6px] ring-1 ring-[var(--color-stroke-soft)] px-[10px] h-[36px] bg-[color-mix(in_oklab,white_3%,transparent)]">
+            <div className="flex items-center gap-[6px] rounded-[6px] ring-1 ring-[var(--color-stroke-soft)] px-[10px] h-[36px] bg-[var(--color-bg-tint-3)]">
               <RiCalendarLine size={14} className="text-[var(--color-text-soft)]" />
               <input
                 type="date"

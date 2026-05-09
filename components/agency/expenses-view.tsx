@@ -312,7 +312,7 @@ export function ExpensesView({
                   "rounded-full px-[10px] py-[4px] text-[11px] font-semibold ring-1 transition-colors duration-150",
                   selectedProjectIds.includes(p.id)
                     ? "bg-[var(--color-brand-400)] text-white ring-[var(--color-brand-400)]"
-                    : "bg-[color-mix(in_oklab,white_4%,transparent)] text-[var(--color-text-soft)] ring-[var(--color-stroke-soft)] hover:ring-[var(--color-stroke-sub)]",
+                    : "bg-[var(--color-bg-tint-4)] text-[var(--color-text-soft)] ring-[var(--color-stroke-soft)] hover:ring-[var(--color-stroke-sub)]",
                 )}
               >
                 {p.name}
@@ -332,7 +332,7 @@ export function ExpensesView({
                 "rounded-full px-[10px] py-[4px] text-[11px] font-semibold ring-1 transition-colors duration-150",
                 selectedCategories.includes(cat)
                   ? cn("ring-1", CAT_COLORS[cat])
-                  : "bg-[color-mix(in_oklab,white_4%,transparent)] text-[var(--color-text-soft)] ring-[var(--color-stroke-soft)] hover:ring-[var(--color-stroke-sub)]",
+                  : "bg-[var(--color-bg-tint-4)] text-[var(--color-text-soft)] ring-[var(--color-stroke-soft)] hover:ring-[var(--color-stroke-sub)]",
               )}
             >
               {t(`expense.cat.${cat}`)}
@@ -412,7 +412,7 @@ export function ExpensesView({
                 {filtered.map((expense) => (
                   <tr
                     key={expense.id}
-                    className="group border-b border-[var(--color-stroke-soft)] last:border-0 hover:bg-[color-mix(in_oklab,white_2%,transparent)] transition-colors duration-100"
+                    className="group border-b border-[var(--color-stroke-soft)] last:border-0 hover:bg-[var(--color-bg-tint-2)] transition-colors duration-100"
                   >
                     {/* Date */}
                     <td className="whitespace-nowrap px-[14px] py-[12px] font-mono text-[12px] tabular-nums text-[var(--color-text-sub)]">
@@ -479,7 +479,7 @@ export function ExpensesView({
                             className={cn(
                               "flex h-[28px] w-[28px] items-center justify-center rounded-[4px]",
                               "text-[var(--color-text-soft)] opacity-0 group-hover:opacity-100",
-                              "hover:bg-[color-mix(in_oklab,white_6%,transparent)] hover:text-[var(--color-text-strong)]",
+                              "hover:bg-[var(--color-bg-tint-6)] hover:text-[var(--color-text-strong)]",
                               "transition-[opacity,background-color,color] duration-150",
                             )}
                           >

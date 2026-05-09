@@ -46,10 +46,27 @@ export type RunStatus =
 
 export type RunKind = "mcp" | "manual" | "break";
 
+export type ChangeCategory =
+  | "feature"
+  | "bugfix"
+  | "refactor"
+  | "infra"
+  | "docs"
+  | "test"
+  | "performance"
+  | "research";
+
+export type DifficultyBucket =
+  | "trivial"
+  | "normal"
+  | "moderate"
+  | "hard"
+  | "very_hard";
+
 export type Run = {
   id: string;
-  clientId: string;
-  projectId: string;
+  clientId?: string;
+  projectId?: string;
   skillId: string;
   agentName: string;
   status: RunStatus;
@@ -70,6 +87,41 @@ export type Run = {
   notes?: string;
   cwd?: string;
   pricingMode?: BillMode;
+  /** True when the run was auto-logged via the Stop hook with no client/project mapping yet. Needs triage. */
+  unsorted: boolean;
+  /** 0..1 percentile-based score across tokens, active time, and event count vs the user's last 100 runs. */
+  difficultyScore?: number;
+  /** Auto-classified bucket from the prompt at run end. Override allowed. */
+  changeCategory?: ChangeCategory;
+  /** 0..1 multiplier applied at billing time. Default 1.0. Lowered by quality signals or manual adjust. */
+  qualityConfidence: number;
+  /** Optional narrative used in the Value Report, never on invoice. */
+  impactNote?: string;
+};
+
+export type QualitySignalKind =
+  | "manual_adjust"
+  | "follow_up_bugfix"
+  | "deliverable_revert"
+  | "deliverable_fix_commit";
+
+export type QualitySignal = {
+  id: string;
+  runId: string;
+  kind: QualitySignalKind;
+  reason?: string;
+  delta: number;
+  source: "auto" | "manual";
+  relatedRunId?: string;
+  createdAt: string;
+};
+
+export type CwdMapping = {
+  id: string;
+  cwd: string;
+  clientId: string;
+  projectId: string;
+  createdAt: string;
 };
 
 export type RunEventKind =
@@ -185,6 +237,8 @@ export type Expense = {
 
 export type AiCostMode = "per_token" | "subscription";
 export type BillMode = "time_only" | "time_plus_tokens" | "baseline";
+export type BillingStyle = "pure_active" | "effort_adjusted";
+export type ThemePreference = "auto" | "light" | "dark";
 
 export type AgencySettings = {
   defaultHourlyRate?: number;
@@ -196,6 +250,29 @@ export type AgencySettings = {
   aiSubscriptionMonthlyUsd: number;
   defaultBillMode: BillMode;
   billActiveMultiplier: number;
+  /** UI theme. "auto" follows OS preference, otherwise forced light or dark. */
+  theme: ThemePreference;
+  /** Top-level switch. pure_active gives clients the literal Claude active hours; effort_adjusted layers in multipliers + quality. */
+  billingStyle: BillingStyle;
+  /** When effort_adjusted, multiply billable by run.qualityConfidence at billing time. */
+  useQualityConfidence: boolean;
+  /** When effort_adjusted, also weight by difficulty_score (1 + score × 0.5, capped at 1.5x). Off by default. */
+  useDifficultyWeight: boolean;
+  /** When effort_adjusted, also apply per-category weights from CATEGORY_WEIGHTS. Off by default. */
+  useCategoryWeight: boolean;
+  /** Set when the user completes the billing-style onboarding so the wizard does not reappear. */
+  billingOnboardedAt?: string;
+};
+
+export const CATEGORY_WEIGHTS: Record<ChangeCategory, number> = {
+  bugfix: 1.0,
+  feature: 1.0,
+  performance: 1.1,
+  infra: 1.05,
+  refactor: 0.95,
+  test: 0.95,
+  research: 0.9,
+  docs: 0.85,
 };
 
 export type LeverageSnapshot = {

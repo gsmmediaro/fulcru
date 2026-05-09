@@ -339,7 +339,7 @@ function RangeDropdown({
               onChange={(e) => onMinChange(e.target.value)}
               placeholder="0"
               className={cn(
-                "h-[32px] w-full rounded-[6px] bg-[color-mix(in_oklab,white_4%,transparent)]",
+                "h-[32px] w-full rounded-[6px] bg-[var(--color-bg-tint-4)]",
                 "px-[10px] text-[13px] text-[var(--color-text-strong)]",
                 "ring-1 ring-[var(--color-stroke-soft)] outline-none",
                 "focus:ring-[var(--color-brand-400)]",
@@ -360,7 +360,7 @@ function RangeDropdown({
               onChange={(e) => onMaxChange(e.target.value)}
               placeholder="∞"
               className={cn(
-                "h-[32px] w-full rounded-[6px] bg-[color-mix(in_oklab,white_4%,transparent)]",
+                "h-[32px] w-full rounded-[6px] bg-[var(--color-bg-tint-4)]",
                 "px-[10px] text-[13px] text-[var(--color-text-strong)]",
                 "ring-1 ring-[var(--color-stroke-soft)] outline-none",
                 "focus:ring-[var(--color-brand-400)]",
@@ -738,7 +738,7 @@ export function InvoicesTable({
             }}
             placeholder={t("invoiceList.searchPlaceholder")}
             className={cn(
-              "h-[32px] w-[200px] rounded-[6px] bg-[color-mix(in_oklab,white_4%,transparent)]",
+              "h-[32px] w-[200px] rounded-[6px] bg-[var(--color-bg-tint-4)]",
               "px-[10px] text-[12px] text-[var(--color-text-strong)]",
               "ring-1 ring-[var(--color-stroke-soft)] outline-none",
               "focus:ring-[var(--color-brand-400)]",
@@ -828,7 +828,7 @@ export function InvoicesTable({
                       key={inv.id}
                       className={cn(
                         "group border-t border-[var(--color-stroke-soft)] transition-colors",
-                        "hover:bg-[color-mix(in_oklab,white_2%,transparent)]",
+                        "hover:bg-[var(--color-bg-tint-2)]",
                         "cursor-pointer",
                       )}
                       onClick={() => router.push(`/agency/invoices/${inv.id}`)}

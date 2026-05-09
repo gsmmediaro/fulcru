@@ -35,7 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="mx-auto w-full max-w-[1136px]">{children}</div>
           </main>
         </div>
-        <footer className="shrink-0 border-t border-[var(--color-stroke-soft)] bg-[var(--color-bg-surface)]/85 px-[16px] py-[18px] backdrop-blur-xl supports-[backdrop-filter]:bg-[var(--color-bg-surface)]/72 sm:px-[24px] lg:px-[32px]">
+        <footer className="shrink-0 border-t border-[var(--color-stroke-soft)] px-[16px] py-[18px] sm:px-[24px] lg:px-[32px]">
           <div className="mx-auto flex w-full max-w-[1136px] flex-col gap-[12px] text-[12px] text-[var(--color-text-soft)] sm:flex-row sm:items-center sm:justify-between">
             <span>{t("footer.tagline", { year: new Date().getFullYear() })}</span>
             <div className="flex flex-wrap items-center gap-x-[16px] gap-y-[6px] sm:gap-x-[20px]">

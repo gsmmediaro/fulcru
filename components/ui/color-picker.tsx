@@ -59,7 +59,7 @@ export function ColorPicker({
           aria-label={ariaLabel ?? "Choose color"}
           className={cn(
             "inline-flex h-[40px] items-center gap-[10px] rounded-[6px] px-[8px]",
-            "bg-[color-mix(in_oklab,white_3%,transparent)]",
+            "bg-[var(--color-bg-tint-3)]",
             "ring-1 ring-[var(--color-stroke-soft)]",
             "text-[13px] font-medium normal-case tracking-normal text-[var(--color-text-strong)]",
             "transition-colors duration-150",
@@ -115,7 +115,7 @@ export function ColorPicker({
             }}
             placeholder="#FF7A1A"
             className={cn(
-              "h-[32px] flex-1 rounded-[6px] bg-[color-mix(in_oklab,white_3%,transparent)]",
+              "h-[32px] flex-1 rounded-[6px] bg-[var(--color-bg-tint-3)]",
               "px-[8px] font-mono text-[12px] uppercase tabular-nums",
               "text-[var(--color-text-strong)] placeholder:text-[var(--color-text-soft)]",
               "ring-1 ring-[var(--color-stroke-soft)] outline-none",

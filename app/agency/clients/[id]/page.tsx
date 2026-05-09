@@ -100,7 +100,7 @@ export default async function ClientBillingPage({
               {client.name}
             </h1>
             <div className="mt-[4px] flex flex-wrap items-center gap-[8px] text-[12px] text-[var(--color-text-soft)]">
-              <span className="inline-flex rounded-[6px] bg-[color-mix(in_oklab,white_4%,transparent)] px-[8px] py-[2px] font-semibold text-[var(--color-text-sub)] ring-1 ring-[var(--color-stroke-soft)] tabular-nums">
+              <span className="inline-flex rounded-[6px] bg-[var(--color-bg-tint-4)] px-[8px] py-[2px] font-semibold text-[var(--color-text-sub)] ring-1 ring-[var(--color-stroke-soft)] tabular-nums">
                 {usdRound.format(client.hourlyRate)}/h
               </span>
               {client.email ? <span>{client.email}</span> : null}
@@ -163,7 +163,7 @@ export default async function ClientBillingPage({
               Everything billable that has not been invoiced yet for this client.
             </p>
           </div>
-          <div className="inline-flex rounded-[8px] bg-[color-mix(in_oklab,white_3%,transparent)] p-[4px] ring-1 ring-[var(--color-stroke-soft)]">
+          <div className="inline-flex rounded-[8px] bg-[var(--color-bg-tint-3)] p-[4px] ring-1 ring-[var(--color-stroke-soft)]">
             {TAX_OPTIONS.map((opt) => (
               <Link
                 key={opt.value}
@@ -274,7 +274,7 @@ export default async function ClientBillingPage({
                 {invoices.map((inv) => (
                   <tr
                     key={inv.id}
-                    className="border-t border-[var(--color-stroke-soft)] hover:bg-[color-mix(in_oklab,white_2%,transparent)]"
+                    className="border-t border-[var(--color-stroke-soft)] hover:bg-[var(--color-bg-tint-2)]"
                   >
                     <td className="px-[12px] py-[12px] font-semibold text-[var(--color-text-strong)]">
                       <Link
@@ -442,7 +442,7 @@ function Row({
     <div
       className={cn(
         "flex items-center justify-between rounded-[6px] px-[10px] py-[8px]",
-        "bg-[color-mix(in_oklab,white_2%,transparent)]",
+        "bg-[var(--color-bg-tint-2)]",
       )}
     >
       <span

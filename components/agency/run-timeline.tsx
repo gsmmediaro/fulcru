@@ -147,7 +147,7 @@ export function RunTimeline({ events }: { events: RunEvent[] }) {
                   <span
                     className={cn(
                       "mt-[6px] inline-flex w-fit items-center rounded-[5px] px-[6px] py-[1px]",
-                      "bg-[color-mix(in_oklab,white_6%,transparent)]",
+                      "bg-[var(--color-bg-tint-6)]",
                       "text-[10px] font-semibold uppercase tracking-[0.04em] text-[var(--color-text-soft)] tabular-nums",
                     )}
                   >

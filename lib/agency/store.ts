@@ -3,7 +3,9 @@ import type {
   AgencySettings,
   Approval,
   ApprovalStatus,
+  ChangeCategory,
   Client,
+  CwdMapping,
   Expense,
   ExpenseCategory,
   Invoice,
@@ -11,6 +13,8 @@ import type {
   InvoiceStatus,
   LeverageSnapshot,
   Project,
+  QualitySignal,
+  QualitySignalKind,
   Run,
   RunEvent,
   RunEventKind,
@@ -19,6 +23,8 @@ import type {
   Skill,
   SkillCategory,
 } from "./types";
+import { classifyChangeCategory, computeDifficulty } from "./scoring";
+import { effortMultiplierForRun } from "./pricing";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -143,12 +149,36 @@ type RunRow = {
   billable_usd: string | number;
   deliverable_url: string | null;
   notes: string | null;
+  unsorted?: boolean | null;
+  difficulty_score?: string | number | null;
+  change_category?: string | null;
+  quality_confidence?: string | number | null;
+  impact_note?: string | null;
 };
+
+const KNOWN_CATEGORIES: ChangeCategory[] = [
+  "feature",
+  "bugfix",
+  "refactor",
+  "infra",
+  "docs",
+  "test",
+  "performance",
+  "research",
+];
+
+function asCategory(v: string | null | undefined): ChangeCategory | undefined {
+  if (!v) return undefined;
+  return (KNOWN_CATEGORIES as readonly string[]).includes(v)
+    ? (v as ChangeCategory)
+    : undefined;
+}
+
 function mapRun(r: RunRow): Run {
   return {
     id: r.id,
-    clientId: r.client_id ?? "",
-    projectId: r.project_id ?? "",
+    clientId: r.client_id ?? undefined,
+    projectId: r.project_id ?? undefined,
     skillId: r.skill_id,
     agentName: r.agent_name,
     status: r.status,
@@ -169,6 +199,36 @@ function mapRun(r: RunRow): Run {
     billableUsd: num(r.billable_usd),
     deliverableUrl: r.deliverable_url ?? undefined,
     notes: r.notes ?? undefined,
+    unsorted: Boolean(r.unsorted),
+    difficultyScore:
+      r.difficulty_score == null ? undefined : num(r.difficulty_score),
+    changeCategory: asCategory(r.change_category),
+    qualityConfidence:
+      r.quality_confidence == null ? 1 : num(r.quality_confidence),
+    impactNote: r.impact_note ?? undefined,
+  };
+}
+
+type QualitySignalRow = {
+  id: string;
+  run_id: string;
+  kind: QualitySignalKind;
+  reason: string | null;
+  delta: string | number;
+  source: "auto" | "manual";
+  related_run_id: string | null;
+  created_at: string;
+};
+function mapQualitySignal(r: QualitySignalRow): QualitySignal {
+  return {
+    id: r.id,
+    runId: r.run_id,
+    kind: r.kind,
+    reason: r.reason ?? undefined,
+    delta: num(r.delta),
+    source: r.source,
+    relatedRunId: r.related_run_id ?? undefined,
+    createdAt: iso(r.created_at),
   };
 }
 
@@ -352,6 +412,12 @@ type AppUserRow = {
   ai_subscription_monthly_usd: string | number;
   default_bill_mode: string;
   bill_active_multiplier: string | number;
+  billing_style: string | null;
+  use_quality_confidence: boolean | null;
+  use_difficulty_weight: boolean | null;
+  use_category_weight: boolean | null;
+  billing_onboarded_at: string | null;
+  theme: string | null;
 };
 
 function asCostMode(v: string): "per_token" | "subscription" {
@@ -362,6 +428,18 @@ function asBillMode(
 ): "time_only" | "time_plus_tokens" | "baseline" {
   if (v === "time_plus_tokens" || v === "baseline") return v;
   return "time_only";
+}
+function asBillingStyle(
+  v: string | null | undefined,
+): "pure_active" | "effort_adjusted" {
+  return v === "pure_active" ? "pure_active" : "effort_adjusted";
+}
+
+function asThemePref(
+  v: string | null | undefined,
+): "auto" | "light" | "dark" {
+  if (v === "auto" || v === "light") return v;
+  return "dark";
 }
 
 function mapSettings(r: AppUserRow): AgencySettings {
@@ -376,6 +454,12 @@ function mapSettings(r: AppUserRow): AgencySettings {
     aiSubscriptionMonthlyUsd: num(r.ai_subscription_monthly_usd),
     defaultBillMode: asBillMode(r.default_bill_mode),
     billActiveMultiplier: num(r.bill_active_multiplier) || 1,
+    billingStyle: asBillingStyle(r.billing_style),
+    useQualityConfidence: r.use_quality_confidence ?? true,
+    useDifficultyWeight: r.use_difficulty_weight ?? false,
+    useCategoryWeight: r.use_category_weight ?? false,
+    billingOnboardedAt: r.billing_onboarded_at ?? undefined,
+    theme: asThemePref(r.theme),
   };
 }
 
@@ -638,7 +722,8 @@ export const store = {
       SELECT id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
              pricing_mode, started_at, ended_at, runtime_sec, active_sec,
              tokens_in, tokens_out, cache_hits, cost_usd,
-             baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+             baseline_hours, rate_usd, billable_usd, deliverable_url, notes, unsorted,
+                difficulty_score, change_category, quality_confidence, impact_note
       FROM run
       WHERE user_id = ${userId}
         AND (${filter?.clientId ?? null}::text IS NULL OR client_id = ${filter?.clientId ?? null})
@@ -656,7 +741,8 @@ export const store = {
       SELECT id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
              pricing_mode, started_at, ended_at, runtime_sec, active_sec,
              tokens_in, tokens_out, cache_hits, cost_usd,
-             baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+             baseline_hours, rate_usd, billable_usd, deliverable_url, notes, unsorted,
+                difficulty_score, change_category, quality_confidence, impact_note
       FROM run
       WHERE user_id = ${userId} AND id = ${id}
       LIMIT 1
@@ -714,7 +800,8 @@ export const store = {
       RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
                 pricing_mode, started_at, ended_at, runtime_sec, active_sec,
                 tokens_in, tokens_out, cache_hits, cost_usd,
-                baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes, unsorted,
+                difficulty_score, change_category, quality_confidence, impact_note
     `) as RunRow[];
     const run = mapRun(rows[0]);
     await sql`
@@ -776,7 +863,8 @@ export const store = {
       RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
                 pricing_mode, started_at, ended_at, runtime_sec, active_sec,
                 tokens_in, tokens_out, cache_hits, cost_usd,
-                baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes, unsorted,
+                difficulty_score, change_category, quality_confidence, impact_note
     `) as RunRow[];
     return mapRun(rows[0]);
   },
@@ -802,7 +890,8 @@ export const store = {
       RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
                 pricing_mode, started_at, ended_at, runtime_sec, active_sec,
                 tokens_in, tokens_out, cache_hits, cost_usd,
-                baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes, unsorted,
+                difficulty_score, change_category, quality_confidence, impact_note
     `) as RunRow[];
     return mapRun(rows[0]);
   },
@@ -865,7 +954,8 @@ export const store = {
       RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
                 pricing_mode, started_at, ended_at, runtime_sec, active_sec,
                 tokens_in, tokens_out, cache_hits, cost_usd,
-                baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes, unsorted,
+                difficulty_score, change_category, quality_confidence, impact_note
     `) as RunRow[];
     return mapRun(rows[0]);
   },
@@ -890,7 +980,8 @@ export const store = {
       RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
                 pricing_mode, started_at, ended_at, runtime_sec, active_sec,
                 tokens_in, tokens_out, cache_hits, cost_usd,
-                baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes, unsorted,
+                difficulty_score, change_category, quality_confidence, impact_note
     `) as RunRow[];
     if (!rows[0]) throw new Error("Unknown run");
     return mapRun(rows[0]);
@@ -947,7 +1038,8 @@ export const store = {
       RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
                 pricing_mode, started_at, ended_at, runtime_sec, active_sec,
                 tokens_in, tokens_out, cache_hits, cost_usd,
-                baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes, unsorted,
+                difficulty_score, change_category, quality_confidence, impact_note
     `) as RunRow[];
     if (!rows[0]) throw new Error("Unknown run");
     return mapRun(rows[0]);
@@ -1083,10 +1175,25 @@ export const store = {
         );
       } else {
         const settings = await store.getSettings(userId);
-        const mult = settings.billActiveMultiplier || 1;
+        const mult =
+          settings.billingStyle === "pure_active"
+            ? 1
+            : settings.billActiveMultiplier || 1;
         billable = Number((activeHours * mult * run.rateUsd).toFixed(2));
       }
     }
+    const eventCount = await store.countRunEvents(userId, input.runId);
+    const totalTokens = (run.tokensIn || 0) + (run.tokensOut || 0);
+    const history = await store.recentRunSignals(userId, input.runId);
+    const { score: difficultyScore } = computeDifficulty(
+      {
+        totalTokens,
+        activeSec: run.activeSec || runtimeSec || 0,
+        eventCount,
+      },
+      history,
+    );
+    const changeCategory = run.changeCategory ?? classifyChangeCategory(run.prompt);
     const rows = (await sql`
       UPDATE run
       SET status = ${input.status},
@@ -1094,12 +1201,15 @@ export const store = {
           runtime_sec = ${runtimeSec},
           deliverable_url = ${input.deliverableUrl ?? null},
           notes = ${input.notes ?? null},
-          billable_usd = ${billable}
+          billable_usd = ${billable},
+          difficulty_score = ${difficultyScore},
+          change_category = COALESCE(change_category, ${changeCategory})
       WHERE user_id = ${userId} AND id = ${input.runId}
       RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
                 pricing_mode, started_at, ended_at, runtime_sec, active_sec,
                 tokens_in, tokens_out, cache_hits, cost_usd,
-                baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes, unsorted,
+                difficulty_score, change_category, quality_confidence, impact_note
     `) as RunRow[];
     await sql`
       INSERT INTO run_event (id, user_id, run_id, kind, label, detail)
@@ -1109,7 +1219,23 @@ export const store = {
         ${input.deliverableUrl ?? null}
       )
     `;
-    return mapRun(rows[0]);
+    const updated = mapRun(rows[0]);
+    if (
+      input.status === "shipped" &&
+      updated.changeCategory === "bugfix" &&
+      updated.cwd
+    ) {
+      // The "follow-up bugfix" rule: if a new shipped bugfix lands in the
+      // same cwd within 14 days of an earlier shipped run, that earlier run
+      // gets a quality penalty. We only touch the most recent prior shipped
+      // run so the penalty is targeted.
+      try {
+        await store.recordFollowUpBugfix(userId, updated);
+      } catch {
+        // Non-fatal: scoring should never block run end.
+      }
+    }
+    return updated;
   },
 
   // ─── Approvals ─────────────────────────────────────────────
@@ -1195,6 +1321,8 @@ export const store = {
     const cutoff = new Date(Date.now() - win * DAY).toISOString();
     const eligible = (await sql`
       SELECT r.id, r.skill_id, r.baseline_hours, r.rate_usd, r.billable_usd,
+             r.active_sec, r.runtime_sec, r.prompt,
+             r.difficulty_score, r.change_category, r.quality_confidence,
              s.name AS skill_name
       FROM run r
       JOIN skill s ON s.id = r.skill_id
@@ -1214,20 +1342,46 @@ export const store = {
       baseline_hours: string;
       rate_usd: string;
       billable_usd: string;
+      active_sec: string | number | null;
+      runtime_sec: string | number | null;
+      prompt: string | null;
+      difficulty_score: string | number | null;
+      change_category: string | null;
+      quality_confidence: string | number | null;
       skill_name: string;
     }>;
     if (eligible.length === 0) {
       throw new Error("No uninvoiced shipped runs for this client in the window");
     }
+    const settings = await store.getSettings(userId);
     const lineItems: InvoiceLineItem[] = eligible.map((r) => {
-      const quantity = num(r.baseline_hours);
+      const activeHours = num(r.active_sec) / 3600;
+      const runtimeHours = num(r.runtime_sec) / 3600;
+      const baselineHours = num(r.baseline_hours);
+      const hours = activeHours > 0 ? activeHours : runtimeHours > 0 ? runtimeHours : baselineHours;
+      const quantity = Number(hours.toFixed(2));
       const unitPrice = num(r.rate_usd);
+      const baseAmount = quantity * unitPrice;
+      const effort = effortMultiplierForRun(settings, {
+        changeCategory: asCategory(r.change_category),
+        difficultyScore:
+          r.difficulty_score == null ? undefined : num(r.difficulty_score),
+        qualityConfidence:
+          r.quality_confidence == null ? 1 : num(r.quality_confidence),
+      });
+      const amount = Number((baseAmount * effort).toFixed(2));
+      const promptRaw = (r.prompt ?? "").trim().replace(/\s+/g, " ");
+      const description = promptRaw
+        ? promptRaw.length > 100
+          ? promptRaw.slice(0, 97) + "..."
+          : promptRaw
+        : `${r.skill_name} session`;
       return {
         type: "service",
-        description: `${r.skill_name} - run ${r.id}`,
+        description,
         quantity,
         unitPrice,
-        amount: num(r.billable_usd) || quantity * unitPrice,
+        amount,
         runId: r.id,
         skillName: r.skill_name,
       };
@@ -1473,7 +1627,9 @@ export const store = {
       SELECT default_hourly_rate, business_name, business_address, business_email,
              business_currency,
              ai_cost_mode, ai_subscription_monthly_usd, default_bill_mode,
-             bill_active_multiplier
+             bill_active_multiplier,
+             billing_style, use_quality_confidence, use_difficulty_weight,
+             use_category_weight, billing_onboarded_at, theme
       FROM app_user
       WHERE id = ${userId}
       LIMIT 1
@@ -1485,7 +1641,12 @@ export const store = {
           aiCostMode: "subscription",
           aiSubscriptionMonthlyUsd: 200,
           defaultBillMode: "time_only",
-          billActiveMultiplier: 1.5,
+          billActiveMultiplier: 1,
+          billingStyle: "effort_adjusted",
+          useQualityConfidence: true,
+          useDifficultyWeight: false,
+          useCategoryWeight: false,
+          theme: "dark",
         };
   },
 
@@ -1501,6 +1662,12 @@ export const store = {
       aiSubscriptionMonthlyUsd?: number;
       defaultBillMode?: "time_only" | "time_plus_tokens" | "baseline";
       billActiveMultiplier?: number;
+      billingStyle?: "pure_active" | "effort_adjusted";
+      useQualityConfidence?: boolean;
+      useDifficultyWeight?: boolean;
+      useCategoryWeight?: boolean;
+      markBillingOnboarded?: boolean;
+      theme?: "auto" | "light" | "dark";
     },
   ): Promise<AgencySettings> {
     await ensureAppUser(userId);
@@ -1514,12 +1681,20 @@ export const store = {
         ai_cost_mode        = COALESCE(${patch.aiCostMode ?? null}::text, ai_cost_mode),
         ai_subscription_monthly_usd = CASE WHEN ${patch.aiSubscriptionMonthlyUsd !== undefined} THEN ${patch.aiSubscriptionMonthlyUsd ?? 0}::numeric ELSE ai_subscription_monthly_usd END,
         default_bill_mode   = COALESCE(${patch.defaultBillMode ?? null}::text, default_bill_mode),
-        bill_active_multiplier = CASE WHEN ${patch.billActiveMultiplier !== undefined} THEN ${patch.billActiveMultiplier ?? 1}::numeric ELSE bill_active_multiplier END
+        bill_active_multiplier = CASE WHEN ${patch.billActiveMultiplier !== undefined} THEN ${patch.billActiveMultiplier ?? 1}::numeric ELSE bill_active_multiplier END,
+        billing_style       = COALESCE(${patch.billingStyle ?? null}::text, billing_style),
+        use_quality_confidence = CASE WHEN ${patch.useQualityConfidence !== undefined} THEN ${patch.useQualityConfidence ?? true}::boolean ELSE use_quality_confidence END,
+        use_difficulty_weight  = CASE WHEN ${patch.useDifficultyWeight !== undefined} THEN ${patch.useDifficultyWeight ?? false}::boolean ELSE use_difficulty_weight END,
+        use_category_weight    = CASE WHEN ${patch.useCategoryWeight !== undefined} THEN ${patch.useCategoryWeight ?? false}::boolean ELSE use_category_weight END,
+        billing_onboarded_at   = CASE WHEN ${patch.markBillingOnboarded === true} THEN now() ELSE billing_onboarded_at END,
+        theme                  = COALESCE(${patch.theme ?? null}::text, theme)
       WHERE id = ${userId}
       RETURNING default_hourly_rate, business_name, business_address, business_email,
                 business_currency,
                 ai_cost_mode, ai_subscription_monthly_usd, default_bill_mode,
-                bill_active_multiplier
+                bill_active_multiplier,
+                billing_style, use_quality_confidence, use_difficulty_weight,
+                use_category_weight, billing_onboarded_at, theme
     `) as AppUserRow[];
     return mapSettings(rows[0]);
   },
@@ -1554,7 +1729,10 @@ export const store = {
       } else if (mode === "time_plus_tokens") {
         billable = runtimeHours * rate + cost;
       } else {
-        const mult = settings.billActiveMultiplier || 1;
+        const mult =
+          settings.billingStyle === "pure_active"
+            ? 1
+            : settings.billActiveMultiplier || 1;
         billable = activeHours * mult * rate;
       }
       billable = Number(billable.toFixed(2));
@@ -2034,7 +2212,8 @@ export const store = {
       SELECT id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
              pricing_mode, started_at, ended_at, runtime_sec, active_sec,
              tokens_in, tokens_out, cache_hits, cost_usd,
-             baseline_hours, rate_usd, billable_usd, deliverable_url, notes
+             baseline_hours, rate_usd, billable_usd, deliverable_url, notes, unsorted,
+                difficulty_score, change_category, quality_confidence, impact_note
       FROM run r
       WHERE r.user_id = ${userId}
         AND r.client_id = ${clientId}
@@ -2115,6 +2294,463 @@ export const store = {
       runs: r.runs,
       hours: Number(num(r.hours).toFixed(2)),
     }));
+  },
+
+  // ─── cwd_mapping ──────────────────────────────────────────────────────────
+  // Maps a working directory to a (client, project). Used by the Stop hook so
+  // future sessions from the same cwd land directly on the right project
+  // instead of in the unsorted Inbox.
+
+  async findCwdMapping(
+    userId: string,
+    cwd: string,
+  ): Promise<{ clientId: string; projectId: string } | undefined> {
+    const rows = (await sql`
+      SELECT client_id, project_id
+      FROM cwd_mapping
+      WHERE user_id = ${userId} AND cwd = ${cwd}
+      LIMIT 1
+    `) as Array<{ client_id: string; project_id: string }>;
+    return rows[0]
+      ? { clientId: rows[0].client_id, projectId: rows[0].project_id }
+      : undefined;
+  },
+
+  async listCwdMappings(userId: string): Promise<CwdMapping[]> {
+    const rows = (await sql`
+      SELECT id, cwd, client_id, project_id, created_at
+      FROM cwd_mapping
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+    `) as Array<{
+      id: string;
+      cwd: string;
+      client_id: string;
+      project_id: string;
+      created_at: string;
+    }>;
+    return rows.map((r) => ({
+      id: r.id,
+      cwd: r.cwd,
+      clientId: r.client_id,
+      projectId: r.project_id,
+      createdAt: iso(r.created_at),
+    }));
+  },
+
+  async upsertCwdMapping(
+    userId: string,
+    input: { cwd: string; clientId: string; projectId: string },
+  ): Promise<CwdMapping> {
+    const id = genId("cwm");
+    const rows = (await sql`
+      INSERT INTO cwd_mapping (id, user_id, cwd, client_id, project_id)
+      VALUES (${id}, ${userId}, ${input.cwd}, ${input.clientId}, ${input.projectId})
+      ON CONFLICT (user_id, cwd) DO UPDATE
+        SET client_id = EXCLUDED.client_id,
+            project_id = EXCLUDED.project_id
+      RETURNING id, cwd, client_id, project_id, created_at
+    `) as Array<{
+      id: string;
+      cwd: string;
+      client_id: string;
+      project_id: string;
+      created_at: string;
+    }>;
+    const r = rows[0];
+    return {
+      id: r.id,
+      cwd: r.cwd,
+      clientId: r.client_id,
+      projectId: r.project_id,
+      createdAt: iso(r.created_at),
+    };
+  },
+
+  async deleteCwdMapping(userId: string, id: string): Promise<void> {
+    await sql`DELETE FROM cwd_mapping WHERE user_id = ${userId} AND id = ${id}`;
+  },
+
+  // ─── Unsorted Inbox ───────────────────────────────────────────────────────
+  // Runs created by the Stop hook for a cwd that has no mapping yet land
+  // here with client_id / project_id null. The user triages them via
+  // assignUnsortedRun, optionally also creating a permanent cwd_mapping.
+
+  async listUnsortedRuns(userId: string): Promise<Run[]> {
+    const rows = (await sql`
+      SELECT id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
+             pricing_mode, started_at, ended_at, runtime_sec, active_sec,
+             tokens_in, tokens_out, cache_hits, cost_usd,
+             baseline_hours, rate_usd, billable_usd, deliverable_url, notes, unsorted,
+                difficulty_score, change_category, quality_confidence, impact_note
+      FROM run
+      WHERE user_id = ${userId} AND unsorted = true
+      ORDER BY started_at DESC
+    `) as RunRow[];
+    return rows.map(mapRun);
+  },
+
+  async bulkAssignRuns(
+    userId: string,
+    runIds: string[],
+    input: { clientId: string; projectId: string; alsoMapCwd?: boolean },
+  ): Promise<{ updated: number; mappedCwds: string[] }> {
+    if (runIds.length === 0) return { updated: 0, mappedCwds: [] };
+
+    const [client, project] = await Promise.all([
+      store.getClient(userId, input.clientId),
+      store.getProject(userId, input.projectId),
+    ]);
+    if (!client || !project) throw new Error("Unknown client or project");
+    if (project.clientId !== input.clientId) {
+      throw new Error("Project does not belong to client");
+    }
+
+    const settings = await store.getSettings(userId);
+    const billMode = settings.defaultBillMode;
+    const mult =
+      settings.billingStyle === "pure_active"
+        ? 1
+        : settings.billActiveMultiplier || 1;
+
+    // Recompute rate_usd as client.hourlyRate × skill.rateModifier and
+    // billable_usd according to the user's bill mode. Single SQL pass.
+    const updateRows = (await sql`
+      UPDATE run
+      SET client_id    = ${input.clientId},
+          project_id   = ${input.projectId},
+          rate_usd     = (${client.hourlyRate}::numeric * s.rate_modifier),
+          billable_usd = CASE
+            WHEN run.pricing_mode = 'baseline'
+              THEN run.baseline_hours * ${client.hourlyRate}::numeric * s.rate_modifier
+            WHEN ${billMode} = 'time_only'
+              THEN (run.active_sec::numeric / 3600)
+                   * ${mult}::numeric
+                   * ${client.hourlyRate}::numeric
+                   * s.rate_modifier
+            ELSE (run.active_sec::numeric / 3600)
+                 * ${client.hourlyRate}::numeric
+                 * s.rate_modifier
+                 + run.cost_usd
+          END,
+          unsorted = false
+      FROM skill s
+      WHERE run.user_id = ${userId}
+        AND run.id = ANY(${runIds}::text[])
+        AND s.id = run.skill_id
+        AND s.user_id = run.user_id
+      RETURNING run.id, run.cwd
+    `) as Array<{ id: string; cwd: string | null }>;
+
+    const mappedCwds: string[] = [];
+    if (input.alsoMapCwd) {
+      const cwds = Array.from(
+        new Set(updateRows.map((r) => r.cwd).filter((c): c is string => !!c)),
+      );
+      for (const cwd of cwds) {
+        await store.upsertCwdMapping(userId, {
+          cwd,
+          clientId: input.clientId,
+          projectId: input.projectId,
+        });
+        mappedCwds.push(cwd);
+      }
+    }
+
+    return { updated: updateRows.length, mappedCwds };
+  },
+
+  async assignUnsortedRun(
+    userId: string,
+    runId: string,
+    input: {
+      clientId: string;
+      projectId: string;
+      alsoMapCwd?: boolean;
+    },
+  ): Promise<Run> {
+    const existing = await store.getRun(userId, runId);
+    if (!existing) throw new Error("Unknown run");
+    if (!existing.unsorted) throw new Error("Run is not unsorted");
+
+    const [client, project] = await Promise.all([
+      store.getClient(userId, input.clientId),
+      store.getProject(userId, input.projectId),
+    ]);
+    if (!client || !project) {
+      throw new Error("Unknown client or project");
+    }
+    if (project.clientId !== input.clientId) {
+      throw new Error("Project does not belong to client");
+    }
+
+    // Recompute pricing now that we know the client's rate.
+    const skill = await store.getSkill(userId, existing.skillId);
+    if (!skill) throw new Error("Unknown skill");
+    const rateUsd = client.hourlyRate * skill.rateModifier;
+    const activeHours = existing.activeSec / 3600;
+    const runtimeHours = existing.runtimeSec / 3600;
+    const settings = await store.getSettings(userId);
+    let billable: number;
+    if (existing.pricingMode === "baseline") {
+      billable = Number((existing.baselineHours * rateUsd).toFixed(2));
+    } else if (settings.defaultBillMode === "time_only") {
+      const mult =
+        settings.billingStyle === "pure_active"
+          ? 1
+          : settings.billActiveMultiplier || 1;
+      billable = Number((activeHours * mult * rateUsd).toFixed(2));
+    } else {
+      billable = Number((activeHours * rateUsd + existing.costUsd).toFixed(2));
+    }
+
+    await sql`
+      UPDATE run
+      SET client_id = ${input.clientId},
+          project_id = ${input.projectId},
+          rate_usd = ${rateUsd},
+          billable_usd = ${billable},
+          unsorted = false
+      WHERE user_id = ${userId} AND id = ${runId}
+    `;
+
+    if (input.alsoMapCwd && existing.cwd) {
+      await store.upsertCwdMapping(userId, {
+        cwd: existing.cwd,
+        clientId: input.clientId,
+        projectId: input.projectId,
+      });
+      // Also retro-assign every other unsorted run from the same cwd.
+      await sql`
+        UPDATE run
+        SET client_id = ${input.clientId},
+            project_id = ${input.projectId},
+            rate_usd = ${rateUsd},
+            unsorted = false
+        WHERE user_id = ${userId}
+          AND unsorted = true
+          AND cwd = ${existing.cwd}
+      `;
+    }
+
+    const updated = await store.getRun(userId, runId);
+    if (!updated) throw new Error("Failed to reload run");
+    return updated;
+  },
+
+  // ─── Run scoring helpers ───────────────────────────────────
+  async countRunEvents(userId: string, runId: string): Promise<number> {
+    const rows = (await sql`
+      SELECT COUNT(*)::int AS n
+      FROM run_event
+      WHERE user_id = ${userId} AND run_id = ${runId}
+    `) as Array<{ n: number }>;
+    return rows[0]?.n ?? 0;
+  },
+
+  async recentRunSignals(
+    userId: string,
+    excludeRunId?: string,
+  ): Promise<{
+    totalTokens: number[];
+    activeSec: number[];
+    eventCount: number[];
+  }> {
+    // Last 100 ended runs for this user, excluding the current one if given.
+    // We compute event_count per run via a subquery so we get one row each.
+    const rows = (await sql`
+      SELECT
+        r.id,
+        COALESCE(r.tokens_in, 0) + COALESCE(r.tokens_out, 0) AS total_tokens,
+        COALESCE(r.active_sec, 0) AS active_sec,
+        COALESCE((SELECT COUNT(*) FROM run_event e WHERE e.run_id = r.id), 0) AS event_count
+      FROM run r
+      WHERE r.user_id = ${userId}
+        AND r.ended_at IS NOT NULL
+        AND (${excludeRunId ?? null}::text IS NULL OR r.id <> ${excludeRunId ?? null})
+      ORDER BY r.ended_at DESC
+      LIMIT 100
+    `) as Array<{
+      total_tokens: string | number;
+      active_sec: string | number;
+      event_count: string | number;
+    }>;
+    return {
+      totalTokens: rows.map((r) => num(r.total_tokens)),
+      activeSec: rows.map((r) => num(r.active_sec)),
+      eventCount: rows.map((r) => num(r.event_count)),
+    };
+  },
+
+  async recordFollowUpBugfix(
+    userId: string,
+    bugfixRun: Run,
+  ): Promise<void> {
+    if (!bugfixRun.cwd) return;
+    // Find the most recent prior shipped run in the same cwd within 14 days.
+    const cutoff = new Date(
+      new Date(bugfixRun.startedAt).getTime() - 14 * DAY,
+    ).toISOString();
+    const rows = (await sql`
+      SELECT id, quality_confidence
+      FROM run
+      WHERE user_id = ${userId}
+        AND id <> ${bugfixRun.id}
+        AND cwd = ${bugfixRun.cwd}
+        AND status = 'shipped'
+        AND ended_at IS NOT NULL
+        AND ended_at >= ${cutoff}
+        AND ended_at <= ${bugfixRun.startedAt}
+      ORDER BY ended_at DESC
+      LIMIT 1
+    `) as Array<{ id: string; quality_confidence: string | number }>;
+    const target = rows[0];
+    if (!target) return;
+    await store.applyQualitySignal(userId, target.id, {
+      kind: "follow_up_bugfix",
+      delta: -0.15,
+      reason: `Follow-up bugfix in same cwd (run ${bugfixRun.id})`,
+      source: "auto",
+      relatedRunId: bugfixRun.id,
+    });
+  },
+
+  async listQualitySignals(
+    userId: string,
+    runId: string,
+  ): Promise<QualitySignal[]> {
+    const rows = (await sql`
+      SELECT id, run_id, kind, reason, delta, source, related_run_id, created_at
+      FROM quality_signal
+      WHERE user_id = ${userId} AND run_id = ${runId}
+      ORDER BY created_at DESC
+    `) as QualitySignalRow[];
+    return rows.map(mapQualitySignal);
+  },
+
+  async applyQualitySignal(
+    userId: string,
+    runId: string,
+    input: {
+      kind: QualitySignalKind;
+      delta: number;
+      reason?: string;
+      source: "auto" | "manual";
+      relatedRunId?: string;
+    },
+  ): Promise<{ run: Run; signal: QualitySignal }> {
+    const run = await store.getRun(userId, runId);
+    if (!run) throw new Error("Unknown run");
+    const id = genId("qs");
+    const sigRows = (await sql`
+      INSERT INTO quality_signal (id, user_id, run_id, kind, reason, delta, source, related_run_id)
+      VALUES (
+        ${id}, ${userId}, ${runId}, ${input.kind}, ${input.reason ?? null},
+        ${input.delta}, ${input.source}, ${input.relatedRunId ?? null}
+      )
+      RETURNING id, run_id, kind, reason, delta, source, related_run_id, created_at
+    `) as QualitySignalRow[];
+    // Recompute confidence from all signals: clamp(1 + sum(deltas), 0.3, 1.0).
+    const sumRows = (await sql`
+      SELECT COALESCE(SUM(delta), 0) AS total
+      FROM quality_signal
+      WHERE user_id = ${userId} AND run_id = ${runId}
+    `) as Array<{ total: string | number }>;
+    const total = num(sumRows[0]?.total ?? 0);
+    const next = Math.max(0.3, Math.min(1, 1 + total));
+    const updated = (await sql`
+      UPDATE run
+      SET quality_confidence = ${next}
+      WHERE user_id = ${userId} AND id = ${runId}
+      RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
+                pricing_mode, started_at, ended_at, runtime_sec, active_sec,
+                tokens_in, tokens_out, cache_hits, cost_usd,
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes, unsorted,
+                difficulty_score, change_category, quality_confidence, impact_note
+    `) as RunRow[];
+    return {
+      run: mapRun(updated[0]),
+      signal: mapQualitySignal(sigRows[0]),
+    };
+  },
+
+  async setManualQualityConfidence(
+    userId: string,
+    runId: string,
+    input: { confidence: number; reason?: string },
+  ): Promise<{ run: Run; signal: QualitySignal }> {
+    if (
+      !Number.isFinite(input.confidence) ||
+      input.confidence < 0.3 ||
+      input.confidence > 1
+    ) {
+      throw new Error("confidence must be between 0.3 and 1.0");
+    }
+    const run = await store.getRun(userId, runId);
+    if (!run) throw new Error("Unknown run");
+    // Manual override replaces any prior manual signal so the slider behaves
+    // as a single source of truth from the user's perspective. Auto signals
+    // remain part of history but the manual delta is always recomputed
+    // against current auto sum, keeping the math consistent.
+    await sql`
+      DELETE FROM quality_signal
+      WHERE user_id = ${userId} AND run_id = ${runId} AND source = 'manual'
+    `;
+    const autoRows = (await sql`
+      SELECT COALESCE(SUM(delta), 0) AS total
+      FROM quality_signal
+      WHERE user_id = ${userId} AND run_id = ${runId}
+    `) as Array<{ total: string | number }>;
+    const autoTotal = num(autoRows[0]?.total ?? 0);
+    const delta = Number((input.confidence - 1 - autoTotal).toFixed(3));
+    return store.applyQualitySignal(userId, runId, {
+      kind: "manual_adjust",
+      delta,
+      reason: input.reason ?? "Manual review",
+      source: "manual",
+    });
+  },
+
+  async setImpactNote(
+    userId: string,
+    runId: string,
+    note: string | null,
+  ): Promise<Run> {
+    const trimmed = note?.trim();
+    const rows = (await sql`
+      UPDATE run
+      SET impact_note = ${trimmed && trimmed.length > 0 ? trimmed : null}
+      WHERE user_id = ${userId} AND id = ${runId}
+      RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
+                pricing_mode, started_at, ended_at, runtime_sec, active_sec,
+                tokens_in, tokens_out, cache_hits, cost_usd,
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes, unsorted,
+                difficulty_score, change_category, quality_confidence, impact_note
+    `) as RunRow[];
+    if (!rows[0]) throw new Error("Unknown run");
+    return mapRun(rows[0]);
+  },
+
+  async setChangeCategory(
+    userId: string,
+    runId: string,
+    category: ChangeCategory,
+  ): Promise<Run> {
+    if (!(KNOWN_CATEGORIES as readonly string[]).includes(category)) {
+      throw new Error("Unknown category");
+    }
+    const rows = (await sql`
+      UPDATE run
+      SET change_category = ${category}
+      WHERE user_id = ${userId} AND id = ${runId}
+      RETURNING id, client_id, project_id, skill_id, agent_name, status, kind, prompt, cwd,
+                pricing_mode, started_at, ended_at, runtime_sec, active_sec,
+                tokens_in, tokens_out, cache_hits, cost_usd,
+                baseline_hours, rate_usd, billable_usd, deliverable_url, notes, unsorted,
+                difficulty_score, change_category, quality_confidence, impact_note
+    `) as RunRow[];
+    if (!rows[0]) throw new Error("Unknown run");
+    return mapRun(rows[0]);
   },
 };
 

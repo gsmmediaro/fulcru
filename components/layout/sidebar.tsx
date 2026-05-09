@@ -77,8 +77,8 @@ function NavRow({
     active
       ? "bg-[var(--color-brand-100)] text-[var(--color-brand-400)] font-semibold"
       : softActive
-        ? "text-[var(--color-brand-400)] font-semibold hover:bg-[color-mix(in_oklab,white_5%,transparent)]"
-        : "text-[var(--color-text-strong)] hover:bg-[color-mix(in_oklab,white_5%,transparent)]",
+        ? "text-[var(--color-brand-400)] font-semibold hover:bg-[var(--color-bg-tint-5)]"
+        : "text-[var(--color-text-strong)] hover:bg-[var(--color-bg-tint-5)]",
   );
 
   if (href && role === "link") {

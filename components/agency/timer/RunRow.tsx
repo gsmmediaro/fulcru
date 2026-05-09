@@ -123,7 +123,7 @@ export function RunRow({
       className={cn(
         "group flex flex-wrap items-center gap-[8px] px-[16px] py-[12px]",
         "border-t border-[var(--color-stroke-soft)]",
-        "hover:bg-[color-mix(in_oklab,white_2%,transparent)]",
+        "hover:bg-[var(--color-bg-tint-2)]",
         "transition-colors",
         isRunning && "bg-[color-mix(in_oklab,var(--color-brand-400)_5%,transparent)]",
         isBreak && "bg-[color-mix(in_oklab,oklch(70%_0.15_80)_5%,transparent)]",
@@ -181,7 +181,7 @@ export function RunRow({
       {/* Project pill */}
       <div className="shrink-0">
         {project ? (
-          <span className="flex items-center gap-[5px] rounded-[6px] bg-[color-mix(in_oklab,white_5%,transparent)] px-[8px] py-[3px] text-[12px] text-[var(--color-text-sub)]">
+          <span className="flex items-center gap-[5px] rounded-[6px] bg-[var(--color-bg-tint-5)] px-[8px] py-[3px] text-[12px] text-[var(--color-text-sub)]">
             <span
               className="size-[7px] shrink-0 rounded-full"
               style={{ backgroundColor: project.color }}
@@ -200,7 +200,7 @@ export function RunRow({
       <div className="relative shrink-0">
         <button
           onClick={() => setTagsOpen((v) => !v)}
-          className="flex size-[28px] items-center justify-center rounded-[6px] text-[var(--color-text-soft)] opacity-0 group-hover:opacity-100 hover:bg-[color-mix(in_oklab,white_6%,transparent)] transition-all"
+          className="flex size-[28px] items-center justify-center rounded-[6px] text-[var(--color-text-soft)] opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-tint-6)] transition-all"
         >
           <RiPriceTag3Line size={13} />
         </button>
@@ -277,7 +277,7 @@ export function RunRow({
       {!isMcp && !isBreak && (
         <button
           onClick={() => onReplay?.(run)}
-          className="flex size-[28px] shrink-0 items-center justify-center rounded-[6px] text-[var(--color-text-soft)] opacity-0 group-hover:opacity-100 hover:bg-[color-mix(in_oklab,white_6%,transparent)] hover:text-[var(--color-brand-400)] transition-all"
+          className="flex size-[28px] shrink-0 items-center justify-center rounded-[6px] text-[var(--color-text-soft)] opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-tint-6)] hover:text-[var(--color-brand-400)] transition-all"
           title="Replay"
         >
           <RiPlayLine size={14} />
@@ -288,7 +288,7 @@ export function RunRow({
       {/* Row menu */}
       <Dropdown>
         <DropdownTrigger asChild>
-          <button className="flex size-[28px] shrink-0 items-center justify-center rounded-[6px] text-[var(--color-text-soft)] opacity-0 group-hover:opacity-100 hover:bg-[color-mix(in_oklab,white_6%,transparent)] hover:text-[var(--color-text-strong)] transition-all">
+          <button className="flex size-[28px] shrink-0 items-center justify-center rounded-[6px] text-[var(--color-text-soft)] opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-tint-6)] hover:text-[var(--color-text-strong)] transition-all">
             <RiMoreLine size={16} />
           </button>
         </DropdownTrigger>

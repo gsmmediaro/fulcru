@@ -170,7 +170,7 @@ function NewExpenseModal({
     "transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-[var(--color-brand-400)]",
     billable
       ? "bg-[var(--color-brand-400)]"
-      : "bg-[color-mix(in_oklab,white_12%,transparent)]",
+      : "bg-[var(--color-bg-tint-12)]",
   );
   const switchThumbCls = cn(
     "pointer-events-none inline-block h-[18px] w-[18px] rounded-full bg-white shadow-sm",
@@ -317,7 +317,7 @@ function NewExpenseModal({
               {t("newExpense.receipt")}
             </span>
             {receiptFilename ? (
-              <div className="flex items-center gap-[8px] rounded-[6px] bg-[color-mix(in_oklab,white_3%,transparent)] px-[10px] py-[8px] ring-1 ring-[var(--color-stroke-soft)]">
+              <div className="flex items-center gap-[8px] rounded-[6px] bg-[var(--color-bg-tint-3)] px-[10px] py-[8px] ring-1 ring-[var(--color-stroke-soft)]">
                 <RiAttachmentLine
                   size={14}
                   className="shrink-0 text-[var(--color-brand-400)]"
@@ -343,7 +343,7 @@ function NewExpenseModal({
                   className={cn(
                     "flex h-[36px] items-center gap-[6px] self-start rounded-[6px]",
                     "px-[12px] text-[13px] font-medium",
-                    "bg-[color-mix(in_oklab,white_4%,transparent)]",
+                    "bg-[var(--color-bg-tint-4)]",
                     "ring-1 ring-[var(--color-stroke-soft)]",
                     "text-[var(--color-text-strong)] hover:ring-[var(--color-stroke-sub)]",
                     "disabled:opacity-50 disabled:cursor-not-allowed",

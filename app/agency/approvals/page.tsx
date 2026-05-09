@@ -16,7 +16,7 @@ export default async function ApprovalsPage() {
     const run = (await api.getRun(a.runId)) ?? null;
     const [skill, client] = await Promise.all([
       run ? api.getSkill(run.skillId).then((v) => v ?? null) : Promise.resolve(null),
-      run ? api.getClient(run.clientId).then((v) => v ?? null) : Promise.resolve(null),
+      run?.clientId ? api.getClient(run.clientId).then((v) => v ?? null) : Promise.resolve(null),
     ]);
     return { approval: a, run, skill, client };
   };

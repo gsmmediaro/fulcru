@@ -91,7 +91,7 @@ export function ModalCloseButton({ onClick }: { onClick: () => void }) {
       className={cn(
         "absolute right-[16px] top-[16px] flex size-[32px] items-center justify-center rounded-[6px]",
         "text-[var(--color-text-soft)] hover:text-[var(--color-text-strong)]",
-        "hover:bg-[color-mix(in_oklab,white_6%,transparent)]",
+        "hover:bg-[var(--color-bg-tint-6)]",
         "transition-colors duration-150",
         "focus-visible:outline-2 focus-visible:outline-[var(--color-brand-400)] focus-visible:outline-offset-2",
       )}

@@ -14,13 +14,8 @@ import {
 } from "@/components/ui/select";
 import { Field, Input } from "@/components/agency/new-client-modal";
 import { useLocale } from "@/lib/i18n/provider";
+import { formatCurrency } from "@/lib/agency/format";
 import type { Client } from "@/lib/agency/types";
-
-const usd = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 2,
-});
 
 type EligibleRun = {
   id: string;
@@ -31,7 +26,13 @@ type EligibleRun = {
   startedAt: string;
 };
 
-export function NewInvoiceButton({ clients }: { clients: Client[] }) {
+export function NewInvoiceButton({
+  clients,
+  currency = "USD",
+}: {
+  clients: Client[];
+  currency?: string;
+}) {
   const { t } = useLocale();
   const [open, setOpen] = React.useState(false);
   return (
@@ -47,6 +48,7 @@ export function NewInvoiceButton({ clients }: { clients: Client[] }) {
         open={open}
         onOpenChange={setOpen}
         clients={clients}
+        currency={currency}
       />
     </>
   );
@@ -56,10 +58,12 @@ function NewInvoiceModal({
   open,
   onOpenChange,
   clients,
+  currency,
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
   clients: Client[];
+  currency: string;
 }) {
   const { t } = useLocale();
   const router = useRouter();
@@ -226,7 +230,7 @@ function NewInvoiceModal({
             </Field>
           </div>
 
-          <div className="rounded-[6px] bg-[color-mix(in_oklab,white_3%,transparent)] px-[14px] py-[12px] ring-1 ring-[var(--color-stroke-soft)]">
+          <div className="rounded-[6px] bg-[var(--color-bg-tint-3)] px-[14px] py-[12px] ring-1 ring-[var(--color-stroke-soft)]">
             <div className="flex items-center justify-between text-[12px] uppercase tracking-[0.04em] text-[var(--color-text-soft)]">
               <span>{t("newInvoice.eligible")}</span>
               <span className="tabular-nums">
@@ -238,19 +242,19 @@ function NewInvoiceModal({
                 {t("newInvoice.subtotal")}
               </span>
               <span className="text-[18px] font-semibold tabular-nums text-[var(--color-text-strong)]">
-                {usd.format(subtotal)}
+                {formatCurrency(subtotal, 2, currency)}
               </span>
             </div>
             <div className="mt-[4px] flex items-baseline justify-between text-[12px] tabular-nums text-[var(--color-text-sub)]">
               <span>{t("newInvoice.taxRow")}</span>
-              <span>{usd.format(taxValue)}</span>
+              <span>{formatCurrency(taxValue, 2, currency)}</span>
             </div>
             <div className="mt-[6px] flex items-baseline justify-between border-t border-[var(--color-stroke-soft)] pt-[8px]">
               <span className="text-[12px] uppercase tracking-[0.04em] text-[var(--color-text-soft)]">
                 {t("newInvoice.total")}
               </span>
               <span className="text-[20px] font-semibold tabular-nums text-[var(--color-text-strong)]">
-                {usd.format(total)}
+                {formatCurrency(total, 2, currency)}
               </span>
             </div>
           </div>
