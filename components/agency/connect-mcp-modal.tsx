@@ -25,15 +25,30 @@ const CLIENT_TABS: Array<{ id: ClientId; labelKey: string }> = [
   { id: "others", labelKey: "mcpModal.tab.others" },
 ];
 
-function buildSnippet(client: ClientId, url: string, key: string | null) {
+function buildSnippet(
+  client: ClientId,
+  url: string,
+  key: string | null,
+  shell: "powershell" | "posix",
+) {
   const bearer = key ?? "YOUR_KEY";
   if (client === "claude") {
     return `claude mcp add --transport http ${SERVER_NAME} ${url} --header "Authorization: Bearer ${bearer}"`;
   }
   if (client === "codex") {
-    // Codex stores creds via env var, not inline. Two-step: export, then add.
+    // Codex stores only the env var name in ~/.codex/config.toml, so make the
+    // env var persistent instead of relying on a temporary shell export.
+    if (shell === "powershell") {
+      return [
+        `$FulcruToken = "${bearer}"`,
+        `[Environment]::SetEnvironmentVariable("FULCRU_TOKEN", $FulcruToken, "User")`,
+        `$env:FULCRU_TOKEN = $FulcruToken`,
+        `codex mcp add ${SERVER_NAME} --url ${url} --bearer-token-env-var FULCRU_TOKEN`,
+      ].join("\n");
+    }
     return [
       `export FULCRU_TOKEN="${bearer}"`,
+      `printf '\\nexport FULCRU_TOKEN="${bearer}"\\n' >> ~/.zshrc`,
       `codex mcp add ${SERVER_NAME} --url ${url} --bearer-token-env-var FULCRU_TOKEN`,
     ].join("\n");
   }
@@ -136,6 +151,13 @@ function ConnectMcpModal({
     | { phase: "error"; reason: string }
   >({ phase: "loading" });
   const [generating, setGenerating] = React.useState(false);
+  const [shell, setShell] = React.useState<"powershell" | "posix">("posix");
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined" && /Win/i.test(window.navigator.platform)) {
+      setShell("powershell");
+    }
+  }, []);
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -210,7 +232,9 @@ function ConnectMcpModal({
   }
 
   const plainKey = keyState.phase === "fresh" ? keyState.key.key : null;
-  const command = serverUrl ? buildSnippet(client, serverUrl, plainKey) : "";
+  const command = serverUrl
+    ? buildSnippet(client, serverUrl, plainKey, shell)
+    : "";
 
   async function copyCommand() {
     if (!command) return;

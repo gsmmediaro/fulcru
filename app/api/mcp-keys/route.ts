@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth-server";
-import { generateMcpKey, listMcpKeys } from "@/lib/agency/mcp-keys";
+import {
+  generateMcpKey,
+  listMcpKeys,
+  revokeAllMcpKeys,
+} from "@/lib/agency/mcp-keys";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,6 +24,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const body = (await req.json().catch(() => ({}))) as { name?: string };
+  await revokeAllMcpKeys(session.user.id);
   const created = await generateMcpKey(session.user.id, body.name?.trim() || "default");
   return NextResponse.json(created);
 }

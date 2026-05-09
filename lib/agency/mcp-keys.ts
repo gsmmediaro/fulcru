@@ -91,6 +91,14 @@ export async function revokeMcpKey(userId: string, id: string): Promise<void> {
   `;
 }
 
+export async function revokeAllMcpKeys(userId: string): Promise<void> {
+  await sql`
+    UPDATE mcp_key
+    SET revoked_at = NOW()
+    WHERE user_id = ${userId} AND revoked_at IS NULL
+  `;
+}
+
 export async function resolveUserIdFromKey(plainKey: string): Promise<string | null> {
   if (!plainKey || !plainKey.startsWith(KEY_PREFIX)) return null;
   const keyHash = hashKey(plainKey);

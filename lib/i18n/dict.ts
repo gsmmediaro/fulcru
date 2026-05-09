@@ -27,13 +27,13 @@ const en: Dict = {
   "sidebar.reconnect": "Reconnect MCP",
   "mcpModal.title": "Connect MCP",
   "mcpModal.subtitle":
-    "Pick your agent client and run the command - every session can be tracked here.",
+    "Pick your agent client and run the command once. It keeps working until you regenerate the key.",
   "mcpModal.tab.claude": "Claude Code",
   "mcpModal.tab.codex": "Codex",
   "mcpModal.tab.opencode": "opencode",
   "mcpModal.tab.others": "Others",
   "mcpModal.codex.hint":
-    "Codex stores credentials via an env var. Run both lines in your shell - codex writes to ~/.codex/config.toml.",
+    "Codex stores the env var name in ~/.codex/config.toml. This command persists FULCRU_TOKEN so it survives restarts.",
   "mcpModal.opencode.hint":
     "Paste into your opencode.json (or opencode.jsonc). opencode uses `mcp` and requires `type: \"remote\"`.",
   "mcpModal.others.hint":
@@ -55,13 +55,13 @@ const en: Dict = {
   "mcpModal.close": "Close",
   "mcpModal.keyLoading": "Looking up your MCP key…",
   "mcpModal.keyNone": "No MCP key yet. Generate one to authorize your agent client.",
-  "mcpModal.keyStored": "An MCP key already exists for this account.",
-  "mcpModal.keyFresh": "New key generated - save it now.",
+  "mcpModal.keyStored": "Permanent MCP key active for this account.",
+  "mcpModal.keyFresh": "Permanent key generated - add it to your agent now.",
   "mcpModal.keyOnceWarning":
-    "We never store the plain key. If you lose it, generate a new one (the old still works until revoked).",
+    "We never store the plain key. Regenerating replaces the old key, so existing agent connections must be updated.",
   "mcpModal.keyGenerate": "Generate key",
   "mcpModal.keyGenerating": "Generating…",
-  "mcpModal.keyNew": "New key",
+  "mcpModal.keyNew": "Regenerate",
   "mcpModal.keyError": "Couldn't load your keys: {reason}",
 
   // Topbar
