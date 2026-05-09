@@ -298,6 +298,19 @@ const TOOLS = [
     },
   },
   {
+    name: "delete_project",
+    description:
+      "Delete a project permanently. Run delete_run first for any runs you intend to remove. Also removes cwd mappings for that project and detaches project-linked expenses.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectId: { type: "string" },
+      },
+      required: ["projectId"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "create_skill",
     description:
       "Create a new skill in the catalog. Skills carry baseline_hours and rate_modifier used to price runs. Pick the closest existing skill via list_skills first; only create when none fits AND you genuinely need a separate billing category. For most agentic LLM work prefer the auto-created generic 'AI development' skill over inventing opinionated names like 'Frontend Engineering' or 'Backend Engineering' - those clutter the catalog and don't help pricing.",
@@ -1192,6 +1205,15 @@ async function callTool(
         description: asString(args.description),
         color: asString(args.color),
       });
+    }
+
+    case "delete_project": {
+      const projectId = asString(args.projectId);
+      if (!projectId) {
+        throw new Error("projectId is required");
+      }
+      await api.deleteProject(projectId);
+      return { ok: true };
     }
 
     case "create_skill": {

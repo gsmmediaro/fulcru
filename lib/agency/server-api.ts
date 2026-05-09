@@ -46,6 +46,7 @@ export function bindApi(userId: string) {
       id: string,
       patch: Parameters<typeof store.updateProject>[2],
     ) => store.updateProject(userId, id, patch),
+    deleteProject: (id: string) => store.deleteProject(userId, id),
 
     listSkills: (): Promise<Skill[]> => store.listSkills(userId),
     getSkill: (id: string) => store.getSkill(userId, id),

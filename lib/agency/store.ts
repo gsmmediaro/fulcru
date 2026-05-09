@@ -651,6 +651,27 @@ export const store = {
     return mapProject(rows[0]);
   },
 
+  async deleteProject(userId: string, id: string): Promise<void> {
+    const existing = await store.getProject(userId, id);
+    if (!existing) throw new Error("Unknown project");
+
+    await sql`
+      DELETE FROM cwd_mapping
+      WHERE user_id = ${userId} AND project_id = ${id}
+    `;
+
+    await sql`
+      UPDATE expense
+      SET project_id = NULL
+      WHERE user_id = ${userId} AND project_id = ${id}
+    `;
+
+    await sql`
+      DELETE FROM project
+      WHERE user_id = ${userId} AND id = ${id}
+    `;
+  },
+
   async updateProject(
     userId: string,
     id: string,
