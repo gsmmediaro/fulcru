@@ -30,12 +30,6 @@ import type { Invoice, Client, InvoiceStatus } from "@/lib/agency/types";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-const usd = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 2,
-});
-
 function fmtDate(iso?: string): string {
   if (!iso) return "-";
   return new Intl.DateTimeFormat("en-US", {
@@ -43,6 +37,18 @@ function fmtDate(iso?: string): string {
     month: "2-digit",
     day: "2-digit",
   }).format(new Date(iso));
+}
+
+function fmtAmount(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    return `${currency} ${amount.toFixed(2)}`;
+  }
 }
 
 function computeBalance(inv: Invoice): number {
@@ -484,6 +490,7 @@ export interface InvoicesTableProps {
   initialAmountMax: string;
   initialBalanceMin: string;
   initialBalanceMax: string;
+  currency: string;
 }
 
 export function InvoicesTable({
@@ -499,6 +506,7 @@ export function InvoicesTable({
   initialAmountMax,
   initialBalanceMin,
   initialBalanceMax,
+  currency,
 }: InvoicesTableProps) {
   const { t } = useLocale();
   const router = useRouter();
@@ -891,7 +899,7 @@ export function InvoicesTable({
 
                       {/* Amount */}
                       <td className="whitespace-nowrap px-[12px] py-[14px] text-right tabular-nums font-semibold text-[var(--color-text-strong)]">
-                        {usd.format(inv.totalUsd)}
+                        {fmtAmount(inv.totalUsd, currency)}
                       </td>
 
                       {/* Balance */}
@@ -903,7 +911,7 @@ export function InvoicesTable({
                             : "text-[var(--color-text-strong)]",
                         )}
                       >
-                        {usd.format(balance)}
+                        {fmtAmount(balance, currency)}
                       </td>
 
                       {/* Status */}

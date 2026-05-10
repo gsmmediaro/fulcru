@@ -45,12 +45,6 @@ import type {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const usd = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 2,
-});
-
 function toDateInputValue(iso?: string): string {
   if (!iso) return "";
   return iso.slice(0, 10);
@@ -567,12 +561,14 @@ function LineItemRow({
   onChange,
   onRemove,
   t,
+  currency,
 }: {
   item: InvoiceLineItem;
   index: number;
   onChange: (patch: Partial<InvoiceLineItem>) => void;
   onRemove: () => void;
   t: (key: string) => string;
+  currency: string;
 }) {
   function handleQtyChange(e: React.ChangeEvent<HTMLInputElement>) {
     const q = parseFloat(e.target.value) || 0;
@@ -643,7 +639,7 @@ function LineItemRow({
       </td>
       {/* Amount */}
       <td className="px-[8px] py-[8px] align-middle w-[110px] text-right text-[12px] tabular-nums font-semibold text-[var(--color-text-strong)]">
-        {usd.format(item.amount)}
+        {fmtAmount(item.amount, currency)}
       </td>
       {/* Remove */}
       <td className="px-[8px] py-[8px] align-middle w-[36px]">
@@ -805,10 +801,12 @@ export function InvoiceEditor({
   invoice: initialInvoice,
   client,
   billableExpenses = [],
+  currency = "USD",
 }: {
   invoice: Invoice;
   client: Client | undefined;
   billableExpenses?: Expense[];
+  currency?: string;
 }) {
   const { t, locale } = useLocale();
   const router = useRouter();
@@ -1318,6 +1316,7 @@ export function InvoiceEditor({
                     onChange={(patch) => updateLineItem(i, patch)}
                     onRemove={() => removeLineItem(i)}
                     t={t}
+                    currency={currency}
                   />
                 ))}
               </tbody>
@@ -1371,7 +1370,7 @@ export function InvoiceEditor({
           <dl className="w-full max-w-[340px] rounded-[6px] bg-[var(--color-bg-tint-2)] p-[16px] ring-1 ring-[var(--color-stroke-soft)] space-y-[10px]">
             <TotalsRow
               label={t("invoice.editor.subtotal")}
-              value={usd.format(subtotal)}
+              value={fmtAmount(subtotal, currency)}
             />
 
             {showDiscount && (
@@ -1418,25 +1417,25 @@ export function InvoiceEditor({
             {discAmt > 0 && (
               <TotalsRow
                 label={`${t("invoice.editor.discount")} (−)`}
-                value={usd.format(discAmt)}
+                value={fmtAmount(discAmt, currency)}
               />
             )}
             {taxPctNum > 0 && (
               <TotalsRow
                 label={`${t("invoice.editor.taxPct")} (${taxPctNum}%)`}
-                value={usd.format(taxAmt)}
+                value={fmtAmount(taxAmt, currency)}
               />
             )}
 
             <div className="border-t border-[var(--color-stroke-soft)] pt-[8px] space-y-[6px]">
               <TotalsRow
                 label={t("invoice.editor.total")}
-                value={usd.format(total)}
+                value={fmtAmount(total, currency)}
                 emphasize
               />
               <TotalsRow
                 label={t("invoice.editor.totalDue")}
-                value={usd.format(total)}
+                value={fmtAmount(total, currency)}
                 emphasize
               />
             </div>

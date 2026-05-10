@@ -112,6 +112,7 @@ export default async function InvoicesPage({
           initialAmountMax={initialAmountMax}
           initialBalanceMin={initialBalanceMin}
           initialBalanceMax={initialBalanceMax}
+          currency={settings.businessCurrency}
         />
       </div>
     </AppShell>
