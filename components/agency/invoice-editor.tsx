@@ -810,7 +810,7 @@ export function InvoiceEditor({
   client: Client | undefined;
   billableExpenses?: Expense[];
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const router = useRouter();
 
   // ── Local state mirrors the invoice fields ──
@@ -898,6 +898,9 @@ export function InvoiceEditor({
     String(initialInvoice.taxPct || ""),
   );
   const [notes, setNotes] = React.useState(initialInvoice.notes ?? "");
+  const [invoiceLanguage, setInvoiceLanguage] = React.useState<"en" | "ro">(
+    locale === "ro" ? "ro" : "en",
+  );
 
   // Recurring state
   const [recurringEnabled, setRecurringEnabled] = React.useState(
@@ -1045,6 +1048,14 @@ export function InvoiceEditor({
     }
   }
 
+  function downloadDocx() {
+    const qs = new URLSearchParams({
+      format: "docx",
+      language: invoiceLanguage,
+    });
+    window.location.href = `/api/agency/invoices/${initialInvoice.id}/export?${qs.toString()}`;
+  }
+
   return (
     <>
       {/* ── Page chrome ── */}
@@ -1067,15 +1078,37 @@ export function InvoiceEditor({
 
         {/* Right: action buttons */}
         <div className="flex items-center gap-[8px] flex-wrap">
+          <div className="flex items-center gap-[6px]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--color-text-soft)]">
+              {t("invoice.editor.language")}
+            </span>
+            <Select
+              value={invoiceLanguage}
+              onValueChange={(value) =>
+                setInvoiceLanguage(value === "ro" ? "ro" : "en")
+              }
+            >
+              <SelectTrigger
+                aria-label={t("invoice.editor.language")}
+                className="h-[32px] min-w-[104px] text-[12px]"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="ro">Romanian</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           {/* Download */}
           <Button
             type="button"
             variant="outline"
             size="sm"
             leadingIcon={<RiDownload2Line size={15} />}
-            onClick={() => window.print()}
+            onClick={downloadDocx}
           >
-            {t("invoice.editor.downloadInvoice")}
+            {t("invoice.editor.downloadDocx")}
           </Button>
 
           {/* Send */}

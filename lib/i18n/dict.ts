@@ -373,6 +373,8 @@ const en: Dict = {
   // Invoice editor
   "invoice.editor.breadcrumb": "Invoices",
   "invoice.editor.downloadInvoice": "Download invoice",
+  "invoice.editor.downloadDocx": "Download DOCX",
+  "invoice.editor.language": "Invoice language",
   "invoice.editor.sendInvoice": "Send invoice",
   "invoice.editor.recurringSettings": "Recurring settings",
   "invoice.editor.actions": "Actions",
@@ -1054,6 +1056,8 @@ const ro: Dict = {
   // Invoice editor
   "invoice.editor.breadcrumb": "Facturi",
   "invoice.editor.downloadInvoice": "Descarcă factura",
+  "invoice.editor.downloadDocx": "Descarcă DOCX",
+  "invoice.editor.language": "Limba facturii",
   "invoice.editor.sendInvoice": "Trimite factura",
   "invoice.editor.recurringSettings": "Setări recurente",
   "invoice.editor.actions": "Acțiuni",

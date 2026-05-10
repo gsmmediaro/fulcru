@@ -1,6 +1,10 @@
 import { NextRequest } from "next/server";
 import { getSession } from "@/lib/auth-server";
 import { bindApi } from "@/lib/agency/server-api";
+import {
+  renderInvoiceDocx,
+  type InvoiceDocumentLanguage,
+} from "@/lib/agency/invoice-docx";
 import { enrichRunFromSession } from "@/lib/agency/session-importer";
 import type {
   ApprovalStatus,
@@ -659,6 +663,33 @@ async function route(
 
       case "invoices": {
         if (method === "GET") {
+          if (id && action === "export") {
+            const inv = await api.getInvoice(id);
+            if (!inv) return notFound("Invoice not found");
+            const [client, settings] = await Promise.all([
+              api.getClient(inv.clientId),
+              api.getSettings(),
+            ]);
+            const language =
+              qp.get("language") === "ro" ? "ro" : ("en" as InvoiceDocumentLanguage);
+            const format = qp.get("format") ?? "docx";
+            if (format !== "docx") return bad("format must be docx");
+            const docx = renderInvoiceDocx(
+              inv,
+              client ?? null,
+              settings.businessCurrency || "USD",
+              language,
+            );
+            const filename = `${inv.number}-${language}.docx`;
+            return new Response(new Uint8Array(docx), {
+              headers: {
+                "Content-Type":
+                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "Content-Disposition": `attachment; filename="${filename}"`,
+                "Cache-Control": "no-store",
+              },
+            });
+          }
           if (!id) {
             return json(
               await api.listInvoices(qp.get("clientId") ?? undefined),
