@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { RiCheckLine } from "@remixicon/react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { Field, Input, Textarea } from "@/components/agency/client-modal";
 import { useLocale } from "@/lib/i18n/provider";
 import { cn } from "@/lib/cn";
@@ -596,31 +597,18 @@ function MultiplierSlider({
   const num = Number(value);
   const safe =
     Number.isFinite(num) && num >= MULT_MIN && num <= MULT_MAX ? num : MULT_MIN;
-  const pct = ((safe - MULT_MIN) / (MULT_MAX - MULT_MIN)) * 100;
-  const display = safe.toFixed(1);
   return (
-    <div className="flex items-center gap-[14px]">
-      <input
-        type="range"
-        min={MULT_MIN}
-        max={MULT_MAX}
-        step={MULT_STEP}
-        value={safe}
-        onChange={(e) => onChange(e.target.value)}
-        aria-label="Active hours multiplier"
-        className="h-[24px] flex-1 cursor-pointer appearance-none bg-transparent outline-none focus-visible:[&::-webkit-slider-thumb]:ring-2 focus-visible:[&::-webkit-slider-thumb]:ring-[var(--color-brand-400)] [&::-moz-range-thumb]:h-[16px] [&::-moz-range-thumb]:w-[16px] [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-[var(--color-accent-orange)] [&::-moz-range-thumb]:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent-orange)_25%,transparent)] [&::-moz-range-track]:h-[6px] [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-[var(--color-bg-tint-8)] [&::-webkit-slider-runnable-track]:h-[6px] [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-thumb]:-mt-[5px] [&::-webkit-slider-thumb]:h-[16px] [&::-webkit-slider-thumb]:w-[16px] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--color-accent-orange)] [&::-webkit-slider-thumb]:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent-orange)_25%,transparent)]"
-        style={{
-          ["--track" as string]: `linear-gradient(to right, var(--color-accent-orange) 0%, var(--color-accent-orange) ${pct}%, var(--color-bg-tint-8) ${pct}%, var(--color-bg-tint-8) 100%)`,
-          background: `linear-gradient(to right, var(--color-accent-orange) 0%, var(--color-accent-orange) ${pct}%, var(--color-bg-tint-8) ${pct}%, var(--color-bg-tint-8) 100%)`,
-          backgroundSize: "100% 6px",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      />
-      <div className="min-w-[56px] rounded-[6px] bg-[var(--color-bg-tint-3)] px-[10px] py-[6px] text-center text-[13px] font-semibold tabular-nums normal-case tracking-normal text-[var(--color-text-strong)] ring-1 ring-[var(--color-stroke-soft)]">
-        {display}×
-      </div>
-    </div>
+    <Slider
+      value={safe}
+      min={MULT_MIN}
+      max={MULT_MAX}
+      step={MULT_STEP}
+      onChange={(next) => onChange(String(next))}
+      ariaLabel="Active hours multiplier"
+      trailing={
+        <span className="min-w-[40px] text-center">{safe.toFixed(1)}×</span>
+      }
+    />
   );
 }
 
