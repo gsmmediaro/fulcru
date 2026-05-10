@@ -96,8 +96,10 @@ function NewInvoiceModal({
       }).then((r) => r.json());
       const used = new Set<string>();
       for (const inv of allInvoices as Array<{
+        status: string;
         lineItems: Array<{ runId: string }>;
       }>) {
+        if (inv.status === "void") continue;
         for (const li of inv.lineItems) used.add(li.runId);
       }
       if (!cancelled) setInvoicedRunIds(used);

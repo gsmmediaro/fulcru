@@ -57,13 +57,34 @@ export default async function ClientBillingPage({
     maximumFractionDigits: 0,
   });
 
-  const [summary, uninvoicedRuns, invoices, uninvoicedExpenses] =
+  const [summary, allRuns, invoices, uninvoicedExpenses] =
     await Promise.all([
       api.clientBillingSummary(id),
-      api.listUninvoicedRunsForClient(id, 25),
+      api.listRuns({ clientId: id }),
       api.listInvoices(id),
       api.listExpenses({ clientId: id, billable: true, invoiceId: null }),
     ]);
+
+  const cutoff30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const recentShippedRuns = allRuns.filter(
+    (r) =>
+      r.status === "shipped" && new Date(r.startedAt).getTime() >= cutoff30,
+  );
+  const billable30 = recentShippedRuns.reduce((s, r) => s + r.billableUsd, 0);
+  const aiCost30 = recentShippedRuns.reduce((s, r) => s + r.costUsd, 0);
+  const activeHours30 =
+    recentShippedRuns.reduce((s, r) => s + r.activeSec, 0) / 3600;
+  const invoicedRunIds = new Set<string>();
+  for (const inv of invoices) {
+    if (inv.status === "void") continue;
+    for (const li of inv.lineItems) {
+      if (li.runId) invoicedRunIds.add(li.runId);
+    }
+  }
+  const recentRunPreview = allRuns
+    .filter((r) => r.status === "shipped")
+    .sort((a, b) => (a.startedAt < b.startedAt ? 1 : -1))
+    .slice(0, 25);
 
   const subtotalNext =
     summary.uninvoicedRuns.billableUsd + summary.uninvoicedExpenses.amountUsd;
@@ -73,10 +94,6 @@ export default async function ClientBillingPage({
     summary.costMode === "subscription"
       ? summary.uninvoicedRuns.amortizedSubCostUsd
       : summary.uninvoicedRuns.aiCostUsd;
-  const costLabel =
-    summary.costMode === "subscription"
-      ? "Your cost (sub amortized)"
-      : "AI cost (tokens)";
   const marginNext = subtotalNext - realCost;
   const marginPct = subtotalNext > 0 ? (marginNext / subtotalNext) * 100 : 0;
 
@@ -127,19 +144,15 @@ export default async function ClientBillingPage({
       <div className="enter-stagger mt-[24px] grid grid-cols-1 gap-[12px] sm:grid-cols-2 lg:grid-cols-4">
         <Hero
           icon={<RiTimeLine size={16} />}
-          label="Uninvoiced time"
-          value={usd.format(summary.uninvoicedRuns.billableUsd)}
-          sub={`${summary.uninvoicedRuns.count} runs · ${summary.uninvoicedRuns.hours.toFixed(1)}h`}
+          label="Billable 30d"
+          value={usd.format(billable30)}
+          sub={`${recentShippedRuns.length} runs - ${activeHours30.toFixed(1)}h active`}
         />
         <Hero
           icon={<RiCpuLine size={16} />}
-          label={costLabel}
-          value={usd.format(realCost)}
-          sub={
-            summary.costMode === "subscription"
-              ? `share of subscription · ${summary.uninvoicedRuns.activeHours.toFixed(1)}h active`
-              : "tokens spent on these runs"
-          }
+          label="AI cost 30d"
+          value={usd.format(aiCost30)}
+          sub="tokens spent on recent shipped runs"
           tone="muted"
         />
         <Hero
@@ -310,45 +323,49 @@ export default async function ClientBillingPage({
         )}
       </section>
 
-      {/* Uninvoiced runs preview */}
-      {uninvoicedRuns.length > 0 ? (
+      {/* Recent runs preview */}
+      {recentRunPreview.length > 0 ? (
         <section className="mt-[16px] rounded-[10px] bg-[var(--color-bg-surface)] p-[20px] ring-1 ring-[var(--color-stroke-soft)]">
           <header className="mb-[12px] flex items-center justify-between">
             <h2 className="tp-overline text-[var(--color-brand-400)]">
-              Uninvoiced runs
+              Recent runs
             </h2>
             <span className="text-[11px] text-[var(--color-text-soft)] tabular-nums">
-              showing {uninvoicedRuns.length} most recent
+              showing {recentRunPreview.length} most recent
             </span>
           </header>
           <ul className="flex flex-col">
-            {uninvoicedRuns.map((r) => (
-              <li
-                key={r.id}
-                className="flex items-center justify-between gap-[12px] border-t border-[var(--color-stroke-soft)] py-[10px] first:border-t-0"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] text-[var(--color-text-strong)]">
-                    {r.prompt || `Run ${r.id.slice(-6)}`}
-                  </div>
-                  <div className="mt-[2px] text-[11px] text-[var(--color-text-soft)] tabular-nums">
-                    {r.startedAt.slice(0, 10)} ·{" "}
-                    {(r.runtimeSec / 3600).toFixed(2)}h ·{" "}
-                    {r.kind === "mcp" ? formatAgentLabel(r.agentName) : "Manual"}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[13px] font-semibold tabular-nums text-[var(--color-brand-400)]">
-                    {usd.format(r.billableUsd)}
-                  </div>
-                  {r.costUsd > 0 ? (
-                    <div className="text-[11px] tabular-nums text-[var(--color-text-soft)]">
-                      AI {usd.format(r.costUsd)}
+            {recentRunPreview.map((r) => {
+              const invoiced = invoicedRunIds.has(r.id);
+              return (
+                <li
+                  key={r.id}
+                  className="flex items-center justify-between gap-[12px] border-t border-[var(--color-stroke-soft)] py-[10px] first:border-t-0"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] text-[var(--color-text-strong)]">
+                      {r.prompt || `Run ${r.id.slice(-6)}`}
                     </div>
-                  ) : null}
-                </div>
-              </li>
-            ))}
+                    <div className="mt-[2px] text-[11px] text-[var(--color-text-soft)] tabular-nums">
+                      {r.startedAt.slice(0, 10)} -{" "}
+                      {(r.runtimeSec / 3600).toFixed(2)}h -{" "}
+                      {r.kind === "mcp" ? formatAgentLabel(r.agentName) : "Manual"}
+                      {invoiced ? " - invoiced" : ""}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[13px] font-semibold tabular-nums text-[var(--color-brand-400)]">
+                      {usd.format(r.billableUsd)}
+                    </div>
+                    {r.costUsd > 0 ? (
+                      <div className="text-[11px] tabular-nums text-[var(--color-text-soft)]">
+                        AI {usd.format(r.costUsd)}
+                      </div>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}

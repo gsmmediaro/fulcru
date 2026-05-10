@@ -194,12 +194,14 @@ test("REST-equivalent via MCP: invoice line items use the run prompt as descript
     `${ourLine.skillName} - run ${ctx.runId}`,
     "description must NOT be the old hardcoded skill-name-run-id format",
   );
-  // Math should check: amount = quantity × unitPrice (within rounding).
-  const expected = Number((ourLine.quantity * ourLine.unitPrice).toFixed(2));
+  const runRow = (
+    await sql`SELECT billable_usd FROM run WHERE id = ${ctx.runId}`
+  )[0];
+  const expected = Number(Number(runRow.billable_usd).toFixed(2));
   assert.equal(
     ourLine.amount,
     expected,
-    "amount must equal quantity × unitPrice",
+    "invoice amount must use the run's stored billable_usd",
   );
 
   // Cleanup the freshly-created invoice so re-runs don't accumulate drafts.

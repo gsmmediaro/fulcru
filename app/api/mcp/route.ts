@@ -447,7 +447,7 @@ const TOOLS = [
   {
     name: "create_invoice",
     description:
-      "Auto-build a draft invoice for a client from all uninvoiced shipped runs in the last `windowDays` (default 30). Each run becomes a line item priced at baseline_hours × rate. Apply taxPct if any. Errors if no eligible runs.",
+      "Auto-build a draft invoice for a client from all uninvoiced shipped runs in the last `windowDays` (default 30). Each run becomes a line item using the run's stored billable_usd amount. Apply taxPct if any. Errors if no eligible runs.",
     inputSchema: {
       type: "object",
       properties: {

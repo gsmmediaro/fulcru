@@ -382,6 +382,10 @@ function mapInvoice(r: InvoiceRow): Invoice {
   };
 }
 
+function detachInvoiceLineItems(items: InvoiceLineItem[]): InvoiceLineItem[] {
+  return items.map(({ runId: _runId, ...item }) => item);
+}
+
 async function ensureAppUser(userId: string) {
   await sql`
     INSERT INTO app_user (id) VALUES (${userId})
@@ -1485,6 +1489,7 @@ export const store = {
         AND NOT EXISTS (
           SELECT 1 FROM invoice i, jsonb_array_elements(i.line_items) li
           WHERE i.user_id = ${userId}
+            AND i.status <> 'void'
             AND (li ->> 'runId') = r.id
         )
       ORDER BY r.started_at ASC
@@ -1505,23 +1510,16 @@ export const store = {
     if (eligible.length === 0) {
       throw new Error("No uninvoiced shipped runs for this client in the window");
     }
-    const settings = await store.getSettings(userId);
     const lineItems: InvoiceLineItem[] = eligible.map((r) => {
       const activeHours = num(r.active_sec) / 3600;
       const runtimeHours = num(r.runtime_sec) / 3600;
       const baselineHours = num(r.baseline_hours);
-      const hours = activeHours > 0 ? activeHours : runtimeHours > 0 ? runtimeHours : baselineHours;
-      const quantity = Number(hours.toFixed(2));
-      const unitPrice = num(r.rate_usd);
-      const baseAmount = quantity * unitPrice;
-      const effort = effortMultiplierForRun(settings, {
-        changeCategory: asCategory(r.change_category),
-        difficultyScore:
-          r.difficulty_score == null ? undefined : num(r.difficulty_score),
-        qualityConfidence:
-          r.quality_confidence == null ? 1 : num(r.quality_confidence),
-      });
-      const amount = Number((baseAmount * effort).toFixed(2));
+      const hours =
+        activeHours > 0 ? activeHours : runtimeHours > 0 ? runtimeHours : baselineHours;
+      const quantity = Number(Math.max(hours, 0.01).toFixed(2));
+      const amount = Number(num(r.billable_usd).toFixed(2));
+      const unitPrice =
+        quantity > 0 ? Number((amount / quantity).toFixed(4)) : amount;
       const promptRaw = (r.prompt ?? "").trim().replace(/\s+/g, " ");
       const description = promptRaw
         ? promptRaw.length > 100
@@ -1653,6 +1651,7 @@ export const store = {
     const numSeq = (numCount[0]?.n ?? 0) + 1;
     const now = new Date();
     const newNumber = `INV-${now.getUTCFullYear()}-${String(100 + numSeq).padStart(4, "0")}`;
+    const lineItems = detachInvoiceLineItems(src.lineItems);
     const rows = (await sql`
       INSERT INTO invoice (
         id, user_id, client_id, number, status,
@@ -1666,7 +1665,7 @@ export const store = {
       SELECT
         ${newId}, ${userId}, client_id, ${newNumber}, 'draft',
         period_start, period_end, due_at,
-        line_items, subtotal_usd, tax_usd, total_usd,
+        ${JSON.stringify(lineItems)}::jsonb, subtotal_usd, tax_usd, total_usd,
         subject, notes,
         bill_from_name, bill_from_address, bill_from_email,
         bill_to_name, bill_to_address, bill_to_email, bill_to_cc_emails,
@@ -2239,7 +2238,9 @@ export const store = {
           AND r.status = 'shipped'
           AND NOT EXISTS (
             SELECT 1 FROM invoice i, jsonb_array_elements(i.line_items) li
-            WHERE i.user_id = ${userId} AND (li ->> 'runId') = r.id
+            WHERE i.user_id = ${userId}
+              AND i.status <> 'void'
+              AND (li ->> 'runId') = r.id
           )
       `,
       sql`
@@ -2318,7 +2319,9 @@ export const store = {
           AND r.active_sec > 0
           AND NOT EXISTS (
             SELECT 1 FROM invoice i, jsonb_array_elements(i.line_items) li
-            WHERE i.user_id = ${userId} AND (li ->> 'runId') = r.id
+            WHERE i.user_id = ${userId}
+              AND i.status <> 'void'
+              AND (li ->> 'runId') = r.id
           )
         GROUP BY date_trunc('month', started_at), r.started_at
       `) as Array<{
@@ -2393,7 +2396,9 @@ export const store = {
         AND r.status = 'shipped'
         AND NOT EXISTS (
           SELECT 1 FROM invoice i, jsonb_array_elements(i.line_items) li
-          WHERE i.user_id = ${userId} AND (li ->> 'runId') = r.id
+          WHERE i.user_id = ${userId}
+            AND i.status <> 'void'
+            AND (li ->> 'runId') = r.id
         )
       ORDER BY started_at DESC
       LIMIT ${limit}

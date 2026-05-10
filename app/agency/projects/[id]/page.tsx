@@ -48,16 +48,17 @@ export default async function ProjectDetailPage({
   const shippedRuns = allRuns.filter((r) => r.status === "shipped");
   const invoicedRunIds = new Set<string>();
   for (const inv of invoices) {
+    if (inv.status === "void") continue;
     for (const li of inv.lineItems) {
       if (li.runId) invoicedRunIds.add(li.runId);
     }
   }
   const uninvoicedRuns = shippedRuns.filter((r) => !invoicedRunIds.has(r.id));
 
-  const billableUsd = uninvoicedRuns.reduce((s, r) => s + r.billableUsd, 0);
-  const aiCostUsd = uninvoicedRuns.reduce((s, r) => s + r.costUsd, 0);
+  const billableUsd = shippedRuns.reduce((s, r) => s + r.billableUsd, 0);
+  const aiCostUsd = shippedRuns.reduce((s, r) => s + r.costUsd, 0);
   const activeHours =
-    uninvoicedRuns.reduce((s, r) => s + r.activeSec, 0) / 3600;
+    shippedRuns.reduce((s, r) => s + r.activeSec, 0) / 3600;
   const lifetimeHours =
     shippedRuns.reduce((s, r) => s + r.activeSec, 0) / 3600;
   const lifetimeBillable = shippedRuns.reduce(
@@ -77,7 +78,7 @@ export default async function ProjectDetailPage({
     inv.lineItems.some((li) => li.runId && projectRunIds.has(li.runId)),
   );
 
-  const sortedRecentRuns = [...uninvoicedRuns]
+  const sortedRecentRuns = [...shippedRuns]
     .sort((a, b) => (a.startedAt < b.startedAt ? 1 : -1))
     .slice(0, 25);
 
@@ -139,9 +140,9 @@ export default async function ProjectDetailPage({
       <div className="enter-stagger mt-[24px] grid grid-cols-1 gap-[12px] sm:grid-cols-2 lg:grid-cols-4">
         <Hero
           icon={<RiTimeLine size={16} />}
-          label={t("projects.kpi.uninvoicedTime")}
+          label="Billable time"
           value={usd.format(billableUsd)}
-          sub={`${uninvoicedRuns.length} ${t("projects.runs").toLowerCase()} · ${activeHours.toFixed(1)}h`}
+          sub={`${shippedRuns.length} ${t("projects.runs").toLowerCase()} - ${activeHours.toFixed(1)}h - ${uninvoicedRuns.length} uninvoiced`}
         />
         <Hero
           icon={<RiCpuLine size={16} />}
@@ -160,7 +161,7 @@ export default async function ProjectDetailPage({
           icon={<RiPulseLine size={16} />}
           label={t("projects.kpi.lifetime")}
           value={`${lifetimeHours.toFixed(1)}h`}
-          sub={`${shippedRuns.length} runs · ${usd.format(lifetimeBillable)}`}
+          sub={`${shippedRuns.length} runs - ${usd.format(lifetimeBillable)}`}
           tone="muted"
         />
       </div>
@@ -227,7 +228,7 @@ export default async function ProjectDetailPage({
         <section className="mt-[16px] rounded-[10px] bg-[var(--color-bg-surface)] p-[20px] ring-1 ring-[var(--color-stroke-soft)]">
           <header className="mb-[12px] flex items-center justify-between">
             <h2 className="tp-overline text-[var(--color-brand-400)]">
-              {t("projects.kpi.uninvoicedRunsTitle")}
+              Recent runs
             </h2>
             <span className="text-[11px] text-[var(--color-text-soft)] tabular-nums">
               {t("projects.kpi.showingRecent", {
@@ -236,33 +237,37 @@ export default async function ProjectDetailPage({
             </span>
           </header>
           <ul className="flex flex-col">
-            {sortedRecentRuns.map((r) => (
-              <li
-                key={r.id}
-                className="flex items-center justify-between gap-[12px] border-t border-[var(--color-stroke-soft)] py-[10px] first:border-t-0"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] text-[var(--color-text-strong)]">
-                    {r.prompt || `Run ${r.id.slice(-6)}`}
-                  </div>
-                  <div className="mt-[2px] text-[11px] text-[var(--color-text-soft)] tabular-nums">
-                    {r.startedAt.slice(0, 10)} ·{" "}
-                    {(r.activeSec / 3600).toFixed(2)}h ·{" "}
-                    {r.kind === "mcp" ? formatAgentLabel(r.agentName) : "Manual"}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[13px] font-semibold tabular-nums text-[var(--color-brand-400)]">
-                    {usd.format(r.billableUsd)}
-                  </div>
-                  {r.costUsd > 0 ? (
-                    <div className="text-[11px] tabular-nums text-[var(--color-text-soft)]">
-                      AI {usd.format(r.costUsd)}
+            {sortedRecentRuns.map((r) => {
+              const invoiced = invoicedRunIds.has(r.id);
+              return (
+                <li
+                  key={r.id}
+                  className="flex items-center justify-between gap-[12px] border-t border-[var(--color-stroke-soft)] py-[10px] first:border-t-0"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] text-[var(--color-text-strong)]">
+                      {r.prompt || `Run ${r.id.slice(-6)}`}
                     </div>
-                  ) : null}
-                </div>
-              </li>
-            ))}
+                    <div className="mt-[2px] text-[11px] text-[var(--color-text-soft)] tabular-nums">
+                      {r.startedAt.slice(0, 10)} -{" "}
+                      {(r.activeSec / 3600).toFixed(2)}h -{" "}
+                      {r.kind === "mcp" ? formatAgentLabel(r.agentName) : "Manual"}
+                      {invoiced ? " - invoiced" : ""}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[13px] font-semibold tabular-nums text-[var(--color-brand-400)]">
+                      {usd.format(r.billableUsd)}
+                    </div>
+                    {r.costUsd > 0 ? (
+                      <div className="text-[11px] tabular-nums text-[var(--color-text-soft)]">
+                        AI {usd.format(r.costUsd)}
+                      </div>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}
