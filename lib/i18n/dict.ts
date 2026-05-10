@@ -165,6 +165,9 @@ const en: Dict = {
   "clients.viewRuns": "View runs",
   "clients.projectsCount": "{n} project",
   "clients.projectsCountPl": "{n} projects",
+  "clients.sendInvoice.label": "Send invoice",
+  "clients.sendInvoice.creating": "Creating…",
+  "clients.sendInvoice.nothingToBill": "Nothing uninvoiced to bill",
 
   // Pages: Projects
   "projects.title": "Projects",
@@ -832,6 +835,9 @@ const ro: Dict = {
   "clients.viewRuns": "Vezi sesiuni",
   "clients.projectsCount": "{n} proiect",
   "clients.projectsCountPl": "{n} proiecte",
+  "clients.sendInvoice.label": "Trimite factură",
+  "clients.sendInvoice.creating": "Se creează…",
+  "clients.sendInvoice.nothingToBill": "Nimic de facturat",
 
   // Pages: Projects
   "projects.title": "Proiecte",

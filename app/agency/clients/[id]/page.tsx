@@ -12,6 +12,7 @@ import {
 import { AppShell } from "@/components/layout/app-shell";
 import { ClientAvatar } from "@/components/agency/client-avatar";
 import { ClientEditButton } from "@/components/agency/client-edit-button";
+import { SendInvoiceButton } from "@/components/agency/send-invoice-button";
 import { InvoiceStatusPill } from "@/components/agency/invoice-status-pill";
 import { getApi } from "@/lib/agency/server-api";
 import { getT } from "@/lib/i18n/server";
@@ -115,6 +116,10 @@ export default async function ClientBillingPage({
             <RiPulseLine size={14} />
             {t("clients.viewRuns")}
           </Link>
+          <SendInvoiceButton
+            clientId={client.id}
+            hasUninvoicedWork={subtotalNext > 0}
+          />
           <ClientEditButton client={client} />
         </div>
       </div>
