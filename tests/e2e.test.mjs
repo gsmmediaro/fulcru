@@ -8,7 +8,7 @@ const CWD = "C:/Users/shado/Desktop/Altele/iproyal";
 const j = async (res) => {
   if (!res.ok && res.status !== 201) {
     const t = await res.text();
-    throw new Error(`HTTP ${res.status} — ${t}`);
+    throw new Error(`HTTP ${res.status} - ${t}`);
   }
   return res.json();
 };
@@ -236,7 +236,7 @@ test("MCP: unknown method returns -32601", async () => {
   assert.equal(body.error.code, -32601);
 });
 
-test("REST: approvals roundtrip — create → resolve", async () => {
+test("REST: approvals roundtrip - create → resolve", async () => {
   const run = await callTool("run_start", {
     clientId: ctx.client2.id,
     projectId: ctx.project2.id,

@@ -232,7 +232,7 @@ export function RunRow({
       {/* Time range */}
       <span className="shrink-0 text-[12px] tabular-nums text-[var(--color-text-soft)]">
         {formatTime(run.startedAt)}
-        {run.endedAt ? ` – ${formatTime(run.endedAt)}` : " – …"}
+        {run.endedAt ? ` - ${formatTime(run.endedAt)}` : " - …"}
       </span>
 
       {/* Cost / billable amount */}
@@ -274,7 +274,7 @@ export function RunRow({
         {formatClock(displaySec)}
       </span>
 
-      {/* Replay — only for non-MCP, non-break runs */}
+      {/* Replay - only for non-MCP, non-break runs */}
       {!isMcp && !isBreak && (
         <button
           onClick={() => onReplay?.(run)}

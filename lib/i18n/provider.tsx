@@ -11,7 +11,7 @@ type Ctx = {
 
 const LocaleContext = React.createContext<Ctx | null>(null);
 
-export const LOCALE_COOKIE = "fulcra_locale";
+export const LOCALE_COOKIE = "fulcru_locale";
 
 export function LocaleProvider({
   locale: initialLocale,

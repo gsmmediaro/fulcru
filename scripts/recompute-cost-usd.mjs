@@ -17,7 +17,11 @@ for (const line of readFileSync(".env.local", "utf8").split(/\r?\n/)) {
   if (!process.env[k]) process.env[k] = v;
 }
 
-const USER_ID = process.argv[2] ?? "SBSw80tO5R7S8O1jyjHOrHtfm666O85I";
+const USER_ID = process.argv[2];
+if (!USER_ID) {
+  console.error("usage: node scripts/recompute-cost-usd.mjs <userId>");
+  process.exit(1);
+}
 const sql = neon(process.env.DATABASE_URL);
 
 const PRICING = {

@@ -145,9 +145,29 @@ export function listCodexSessions(opts: {
         modifiedAt: new Date(st.mtimeMs).toISOString(),
       };
     })
-    .filter((s) => !opts.cwd || samePath(s.cwd, opts.cwd))
+    .filter((s) => !opts.cwd || cwdMatchesProject(s.cwd, opts.cwd))
     .filter((s) => !isFulcruSelfCwd(s.cwd))
     .sort((a, b) => (a.modifiedAt < b.modifiedAt ? 1 : -1));
+}
+
+/**
+ * Match a session's cwd against a target project directory.
+ * Returns true when the session was started inside the target dir or any
+ * subdirectory of it (e.g. nested folders, in-tree git worktrees, etc.).
+ * Sibling worktrees living outside the target dir are NOT matched here -
+ * the importer surfaces them by basename hint when the user asks for
+ * "all sessions for project X".
+ */
+function cwdMatchesProject(
+  sessionCwd: string | undefined,
+  targetCwd: string,
+): boolean {
+  if (!sessionCwd) return false;
+  const a = normalizePath(sessionCwd);
+  const b = normalizePath(targetCwd);
+  if (a === b) return true;
+  const sep = path.sep;
+  return a.startsWith(b.endsWith(sep) ? b : b + sep);
 }
 
 export function findCodexSessionJsonl(opts: {

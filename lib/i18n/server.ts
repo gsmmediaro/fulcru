@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { LOCALES, translate, type Locale } from "./dict";
 
-export const LOCALE_COOKIE = "fulcra_locale";
+export const LOCALE_COOKIE = "fulcru_locale";
 
 export async function getLocale(): Promise<Locale> {
   const c = await cookies();

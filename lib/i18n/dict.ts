@@ -492,14 +492,14 @@ const en: Dict = {
   "onb.s1.q1": "How large is your agency?",
   "onb.s1.q2": "How many clients do you serve at once?",
   "onb.size.solo": "Just me",
-  "onb.size.s_2_5": "2 – 5",
-  "onb.size.s_6_20": "6 – 20",
-  "onb.size.s_21_50": "21 – 50",
+  "onb.size.s_2_5": "2 - 5",
+  "onb.size.s_6_20": "6 - 20",
+  "onb.size.s_21_50": "21 - 50",
   "onb.size.s_51_plus": "51+",
   "onb.cc.c_1": "1",
-  "onb.cc.c_2_5": "2 – 5",
-  "onb.cc.c_6_15": "6 – 15",
-  "onb.cc.c_16_50": "16 – 50",
+  "onb.cc.c_2_5": "2 - 5",
+  "onb.cc.c_6_15": "6 - 15",
+  "onb.cc.c_16_50": "16 - 50",
   "onb.cc.c_50_plus": "50+",
 
   // Step 2 - service category
@@ -512,7 +512,7 @@ const en: Dict = {
   "onb.svc.consulting": "Consulting",
   "onb.svc.ops": "Ops & DevOps",
   "onb.svc.other": "Something else",
-  "onb.svc.otherPlaceholder": "Tell us in 2–3 words",
+  "onb.svc.otherPlaceholder": "Tell us in 2-3 words",
 
   // Step 3 - use cases
   "onb.s3.q": "What will you use Fulcru for?",
@@ -1162,14 +1162,14 @@ const ro: Dict = {
   "onb.s1.q1": "Cât de mare e agenția ta?",
   "onb.s1.q2": "Cu câți clienți lucrezi simultan?",
   "onb.size.solo": "Doar eu",
-  "onb.size.s_2_5": "2 – 5",
-  "onb.size.s_6_20": "6 – 20",
-  "onb.size.s_21_50": "21 – 50",
+  "onb.size.s_2_5": "2 - 5",
+  "onb.size.s_6_20": "6 - 20",
+  "onb.size.s_21_50": "21 - 50",
   "onb.size.s_51_plus": "51+",
   "onb.cc.c_1": "1",
-  "onb.cc.c_2_5": "2 – 5",
-  "onb.cc.c_6_15": "6 – 15",
-  "onb.cc.c_16_50": "16 – 50",
+  "onb.cc.c_2_5": "2 - 5",
+  "onb.cc.c_6_15": "6 - 15",
+  "onb.cc.c_16_50": "16 - 50",
   "onb.cc.c_50_plus": "50+",
 
   // Step 2 - serviciu principal
@@ -1182,7 +1182,7 @@ const ro: Dict = {
   "onb.svc.consulting": "Consultanță",
   "onb.svc.ops": "Operațiuni & DevOps",
   "onb.svc.other": "Altceva",
-  "onb.svc.otherPlaceholder": "Spune-ne în 2–3 cuvinte",
+  "onb.svc.otherPlaceholder": "Spune-ne în 2-3 cuvinte",
 
   // Step 3 - use cases
   "onb.s3.q": "Pentru ce folosești Fulcru?",

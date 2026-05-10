@@ -500,7 +500,7 @@ export function EntryBar({
                 className="bg-transparent text-[13px] text-[var(--color-text-strong)] outline-none [color-scheme:dark]"
               />
             </div>
-            <span className="text-[var(--color-text-soft)]">–</span>
+            <span className="text-[var(--color-text-soft)]">-</span>
             {/* End time */}
             <div className="flex items-center gap-[6px] rounded-[6px] ring-1 ring-[var(--color-stroke-soft)] px-[10px] h-[36px] bg-[var(--color-bg-tint-3)]">
               <input

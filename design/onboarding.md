@@ -1,6 +1,6 @@
 # Onboarding - Design Spec
 
-> Four-step wizard shown immediately after a user finishes Google OAuth and before they reach `/agency`. Structure copied from Clockify (4 steps, stepper, Back / Next / Done). Visual language is Fulcra (dark, teal brand, Be Vietnam Pro, no AI-slop blue).
+> Four-step wizard shown immediately after a user finishes Google OAuth and before they reach `/agency`. Structure copied from Clockify (4 steps, stepper, Back / Next / Done). Visual language is Fulcru (dark, teal brand, Be Vietnam Pro, no AI-slop blue).
 
 ---
 
@@ -11,7 +11,7 @@ Capture five things on first sign-in so the workspace is useful from day zero, a
 1. **Agency size** - drives default invoice templates, hint about team seats
 2. **Concurrent clients** - drives whether we surface the multi-client billing roll-up
 3. **Primary service** - drives which seed Skills we offer in the catalog
-4. **Why Fulcra** - drives which surface we land them on after onboarding
+4. **Why Fulcru** - drives which surface we land them on after onboarding
 5. **Attribution** - feeds the founder analytics dashboard, not surfaced to user
 
 Onboarding is single-shot: completion writes `onboarding_state.completed_at` and the wizard never re-appears.
@@ -82,7 +82,7 @@ The wizard does **not** use the AppShell (no sidebar, no topbar). It runs in a d
 │  Cât de mare e agenția ta?                                   │  ← headline-xs, strong
 │                                                              │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐                      │
-│  │ ○ Solo   │ │ ○ 2–5    │ │ ○ 6–20   │  ← pill-chips        │
+│  │ ○ Solo   │ │ ○ 2-5    │ │ ○ 6-20   │  ← pill-chips        │
 │  └──────────┘ └──────────┘ └──────────┘                      │
 │                                                              │
 │  Cu câți clienți lucrezi simultan?                           │
@@ -111,7 +111,7 @@ The wizard does **not** use the AppShell (no sidebar, no topbar). It runs in a d
 | Active pill fill   | `color-mix(in oklab, var(--color-brand-400) 14%, transparent)` |
 | Inactive pill bg   | `--color-bg-surface-elevated`               |
 | Inactive pill ring | `1px var(--color-stroke-soft)`              |
-| Pill radius        | `--radius-8` (slightly squarer than Clockify's full pill - Fulcra is more architectural) |
+| Pill radius        | `--radius-8` (slightly squarer than Clockify's full pill - Fulcru is more architectural) |
 | Footer divider     | `1px var(--color-stroke-soft)`              |
 | Animation          | `modal-rise` on card mount, `count-in` on step swap |
 
@@ -197,9 +197,9 @@ Replaces the radio dot with a 16px square check (filled brand-400 + white check 
 | Value          | Label RO          | Label EN     |
 | -------------- | ----------------- | ------------ |
 | `solo`         | Doar eu           | Solo         |
-| `s_2_5`        | 2 – 5             | 2 – 5        |
-| `s_6_20`       | 6 – 20            | 6 – 20       |
-| `s_21_50`      | 21 – 50           | 21 – 50      |
+| `s_2_5`        | 2 - 5             | 2 - 5        |
+| `s_6_20`       | 6 - 20            | 6 - 20       |
+| `s_21_50`      | 21 - 50           | 21 - 50      |
 | `s_51_plus`    | 51+               | 51+          |
 
 > **RO**: "Cu câți clienți lucrezi simultan?" / **EN**: "How many clients do you serve at once?"
@@ -208,9 +208,9 @@ Replaces the radio dot with a 16px square check (filled brand-400 + white check 
 | Value     | Label   |
 | --------- | ------- |
 | `c_1`     | 1       |
-| `c_2_5`   | 2 – 5   |
-| `c_6_15`  | 6 – 15  |
-| `c_16_50` | 16 – 50 |
+| `c_2_5`   | 2 - 5   |
+| `c_6_15`  | 6 - 15  |
+| `c_16_50` | 16 - 50 |
 | `c_50_plus` | 50+   |
 
 **Validation**: both required to enable Continue.
@@ -235,7 +235,7 @@ If `other` selected → **inline reveal** of a single-line input below the chip 
 
 ### Step 3 - `use_cases`
 
-> **RO**: "Pentru ce folosești Fulcra?" / **EN**: "What will you use Fulcra for?"
+> **RO**: "Pentru ce folosești Fulcru?" / **EN**: "What will you use Fulcru for?"
 > **Multi-select** (the only multi-select step). At least one required.
 
 | Value           | Label RO                                | Label EN                              |

@@ -970,7 +970,7 @@ export const store = {
   // ─── Timer-specific run methods ────────────────────────────
   /**
    * Start a manual timer run. Requires clientId so we can derive a rate.
-   * projectId and skillId are optional — if not provided we use sentinel
+   * projectId and skillId are optional - if not provided we use sentinel
    * values '' (empty string sentinel is not valid for FK, so we use the
    * constant below) and store rate_usd from settings default.
    */

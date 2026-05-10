@@ -432,8 +432,8 @@ export function ExpensesView({
                     {/* Project */}
                     <td className="px-[14px] py-[12px] text-[var(--color-text-sub)]">
                       {expense.projectId
-                        ? projectMap.get(expense.projectId) ?? "—"
-                        : "—"}
+                        ? projectMap.get(expense.projectId) ?? "-"
+                        : "-"}
                     </td>
                     {/* Amount */}
                     <td className="px-[14px] py-[12px] text-right font-semibold tabular-nums text-[var(--color-text-strong)]">
@@ -466,7 +466,7 @@ export function ExpensesView({
                           <RiExternalLinkLine size={14} />
                         </a>
                       ) : (
-                        <span className="text-[var(--color-text-soft)]">—</span>
+                        <span className="text-[var(--color-text-soft)]">-</span>
                       )}
                     </td>
                     {/* Actions */}

@@ -884,7 +884,7 @@ async function route(
           }
         }
 
-        // POST — create or attach action
+        // POST - create or attach action
         if (!body) return bad("Missing body");
         if (!id) {
           const date = asString(body.date);

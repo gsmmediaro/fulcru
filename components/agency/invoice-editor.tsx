@@ -362,7 +362,7 @@ function ImportTimeModal({
     setError(null);
     try {
       const expenseIds = Array.from(selected);
-      // Mark expenses as invoiced — POST to the expenses route with action=attach
+      // Mark expenses as invoiced - POST to the expenses route with action=attach
       // We use a sentinel id "bulk" and action "attach" pattern
       await fetch(`/api/agency/expenses/bulk/attach`, {
         method: "POST",
@@ -835,7 +835,7 @@ export function InvoiceEditor({
 
   // Hydrate Bill from defaults from /agency/settings on first mount, but only
   // when the invoice doesn't already have its own values and the user hasn't
-  // typed anything yet. We don't auto-save these defaults — the user has to
+  // typed anything yet. We don't auto-save these defaults - the user has to
   // accept them by typing/blurring, otherwise the invoice stays as-is.
   const billFromHydratedRef = React.useRef(false);
   React.useEffect(() => {
