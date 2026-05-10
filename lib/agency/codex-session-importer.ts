@@ -116,6 +116,15 @@ function readMeta(filePath: string): { sessionId: string; cwd?: string; model?: 
   return { sessionId: extractSessionId(filePath) };
 }
 
+function fulcruSelfCwd(): string {
+  return process.env.FULCRU_SELF_CWD ?? process.cwd();
+}
+
+function isFulcruSelfCwd(cwd: string | undefined): boolean {
+  if (!cwd) return false;
+  return normalizePath(cwd) === normalizePath(fulcruSelfCwd());
+}
+
 export function listCodexSessions(opts: {
   cwd?: string;
   sessionsRoot?: string;
@@ -137,6 +146,7 @@ export function listCodexSessions(opts: {
       };
     })
     .filter((s) => !opts.cwd || samePath(s.cwd, opts.cwd))
+    .filter((s) => !isFulcruSelfCwd(s.cwd))
     .sort((a, b) => (a.modifiedAt < b.modifiedAt ? 1 : -1));
 }
 
