@@ -16,6 +16,10 @@ import { useLocale } from "@/lib/i18n/provider";
 import { cn } from "@/lib/cn";
 import type { Client, Project } from "@/lib/agency/types";
 
+const STOP = (event: React.MouseEvent | React.KeyboardEvent) => {
+  event.stopPropagation();
+};
+
 type ProjectCard = Project & {
   clientName: string;
   runsCount: number;
@@ -37,7 +41,7 @@ export function ProjectsGrid({
   projects: ProjectCard[];
 }) {
   const { t } = useLocale();
-  const [selected, setSelected] = React.useState<ProjectCard | null>(null);
+  const [editing, setEditing] = React.useState<ProjectCard | null>(null);
   const [deletedIds, setDeletedIds] = React.useState<Set<string>>(
     () => new Set(),
   );
@@ -47,19 +51,11 @@ export function ProjectsGrid({
     <>
       <div className="enter-stagger mt-[24px] grid grid-cols-1 gap-[16px] sm:grid-cols-2 lg:grid-cols-3">
         {visibleProjects.map((p) => (
-          <article
+          <Link
             key={p.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => setSelected(p)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                setSelected(p);
-              }
-            }}
+            href={`/agency/projects/${p.id}`}
             className={cn(
-              "flex cursor-pointer flex-col gap-[16px] rounded-[8px] bg-[var(--color-bg-surface)] p-[20px]",
+              "group relative flex flex-col gap-[16px] rounded-[8px] bg-[var(--color-bg-surface)] p-[20px]",
               "ring-1 ring-[var(--color-stroke-soft)] transition-colors",
               "hover:ring-[var(--color-stroke-sub)]",
               "focus-visible:outline-2 focus-visible:outline-[var(--color-brand-400)] focus-visible:outline-offset-2",
@@ -68,7 +64,7 @@ export function ProjectsGrid({
             <div className="flex items-start gap-[14px]">
               <ProjectBadge color={p.color} />
               <div className="flex min-w-0 flex-1 flex-col">
-                <h3 className="truncate text-[17px] font-semibold text-[var(--color-text-strong)]">
+                <h3 className="truncate text-[17px] font-semibold text-[var(--color-text-strong)] group-hover:text-[var(--color-brand-400)]">
                   {p.name}
                 </h3>
                 <div className="mt-[6px] flex items-center gap-[8px]">
@@ -90,14 +86,14 @@ export function ProjectsGrid({
               </div>
               <ProjectActionsMenu
                 project={p}
-                onEdit={() => setSelected(p)}
+                onEdit={() => setEditing(p)}
                 onDeleted={(id) => {
                   setDeletedIds((current) => {
                     const next = new Set(current);
                     next.add(id);
                     return next;
                   });
-                  setSelected((current) =>
+                  setEditing((current) =>
                     current?.id === id ? null : current,
                   );
                 }}
@@ -116,28 +112,34 @@ export function ProjectsGrid({
               />
             </div>
 
-            <Link
-              href={`/agency/runs?projectId=${p.id}`}
-              onClick={(event) => event.stopPropagation()}
-              className="inline-flex items-center gap-[6px] self-start text-[13px] font-semibold text-[var(--color-brand-400)] hover:underline"
+            <span
+              onClick={STOP}
+              onKeyDown={STOP}
+              className="inline-flex items-center gap-[6px] self-start text-[13px] font-semibold text-[var(--color-brand-400)]"
             >
-              {t("projects.viewRuns")} <RiArrowRightLine size={14} />
-            </Link>
-          </article>
+              <Link
+                href={`/agency/runs?projectId=${p.id}`}
+                onClick={STOP}
+                className="inline-flex items-center gap-[6px] hover:underline"
+              >
+                {t("projects.viewRuns")} <RiArrowRightLine size={14} />
+              </Link>
+            </span>
+          </Link>
         ))}
       </div>
 
-      {selected ? (
+      {editing ? (
         <ProjectModal
           mode="edit"
-          project={selected}
+          project={editing}
           clients={clients}
-          open={Boolean(selected)}
+          open={Boolean(editing)}
           onOpenChange={(open) => {
-            if (!open) setSelected(null);
+            if (!open) setEditing(null);
           }}
           onSaved={(project) => {
-            setSelected((current) =>
+            setEditing((current) =>
               current ? { ...current, ...project } : current,
             );
           }}
