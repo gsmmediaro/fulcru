@@ -1855,7 +1855,8 @@ export const store = {
     const settings = await store.getSettings(userId);
     const mode = settings.defaultBillMode;
     const rows = (await sql`
-      SELECT id, runtime_sec, active_sec, baseline_hours, rate_usd, cost_usd, pricing_mode, kind
+      SELECT id, runtime_sec, active_sec, baseline_hours, rate_usd, cost_usd,
+             pricing_mode, kind, difficulty_score, change_category, quality_confidence
       FROM run
       WHERE user_id = ${userId} AND status = 'shipped' AND kind <> 'break'
     `) as Array<{
@@ -1867,6 +1868,9 @@ export const store = {
       cost_usd: string | number;
       pricing_mode: string;
       kind: string;
+      difficulty_score: string | number | null;
+      change_category: string | null;
+      quality_confidence: string | number | null;
     }>;
     let updated = 0;
     for (const r of rows) {
@@ -1875,17 +1879,24 @@ export const store = {
       const cost = num(r.cost_usd);
       const activeHours = (r.active_sec || r.runtime_sec) / 3600;
       const runtimeHours = r.runtime_sec / 3600;
+      const effort = effortMultiplierForRun(settings, {
+        changeCategory: asCategory(r.change_category),
+        difficultyScore:
+          r.difficulty_score == null ? undefined : num(r.difficulty_score),
+        qualityConfidence:
+          r.quality_confidence == null ? 1 : num(r.quality_confidence),
+      });
       let billable = 0;
       if (mode === "baseline") {
-        billable = baseline * rate;
+        billable = baseline * rate * effort;
       } else if (mode === "time_plus_tokens") {
-        billable = runtimeHours * rate + cost;
+        billable = runtimeHours * rate * effort + cost;
       } else {
         const mult =
           settings.billingStyle === "pure_active"
             ? 1
             : settings.billActiveMultiplier || 1;
-        billable = activeHours * mult * rate;
+        billable = activeHours * mult * rate * effort;
       }
       billable = Number(billable.toFixed(2));
       await sql`
@@ -2316,14 +2327,24 @@ export const store = {
         month_total_active_sec: number;
       }>;
       const sub = settings.aiSubscriptionMonthlyUsd;
-      let totalAmortized = 0;
+      // Show at most one month of subscription cost: take the worst (max)
+      // monthly share for this client. Spreading uninvoiced work across many
+      // months should not multiply the displayed AI cost - the user pays the
+      // sub once per month and we want the dashboard to reflect the
+      // current-period commitment, not summed historical commitments.
+      const byMonth = new Map<string, number>();
       monthRows.forEach((row) => {
         if (row.month_total_active_sec > 0) {
-          totalAmortized +=
+          const contribution =
             (sub * row.active_sec_run) / row.month_total_active_sec;
+          byMonth.set(
+            row.month,
+            (byMonth.get(row.month) ?? 0) + contribution,
+          );
         }
       });
-      amortizedSubCostUsd = Number(totalAmortized.toFixed(2));
+      const maxMonthly = Math.max(0, ...byMonth.values());
+      amortizedSubCostUsd = Number(maxMonthly.toFixed(2));
     }
 
     return {
