@@ -1,0 +1,26 @@
+{
+  "serverInfo": { "name": "fulcru", "version": "2.0.0" },
+  "authentication": { "required": true, "schemes": ["bearer"] },
+  "tools": [
+    {
+      "name": "fulcru_visibility",
+      "description": "Read the authenticated brand's AI-visibility data (overview, competitors, sources, mentions, prompts)."
+    },
+    {
+      "name": "fulcru_gaps",
+      "description": "List the questions where AI names competitors but not the brand, worst first. Each gap carries a promptId for fulcru_write_page."
+    },
+    {
+      "name": "fulcru_write_page",
+      "description": "Write the page that closes one gap: a full article draft targeting that query, grounded in the sources AI cites."
+    },
+    {
+      "name": "fulcru_publish_page",
+      "description": "Mark a drafted page as published at a live URL and snapshot the current AI mention rate as the baseline."
+    },
+    {
+      "name": "fulcru_delta",
+      "description": "For each published page, the AI mention rate when it went live versus now. The proof the work landed."
+    }
+  ]
+}
