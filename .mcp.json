@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "fulcru": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/server.mjs"],
+      "env": {
+        "FULCRU_TOKEN": "${FULCRU_TOKEN}"
+      }
+    }
+  }
+}

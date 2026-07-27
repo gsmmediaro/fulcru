@@ -1,0 +1,26 @@
+{
+  "name": "fulcru",
+  "description": "Get named by AI search engines. Finds the questions where ChatGPT, Gemini and Perplexity name a competitor instead of you, writes the page that closes the gap, and measures what publishing it did.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Fulcru",
+    "url": "https://fulcru.app"
+  },
+  "homepage": "https://fulcru.app",
+  "repository": "https://github.com/gsmmediaro/fulcru-agent",
+  "license": "AGPL-3.0-or-later",
+  "keywords": [
+    "aeo",
+    "geo",
+    "answer-engine-optimization",
+    "ai-search",
+    "llm-seo",
+    "chatgpt",
+    "perplexity",
+    "gemini",
+    "brand-monitoring",
+    "seo"
+  ],
+  "skills": ["./skills/fulcru"],
+  "mcpServers": "./.mcp.json"
+}
