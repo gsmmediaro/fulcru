@@ -19,7 +19,7 @@
 const ENDPOINT =
   process.env.FULCRU_ENDPOINT ?? "https://little-orca-977.convex.site/mcp";
 const TOKEN = process.env.FULCRU_TOKEN;
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 
 // Who launched us, and one id for this process's run. We answer `initialize`
 // locally, so without these the hosted server would see every proxied call as
@@ -72,6 +72,11 @@ async function handle(line) {
     if (method === "initialize") {
       clientName = params?.clientInfo?.name;
       clientVersion = params?.clientInfo?.version;
+      // Answer locally (below) so startup never waits on the network, but tell
+      // the hosted server the handshake happened, or its view of this session
+      // would begin at the first tools/list with no client info attached.
+      // Deliberately not awaited, and its result is thrown away.
+      void remote("initialize", params, id).catch(() => {});
       return send({
         jsonrpc: "2.0",
         id,

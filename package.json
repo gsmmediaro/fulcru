@@ -1,6 +1,6 @@
 {
   "name": "fulcru",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Get named by AI search engines. Find the questions where ChatGPT, Gemini and Perplexity name a competitor instead of you, write the page that closes the gap, and measure what publishing it did. CLI + MCP server + skill for agents.",
   "keywords": [
     "aeo",
