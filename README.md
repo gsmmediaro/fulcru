@@ -24,6 +24,16 @@ npm install -g fulcru
 export FULCRU_TOKEN=pk_...        # Settings -> Integrations at fulcru.app
 ```
 
+Or run it in Docker, with nothing installed on the host:
+
+```bash
+docker build -t fulcru .
+docker run --rm -e FULCRU_TOKEN=pk_... fulcru gaps
+```
+
+No secrets are baked into the image; the token is passed at run time. Verified on
+`node:20-alpine`, 2026-07-27.
+
 ## The loop
 
 ```bash
