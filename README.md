@@ -102,7 +102,7 @@ nothing but web access — audit a domain, find the gaps, write the page, re-mea
 
 ```bash
 # Claude / OpenClaw
-npx skills add gsmmediaro/fulcru-agent
+npx skills add gsmmediaro/fulcru
 # Hermes
 hermes skills install <path-or-registry>
 ```

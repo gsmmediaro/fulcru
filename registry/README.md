@@ -65,7 +65,7 @@ hermes skills publish ./skills/fulcru
 ```
 
 Also list on the community Hermes Registry (registry.hermesone.org) and, for
-OpenClaw, install the skill with `npx skills add gsmmediaro/fulcru-agent`.
+OpenClaw, install the skill with `npx skills add gsmmediaro/fulcru`.
 
 ## Awesome lists
 

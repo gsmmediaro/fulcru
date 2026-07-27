@@ -39,6 +39,6 @@
   "homepage": "https://fulcru.app",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gsmmediaro/fulcru-agent.git"
+    "url": "git+https://github.com/gsmmediaro/fulcru.git"
   }
 }

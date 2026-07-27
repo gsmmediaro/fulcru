@@ -1,12 +1,12 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.gsmmediaro/fulcru-agent",
+  "name": "io.github.gsmmediaro/fulcru",
   "title": "Fulcru",
   "description": "Find the questions where ChatGPT, Gemini and Perplexity name your competitor instead of you, write the page that closes the gap, and measure what publishing it did.",
   "version": "2.0.0",
   "websiteUrl": "https://fulcru.app",
   "repository": {
-    "url": "https://github.com/gsmmediaro/fulcru-agent",
+    "url": "https://github.com/gsmmediaro/fulcru",
     "source": "github"
   },
   "remotes": [
