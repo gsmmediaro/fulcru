@@ -21,12 +21,29 @@ const ENDPOINT =
 const TOKEN = process.env.FULCRU_TOKEN;
 const VERSION = "0.1.0";
 
+// Who launched us, and one id for this process's run. We answer `initialize`
+// locally, so without these the hosted server would see every proxied call as
+// an anonymous POST from `node`. Sending them as headers lets it tell Claude
+// Desktop from Cursor, and one long agent session from the next.
+const session = `ses_${randomHex(32)}`;
+let clientName;
+let clientVersion;
+
+function randomHex(chars) {
+  let out = "";
+  while (out.length < chars) out += Math.floor(Math.random() * 16).toString(16);
+  return out.slice(0, chars);
+}
+
 /** One JSON-RPC round trip to the hosted HTTP MCP. */
 async function remote(method, params, id) {
   const res = await fetch(ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "Mcp-Session-Id": session,
+      ...(clientName ? { "Mcp-Client-Name": clientName } : {}),
+      ...(clientVersion ? { "Mcp-Client-Version": clientVersion } : {}),
       ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
     },
     body: JSON.stringify({ jsonrpc: "2.0", id, method, params }),
@@ -52,6 +69,8 @@ async function handle(line) {
 
   try {
     if (method === "initialize") {
+      clientName = params?.clientInfo?.name;
+      clientVersion = params?.clientInfo?.version;
       return send({
         jsonrpc: "2.0",
         id,
