@@ -30,9 +30,10 @@ let clientName;
 let clientVersion;
 
 function randomHex(chars) {
-  let out = "";
-  while (out.length < chars) out += Math.floor(Math.random() * 16).toString(16);
-  return out.slice(0, chars);
+  const bytes = crypto.getRandomValues(new Uint8Array(Math.ceil(chars / 2)));
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, chars);
 }
 
 /** One JSON-RPC round trip to the hosted HTTP MCP. */
