@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.gsmmediaro/fulcru",
   "title": "Fulcru",
-  "description": "Find the questions where ChatGPT, Gemini and Perplexity name your competitor instead of you, write the page that closes the gap, and measure what publishing it did.",
+  "description": "Find where ChatGPT names your competitor, write the page that closes the gap, measure it.",
   "version": "2.0.0",
   "websiteUrl": "https://fulcru.app",
   "repository": {
@@ -12,11 +12,11 @@
   "remotes": [
     {
       "type": "streamable-http",
-      "url": "https://little-orca-977.convex.site/mcp",
+      "url": "https://api.fulcru.app/mcp",
       "headers": [
         {
           "name": "Authorization",
-          "description": "Bearer token from the Integrations page at fulcru.app (format: `Bearer <token>`).",
+          "description": "Bearer token from the Integrations page at fulcru.app (format: `Bearer <token>`). The server also speaks OAuth 2.1 with dynamic client registration, so a client that follows the 401 challenge can authorize instead of pasting a token.",
           "isRequired": true,
           "isSecret": true
         }

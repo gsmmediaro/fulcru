@@ -14,6 +14,11 @@ This repo is the open, self-hostable agent surface. The measurement engine is th
 hosted [Fulcru](https://fulcru.app) service; everything here is a thin client that
 talks to it with your token.
 
+We run it on ourselves and publish the result, whichever way it goes. Today it
+scores us **0 out of 34 prompts**: [we sell AI visibility and we score zero on our
+own product](https://www.fulcru.app/guides/scored-zero-on-our-own-tool), with the
+full run and the source data.
+
 ```bash
 npm install -g fulcru
 export FULCRU_TOKEN=pk_...        # Settings -> Integrations at fulcru.app
