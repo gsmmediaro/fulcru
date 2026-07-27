@@ -1,0 +1,31 @@
+{
+  "id": "fulcru",
+  "name": "Fulcru",
+  "description": "Get named by AI search engines. Finds the questions where ChatGPT, Gemini and Perplexity name a competitor instead of you, writes the page that closes the gap, and measures what publishing it did.",
+  "version": "0.2.0",
+  "icon": "https://www.fulcru.app/icon.png",
+  "skills": ["./skills/fulcru"],
+  "mcpServers": {
+    "fulcru": {
+      "command": "fulcru-mcp",
+      "args": []
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "token": {
+        "type": "string",
+        "description": "Fulcru API token. Optional. The skill works with web access alone."
+      }
+    }
+  },
+  "uiHints": {
+    "token": {
+      "label": "Fulcru API token",
+      "help": "Only needed for the MCP tools. Get one at https://www.fulcru.app",
+      "sensitive": true
+    }
+  }
+}
