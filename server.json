@@ -3,7 +3,7 @@
   "name": "io.github.gsmmediaro/fulcru",
   "title": "Fulcru",
   "description": "Find where ChatGPT names your competitor, write the page that closes the gap, measure it.",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "websiteUrl": "https://fulcru.app",
   "repository": {
     "url": "https://github.com/gsmmediaro/fulcru",

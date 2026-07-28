@@ -109,6 +109,12 @@ MCP server that proxies to the hosted endpoint:
 Tools: `fulcru_gaps`, `fulcru_write_page`, `fulcru_publish_page`, `fulcru_delta`,
 `fulcru_visibility`.
 
+Both speak protocol revision `2026-07-28` and the older handshake-based
+revisions, and pick per request from what the client sends. A client on the new
+revision gets `server/discover`, per-request `_meta`, and a cacheable tool list;
+one still sending `initialize` is served exactly as before. Nothing needs
+configuring either way.
+
 ## Skill
 
 The [`skills/fulcru`](skills/fulcru/SKILL.md) skill runs the whole playbook using
