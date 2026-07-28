@@ -27,7 +27,7 @@
 const ENDPOINT =
   process.env.FULCRU_ENDPOINT ?? "https://little-orca-977.convex.site/mcp";
 const TOKEN = process.env.FULCRU_TOKEN;
-const VERSION = "0.3.0";
+const VERSION = "0.3.1";
 
 const MODERN_VERSION = "2026-07-28";
 const LEGACY_VERSION = "2024-11-05";

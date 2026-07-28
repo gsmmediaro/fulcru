@@ -59,7 +59,7 @@ hermes skills publish ./skills/fulcru
 #   mcp_servers:
 #     fulcru:
 #       command: "npx"
-#       args: ["-y", "fulcru", "fulcru-mcp"]
+#       args: ["-y", "-p", "fulcru", "fulcru-mcp"]
 #       env:
 #         FULCRU_TOKEN: "pk_..."
 ```

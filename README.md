@@ -99,12 +99,16 @@ MCP server that proxies to the hosted endpoint:
   "mcpServers": {
     "fulcru": {
       "command": "npx",
-      "args": ["-y", "fulcru", "fulcru-mcp"],
+      "args": ["-y", "-p", "fulcru", "fulcru-mcp"],
       "env": { "FULCRU_TOKEN": "pk_..." }
     }
   }
 }
 ```
+
+The `-p` is not decoration. This package ships two commands, and without it npx
+runs the one named after the package, which is the CLI: the host gets a usage
+screen instead of an MCP server.
 
 Tools: `fulcru_gaps`, `fulcru_write_page`, `fulcru_publish_page`, `fulcru_delta`,
 `fulcru_visibility`.
